@@ -1,10 +1,11 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Alert, Text, View } from 'react-native';
+import { Alert, Text } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
 import type { ConnectionRequest } from '@/api/contracts';
-import { Avatar, Button, Card, ErrorMessage, Loading, Screen, SectionLabel } from '@/components/ui';
+import { ErrorMessage, Loading, Screen, SectionLabel } from '@/components/ui';
 import { acceptRequest, cancelRequest, connectionsQuery, declineRequest, pendingRequestsQuery } from '@/features/connections/api';
+import { ConnectionRequestCard } from '@/features/connections/components/connection-request-card';
 import { useAppTheme } from '@/theme/theme';
 
 export default function RequestsScreen() {
@@ -35,30 +36,13 @@ export default function RequestsScreen() {
     <Screen>
       {query.error || mutation.error ? <ErrorMessage error={query.error ?? mutation.error} /> : null}
       {!incoming.length && !outgoing.length ? <Text selectable style={{ color: colors.secondary, fontSize: 17, textAlign: 'center', paddingVertical: 32 }}>No pending connection requests.</Text> : null}
-      {incoming.length ? <SectionLabel>RECEIVED</SectionLabel> : null}
+      {incoming.length ? <SectionLabel>INCOMING · {incoming.length}</SectionLabel> : null}
       {incoming.map((item) => (
-        <Card key={item.id}>
-          <View style={{ padding: 12, gap: 12 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <Avatar name={item.personDisplayName} />
-              <View style={{ flex: 1 }}><Text selectable style={{ color: colors.text, fontSize: 17, fontWeight: '600' }}>{item.personDisplayName}</Text><Text selectable style={{ color: colors.secondary, fontSize: 13 }}>{item.personEmail}</Text></View>
-            </View>
-            <Button title="Accept" loading={mutation.isPending && mutation.variables?.id === item.id} onPress={() => mutation.mutate({ action: 'accept', id: item.id })} />
-            <Button title="Decline" secondary destructive disabled={mutation.isPending} onPress={() => confirm(item, 'decline')} />
-          </View>
-        </Card>
+        <ConnectionRequestCard key={item.id} request={item} disabled={mutation.isPending} loading={mutation.isPending && mutation.variables?.id === item.id} onAccept={() => mutation.mutate({ action: 'accept', id: item.id })} onDecline={() => confirm(item, 'decline')} onCancel={() => confirm(item, 'cancel')} />
       ))}
-      {outgoing.length ? <SectionLabel>SENT</SectionLabel> : null}
+      {outgoing.length ? <SectionLabel>OUTGOING · {outgoing.length}</SectionLabel> : null}
       {outgoing.map((item) => (
-        <Card key={item.id}>
-          <View style={{ padding: 12, gap: 12 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <Avatar name={item.personDisplayName} />
-              <View style={{ flex: 1 }}><Text selectable style={{ color: colors.text, fontSize: 17, fontWeight: '600' }}>{item.personDisplayName}</Text><Text selectable style={{ color: colors.secondary, fontSize: 13 }}>{item.personEmail}</Text></View>
-            </View>
-            <Button title="Cancel request" secondary destructive disabled={mutation.isPending} onPress={() => confirm(item, 'cancel')} />
-          </View>
-        </Card>
+        <ConnectionRequestCard key={item.id} request={item} disabled={mutation.isPending} loading={mutation.isPending && mutation.variables?.id === item.id} onAccept={() => mutation.mutate({ action: 'accept', id: item.id })} onDecline={() => confirm(item, 'decline')} onCancel={() => confirm(item, 'cancel')} />
       ))}
     </Screen>
   );

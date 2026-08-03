@@ -33,7 +33,7 @@ export default function FriendsScreen() {
           ),
         }}
       />
-      {connections.error ? <ErrorMessage error={connections.error} /> : null}
+      {connections.error || requests.error ? <ErrorMessage error={connections.error ?? requests.error} /> : null}
       <TextInput
         accessibilityLabel="Search friends"
         placeholder="Search"
@@ -53,7 +53,7 @@ export default function FriendsScreen() {
             <Row
               key={friend.userId}
               title={friend.displayName}
-              subtitle={`${friend.email ?? 'No email shown'} · Balances coming later`}
+              subtitle="Balances coming later"
               href={{ pathname: '/friends/[friendId]', params: { friendId: friend.userId } }}
               leading={<Avatar name={friend.displayName} />}
             />
@@ -62,7 +62,7 @@ export default function FriendsScreen() {
       ) : (
         <View style={{ gap: 12, alignItems: 'stretch', paddingVertical: 24 }}>
           <Text selectable style={{ color: colors.secondary, fontSize: 17, lineHeight: 23, textAlign: 'center' }}>
-            {search ? 'No connections match your search.' : 'No connections yet.'}
+            {search ? 'No connections match your search.' : 'No connections yet. Connect with someone by their exact email address.'}
           </Text>
           {!search ? <Button title="Add connection" href="/connection-new" /> : null}
         </View>

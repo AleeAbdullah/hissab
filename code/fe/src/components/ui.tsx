@@ -20,7 +20,7 @@ export function Screen({ children }: PropsWithChildren) {
       contentInsetAdjustmentBehavior="automatic"
       keyboardShouldPersistTaps="handled"
       style={{ flex: 1 }}
-      contentContainerStyle={{ padding: 16, gap: 16, flexGrow: 1 }}
+      contentContainerStyle={{ padding: 20, gap: 16, flexGrow: 1 }}
     >
       {children}
     </ScrollView>
@@ -30,7 +30,7 @@ export function Screen({ children }: PropsWithChildren) {
 export function Card({ children }: PropsWithChildren) {
   return (
     <View
-      className="bg-surface"
+      className="bg-surface border border-divider"
       style={{
         borderRadius: 16,
         borderCurve: 'continuous',
@@ -62,6 +62,7 @@ export function Row({
   onPress,
   destructive,
   leading,
+  trailing,
   disabled,
 }: {
   title: string;
@@ -71,38 +72,46 @@ export function Row({
   onPress?: () => void;
   destructive?: boolean;
   leading?: ReactNode;
+  trailing?: ReactNode;
   disabled?: boolean;
 }) {
   const { colors } = useAppTheme();
-  const content = (
+  const style = {
+    minHeight: 52,
+    padding: 12,
+    gap: 12,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    opacity: disabled ? 0.55 : 1,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.divider,
+  };
+  const content = <>
+    {leading}
+    <View style={{ flex: 1, gap: 2 }}>
+      <Text selectable style={{ color: destructive ? colors.negative : colors.text, fontSize: 17, lineHeight: 23 }}>
+        {title}
+      </Text>
+      {subtitle ? <Text selectable style={{ color: colors.secondary, fontSize: 13, lineHeight: 18 }}>{subtitle}</Text> : null}
+    </View>
+    {detail ? <Text selectable style={{ color: colors.secondary, fontSize: 15, lineHeight: 20, textAlign: 'right', maxWidth: '42%' }}>{detail}</Text> : null}
+    {trailing ?? (href ? <Text style={{ color: colors.secondary, fontSize: 22 }}>›</Text> : null)}
+  </>;
+  if (!href && !onPress) {
+    return <View style={style}>{content}</View>;
+  }
+  const pressable = (
     <Pressable
-      accessibilityRole={href ? 'link' : onPress ? 'button' : undefined}
+      accessibilityRole={href ? 'link' : 'button'}
       accessibilityState={{ disabled }}
-      disabled={disabled || (!href && !onPress)}
+      disabled={disabled}
       onPress={onPress}
-      style={{
-        minHeight: 52,
-        padding: 12,
-        gap: 12,
-        flexDirection: 'row',
-        alignItems: 'center',
-        opacity: disabled ? 0.55 : 1,
-        borderBottomWidth: 1,
-        borderBottomColor: colors.divider,
-      }}
+      style={style}
     >
-      {leading}
-      <View style={{ flex: 1, gap: 2 }}>
-        <Text selectable style={{ color: destructive ? colors.negative : colors.text, fontSize: 17, lineHeight: 23 }}>
-          {title}
-        </Text>
-        {subtitle ? <Text selectable style={{ color: colors.secondary, fontSize: 13, lineHeight: 18 }}>{subtitle}</Text> : null}
-      </View>
-      {detail ? <Text selectable style={{ color: colors.secondary, fontSize: 15, lineHeight: 20, textAlign: 'right', maxWidth: '42%' }}>{detail}</Text> : null}
-      {href ? <Text style={{ color: colors.secondary, fontSize: 22 }}>›</Text> : null}
+      {content}
     </Pressable>
   );
-  return href ? <Link href={href} asChild>{content}</Link> : content;
+  return href ? <Link href={href} asChild>{pressable}</Link> : pressable;
 }
 
 export function Avatar({ name, large }: { name: string; large?: boolean }) {
@@ -169,7 +178,7 @@ export function Button({
   destructive?: boolean;
 }) {
   const { colors } = useAppTheme();
-  const background = secondary ? colors.surface : destructive ? colors.negative : colors.brand;
+  const background = secondary ? 'transparent' : destructive ? colors.negative : colors.brand;
   const foreground = secondary ? (destructive ? colors.negative : colors.brand) : colors.onBrand;
   const content = (
     <Pressable

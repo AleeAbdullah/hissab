@@ -1,4 +1,5 @@
 import { Stack } from 'expo-router/stack';
+import { Text } from 'react-native';
 
 import { useAppTheme } from '@/theme/theme';
 
@@ -7,6 +8,8 @@ export default function AuthLayout() {
   return (
     <Stack
       screenOptions={{
+        headerTitle: () => <Text selectable style={{ color: colors.text, fontFamily: 'serif', fontSize: 21, lineHeight: 24, fontWeight: '500' }}>Hissab</Text>,
+        headerTitleAlign: 'center',
         headerBackButtonDisplayMode: 'minimal',
         headerShadowVisible: false,
         contentStyle: { backgroundColor: colors.canvas },

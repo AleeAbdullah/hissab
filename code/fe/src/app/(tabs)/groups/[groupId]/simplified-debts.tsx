@@ -1,2 +1,2 @@
 import { ComingLaterScreen } from '@/features/coming-later/screen';
-export default function SimplifiedDebtsScreen() { return <ComingLaterScreen purpose="Debt simplification needs complete, currency-scoped group balances." links={[{ label: 'Record settlement', href: '/settlement' }]} />; }
+export default function SimplifiedDebtsScreen() { return <ComingLaterScreen eyebrow="SIMPLIFIED DEBTS" title="Debt simplification is coming later" purpose="Simplified debts require complete, read-only balances for one group and one currency." />; }

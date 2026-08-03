@@ -2,7 +2,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { Alert, Text, View } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
-import { Avatar, Button, Card, ErrorMessage, Loading, Screen } from '@/components/ui';
+import { Avatar, Button, Card, ErrorMessage, Loading, Row, Screen, SectionLabel } from '@/components/ui';
 import { blocksQuery, unblock } from '@/features/connections/api';
 import { useAppTheme } from '@/theme/theme';
 
@@ -18,25 +18,22 @@ export default function BlockedScreen() {
   return (
     <Screen>
       {query.error || mutation.error ? <ErrorMessage error={query.error ?? mutation.error} /> : null}
-      {!query.data?.length ? <Text selectable style={{ color: colors.secondary, fontSize: 17, textAlign: 'center', paddingVertical: 32 }}>No blocked people.</Text> : null}
-      {query.data?.map((person) => (
-        <Card key={person.userId}>
-          <>
-            <View style={{ padding: 12, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <Avatar name={person.displayName} />
-              <Text selectable style={{ flex: 1, color: colors.text, fontSize: 17 }}>{person.displayName}</Text>
-            </View>
-            <View style={{ padding: 12 }}>
-              <Button
-                title="Unblock"
-                secondary
-                loading={mutation.isPending && mutation.variables === person.userId}
-                onPress={() => Alert.alert('Unblock this person?', 'They will be able to send a new connection request.', [{ text: 'Cancel', style: 'cancel' }, { text: 'Unblock', onPress: () => mutation.mutate(person.userId) }])}
-              />
-            </View>
-          </>
+      {!query.data?.length ? <Text selectable style={{ color: colors.secondary, fontSize: 15, lineHeight: 22, textAlign: 'center', paddingVertical: 32 }}>No blocked people.</Text> : null}
+      {query.data?.length ? <SectionLabel>BLOCKED · {query.data.length}</SectionLabel> : null}
+      {query.data?.length ? (
+        <Card>
+          {query.data.map((person) => (
+            <Row
+              key={person.userId}
+              title={person.displayName}
+              subtitle="Blocked"
+              leading={<Avatar name={person.displayName} />}
+              trailing={<View style={{ width: 92 }}><Button title="Unblock" secondary loading={mutation.isPending && mutation.variables === person.userId} onPress={() => Alert.alert('Unblock this person?', 'They can send a new connection request after you unblock them.', [{ text: 'Cancel', style: 'cancel' }, { text: 'Unblock', onPress: () => mutation.mutate(person.userId) }])} /></View>}
+            />
+          ))}
         </Card>
-      ))}
+      ) : null}
+      <Text selectable style={{ color: colors.secondary, fontSize: 12, lineHeight: 16 }}>Unblocking does not restore a connection or resend a request.</Text>
     </Screen>
   );
 }

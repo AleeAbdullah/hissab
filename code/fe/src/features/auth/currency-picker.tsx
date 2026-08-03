@@ -3,6 +3,8 @@ import { FlatList, Modal, Pressable, Text, TextInput, View } from 'react-native'
 
 import { useAppTheme } from '@/theme/theme';
 
+import { AuthField } from './components/auth-field';
+
 const fallbackCurrencies = ['AED', 'AUD', 'CAD', 'EUR', 'GBP', 'INR', 'PKR', 'USD'];
 
 function currencies() {
@@ -10,7 +12,7 @@ function currencies() {
   return supportedValuesOf?.('currency') ?? fallbackCurrencies;
 }
 
-export function CurrencyPicker({ value, onChange }: { value?: string; onChange: (value: string) => void }) {
+export function CurrencyPicker({ value, onChange, first }: { value?: string; onChange: (value: string) => void; first?: boolean }) {
   const { colors } = useAppTheme();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -21,15 +23,16 @@ export function CurrencyPicker({ value, onChange }: { value?: string; onChange: 
 
   return (
     <>
-      <Text selectable style={{ color: colors.secondary, fontSize: 13 }}>Default currency</Text>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Choose default currency"
-        onPress={() => setOpen(true)}
-        style={{ minHeight: 48, borderWidth: 1, borderColor: colors.control, borderRadius: 12, borderCurve: 'continuous', backgroundColor: colors.surface, paddingHorizontal: 12, justifyContent: 'center' }}
-      >
-        <Text style={{ color: value ? colors.text : colors.secondary, fontSize: 17 }}>{value ?? 'Choose a currency'}</Text>
-      </Pressable>
+      <AuthField first={first} label="Default currency">
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Choose default currency"
+          onPress={() => setOpen(true)}
+          style={{ minHeight: 44, justifyContent: 'center' }}
+        >
+          <Text style={{ color: value ? colors.text : colors.secondary, fontSize: 16, lineHeight: 24 }}>{value ?? 'Choose a currency'}</Text>
+        </Pressable>
+      </AuthField>
       <Modal visible={open} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setOpen(false)}>
         <View style={{ flex: 1, backgroundColor: colors.canvas, paddingTop: 16 }}>
           <View style={{ minHeight: 44, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, gap: 12 }}>
