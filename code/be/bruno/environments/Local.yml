@@ -1,0 +1,50 @@
+name: Local
+variables:
+  - name: baseUrl
+    value: http://localhost:3000
+    description: ""
+  - name: email
+    value: ali@gmail.com
+    description: ""
+  - name: password
+    value: securepassword123
+    description: ""
+  - name: newPassword
+    value: securepassword123
+    description: ""
+  - name: displayName
+    value: Ali
+    description: ""
+  - name: defaultCurrency
+    value: PKR
+    description: ""
+  - name: timezone
+    value: Asia/Karachi
+    description: ""
+  - name: deviceName
+    value: mine
+    description: ""
+  - name: accessToken
+    value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwNjQ4OTMyOS1jMjg4LTRhZDctOTUzNS0zZTdjYzEyMmU2OGMiLCJzaWQiOiJkMWRlNjY5My1hMDU4LTRmYjgtYWQwZi1lODY3NzlkOWYzMmMiLCJqdGkiOiIwMWU0OTM3Mi02NDg2LTRhNDAtYTlhYy1hODA1NmZmMGZmOTIiLCJ0eXAiOiJhY2Nlc3MiLCJpYXQiOjE3ODU2OTM5MDcsImV4cCI6MTc4NTY5NDgwNywiYXVkIjoiaGlzc2FiLW1vYmlsZSIsImlzcyI6Imhpc3NhYi1hcGkifQ.9v0YtWembMEET1nVvS224Qn3eNHDGqu-yU9w87FOLo8.eyJzdWIiOiIwNjQ4OTMyOS1jMjg4LTRhZDctOTUzNS0zZTdjYzEyMmU2OGMiLCJzaWQiOiI1M2U4OTVjNS04OWMxLTQ2YTAtODY1OC01NGMwNTY4ZDIwMmIiLCJqdGkiOiJlYjkyZTVmZi0yNDhkLTRmZTMtOWI4Ny0yODM4ZGU3OTk5NWYiLCJ0eXAiOiJhY2Nlc3MiLCJpYXQiOjE3ODU2OTM2MDgsImV4cCI6MTc4NTY5NDUwOCwiYXVkIjoiaGlzc2FiLW1vYmlsZSIsImlzcyI6Imhpc3NhYi1hcGkifQ.isU-FtuU6YHeVoGxoYMM03gMF4R7CQPfrjb4EiEWeFo
+    description: ""
+  - name: refreshToken
+    value: 09wLHRzPLAZ-xc799FJCvHx_N7zL5JRJZj6jpqlDBh0
+    description: ""
+  - name: resetToken
+    value: ""
+    description: ""
+  - name: sessionId
+    value: 00000000-0000-4000-8000-000000000000
+    description: ""
+  - name: targetUserId
+    value: 00000000-0000-4000-8000-000000000000
+    description: ""
+  - name: requestId
+    value: 00000000-0000-4000-8000-000000000000
+    description: ""
+  - name: direction
+    value: incoming
+    description: ""
+  - name: requestStatus
+    value: PENDING
+    description: ""

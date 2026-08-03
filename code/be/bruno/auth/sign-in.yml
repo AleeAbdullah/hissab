@@ -1,0 +1,32 @@
+info:
+  name: Sign in
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{baseUrl}}/v1/auth/sign-in"
+  headers:
+    - name: Content-Type
+      value: application/json
+    - name: Idempotency-Key
+      value: "{{$randomUUID}}"
+  body:
+    type: json
+    data: |-
+      {
+        "email": "{{email}}",
+        "password": "{{password}}",
+        "deviceName": "{{deviceName}}"
+      }
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        if (res.status === 200) {
+          bru.setVar("accessToken", res.body.accessToken);
+          bru.setVar("refreshToken", res.body.refreshToken);
+          bru.setVar("sessionId", res.body.sessionId);
+        }
+
+docs: Signs in and captures the returned access token, refresh token, and session ID.

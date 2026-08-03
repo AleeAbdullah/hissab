@@ -1,0 +1,2 @@
+import { ComingLaterScreen } from '@/features/coming-later/screen';
+export default function PersonalScreen() { return <ComingLaterScreen purpose="The personal dashboard needs private transaction and report APIs." links={[{ label: 'Add personal transaction', href: '/personal-transaction' }, { label: 'Transactions', href: '/personal/transactions' }, { label: 'Reports', href: '/personal/reports' }]} />; }

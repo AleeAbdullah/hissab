@@ -1,0 +1,25 @@
+info:
+  name: Send connection request
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{baseUrl}}/v1/connection-requests"
+  headers:
+    - name: Content-Type
+      value: application/json
+    - name: Idempotency-Key
+      value: "{{$randomUUID}}"
+  body:
+    type: json
+    data: |-
+      {
+        "receiverUserId": "{{targetUserId}}"
+      }
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+docs: Sends a connection request to targetUserId.
+

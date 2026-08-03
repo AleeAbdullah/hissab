@@ -1,0 +1,17 @@
+info:
+  name: Accept connection request
+  type: http
+  seq: 3
+
+http:
+  method: POST
+  url: "{{baseUrl}}/v1/connection-requests/{{requestId}}/accept"
+  headers:
+    - name: Idempotency-Key
+      value: "{{$randomUUID}}"
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+docs: Accepts an incoming request and creates or reactivates a direct ledger.
+

@@ -1,0 +1,17 @@
+info:
+  name: Unblock user
+  type: http
+  seq: 9
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/v1/blocks/{{targetUserId}}"
+  headers:
+    - name: Idempotency-Key
+      value: "{{$randomUUID}}"
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+docs: Unblocks targetUserId without automatically reconnecting the users.
+

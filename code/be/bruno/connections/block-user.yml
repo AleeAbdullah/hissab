@@ -1,0 +1,17 @@
+info:
+  name: Block user
+  type: http
+  seq: 8
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/v1/blocks/{{targetUserId}}"
+  headers:
+    - name: Idempotency-Key
+      value: "{{$randomUUID}}"
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+docs: Blocks targetUserId, cancels pending pair requests, and archives their direct ledger.
+

@@ -1,0 +1,17 @@
+info:
+  name: Cancel connection request
+  type: http
+  seq: 5
+
+http:
+  method: POST
+  url: "{{baseUrl}}/v1/connection-requests/{{requestId}}/cancel"
+  headers:
+    - name: Idempotency-Key
+      value: "{{$randomUUID}}"
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+docs: Cancels a connection request sent by the authenticated user.
+

@@ -1,0 +1,14 @@
+info:
+  name: List connections
+  type: http
+  seq: 6
+
+http:
+  method: GET
+  url: "{{baseUrl}}/v1/connections"
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+docs: Lists the authenticated user's active direct connections.
+

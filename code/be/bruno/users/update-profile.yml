@@ -1,0 +1,28 @@
+info:
+  name: Update profile
+  type: http
+  seq: 2
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/v1/users/me"
+  headers:
+    - name: Content-Type
+      value: application/json
+    - name: Idempotency-Key
+      value: "{{$randomUUID}}"
+  body:
+    type: json
+    data: |-
+      {
+        "displayName": "{{displayName}}",
+        "defaultCurrency": "{{defaultCurrency}}",
+        "timezone": "{{timezone}}",
+        "personalReportMode": "OWED_SHARE"
+      }
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+docs: Updates one or more fields on the authenticated user's profile.
+

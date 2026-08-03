@@ -1,0 +1,14 @@
+info:
+  name: List sessions
+  type: http
+  seq: 5
+
+http:
+  method: GET
+  url: "{{baseUrl}}/v1/auth/sessions"
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+docs: Lists the authenticated user's login sessions and devices.
+

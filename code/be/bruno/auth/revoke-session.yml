@@ -1,0 +1,17 @@
+info:
+  name: Revoke session
+  type: http
+  seq: 6
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/v1/auth/sessions/{{sessionId}}"
+  headers:
+    - name: Idempotency-Key
+      value: "{{$randomUUID}}"
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+docs: Revokes the login session selected by sessionId.
+

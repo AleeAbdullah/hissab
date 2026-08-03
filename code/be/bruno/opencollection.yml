@@ -1,0 +1,12 @@
+opencollection: 1.0.0
+
+info:
+  name: Hissab API
+
+bundled: false
+extensions:
+  bruno:
+    ignore:
+      - .git
+      - node_modules
+

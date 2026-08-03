@@ -1,0 +1,17 @@
+info:
+  name: Decline connection request
+  type: http
+  seq: 4
+
+http:
+  method: POST
+  url: "{{baseUrl}}/v1/connection-requests/{{requestId}}/decline"
+  headers:
+    - name: Idempotency-Key
+      value: "{{$randomUUID}}"
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+docs: Declines an incoming connection request.
+

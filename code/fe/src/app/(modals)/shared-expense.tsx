@@ -1,0 +1,2 @@
+import { ComingLaterScreen } from '@/features/coming-later/screen';
+export default function SharedExpenseScreen() { return <ComingLaterScreen purpose="Saving a shared expense needs ledger, expense and attachment APIs." links={[{ label: 'Choose ledger', href: '/ledger-picker' }, { label: 'Choose currency', href: '/currency-picker' }, { label: 'Choose category', href: '/category-picker' }, { label: 'Configure payers', href: '/payers' }, { label: 'Configure split', href: '/split' }, { label: 'Add receipt', href: '/receipt' }]} />; }
