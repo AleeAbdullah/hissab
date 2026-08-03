@@ -1,0 +1,604 @@
+/* ============================================================================
+   hissab — frame chrome and component styles
+   Visual direction: Direction A "Grouped Ledger", variant A1, list density L1.
+   Every grouped surface is an inset card, lists included. No edge-to-edge rows.
+   Shared component styles for every generated screen.
+   ========================================================================== */
+
+*,*::before,*::after { box-sizing:border-box; }
+html,body { margin:0; padding:0; }
+body {
+  background:#8A90A0; color:var(--textPrimary);
+  font-family:var(--font); -webkit-font-smoothing:antialiased;
+  padding:0 0 64px;
+}
+.dk body, html.dk body { background:#04060A; }
+
+/* ---------- page chrome (not part of the product) ------------------------- */
+.sheet-head {
+  position:sticky; top:0; z-index:50;
+  background:#12151C; color:#EDEFF4; padding:18px 24px 16px;
+  border-bottom:1px solid #262C38;
+}
+.sheet-head .crumb { font-size:13px; margin-bottom:6px; }
+.sheet-head .crumb a { color:#9AA6C4; text-decoration:none; }
+.sheet-head .crumb a:hover { text-decoration:underline; }
+.sheet-head h1 { font-size:21px; line-height:26px; margin:0 0 6px; font-weight:650; }
+.sheet-head h1 .sid {
+  font-size:11px; font-weight:700; letter-spacing:.8px; vertical-align:2px;
+  background:#2A3450; color:#B8C6EE; border-radius:5px; padding:3px 7px; margin-left:8px;
+}
+.sheet-head .note { margin:0; max-width:88ch; font-size:13.5px; line-height:20px; color:#A2ABBF; }
+.sheet-head .note code { background:#232936; padding:1px 5px; border-radius:4px; color:#C7D2EC; }
+.sheet-head .prov {
+  display:inline-block; margin-top:8px; font-size:11.5px; font-weight:650; letter-spacing:.4px;
+  text-transform:uppercase; color:#F0B457; border:1px solid #6B5326; background:#2A2113;
+  border-radius:5px; padding:3px 8px;
+}
+.mode-btn {
+  position:fixed; right:20px; bottom:20px; z-index:60;
+  background:#22283A; color:#E6EAF4; border:1px solid #39415A; border-radius:11px;
+  padding:11px 16px; font:600 13px/1 var(--font); cursor:pointer;
+}
+.mode-btn:hover { background:#2C3448; }
+
+.board {
+  display:flex; flex-wrap:wrap; gap:40px 32px;
+  padding:32px 24px; align-items:flex-start;
+}
+.fr { margin:0; width:393px; }
+.fr figcaption {
+  font-size:12.5px; line-height:18px; color:#E9ECF3; margin-bottom:10px; min-height:36px;
+}
+.fr figcaption b { display:block; font-size:14px; color:#fff; font-weight:650; margin-bottom:2px; }
+.fr figcaption em { color:#F0B457; font-style:normal; }
+
+/* ---------- phone frame -------------------------------------------------- */
+/* 393 x 852 — iPhone 15 logical size. Height is fixed so anything below the
+   fold is genuinely below the fold, which is what makes A1's scroll cost and
+   the list-density measurements real rather than asserted. */
+.phone {
+  width:393px; height:852px; position:relative; overflow:hidden;
+  background:var(--canvas); color:var(--textPrimary);
+  border-radius:44px; display:flex; flex-direction:column;
+  box-shadow:0 0 0 3px #2A3040, 0 18px 40px rgba(0,0,0,.35);
+}
+.phone.sm { height:560px; }          /* short frame for sheets and dialogs */
+.phone.tall { height:980px; }        /* only for 200% text demonstrations */
+
+.statusbar {
+  flex:0 0 auto; height:54px; padding:16px 30px 0;
+  display:flex; align-items:flex-start; justify-content:space-between;
+  font-size:14px; font-weight:600; letter-spacing:.2px;
+}
+.statusbar .ind { display:flex; gap:5px; align-items:center; }
+.statusbar .ind i { display:block; width:17px; height:11px; border:1.5px solid currentColor;
+  border-radius:3px; opacity:.9; }
+.statusbar .ind i.b { width:24px; }
+.statusbar .ind i.b::after { content:""; display:block; width:70%; height:100%; background:currentColor; }
+
+.homebar { flex:0 0 auto; height:24px; display:flex; align-items:center; justify-content:center; }
+.homebar::after { content:""; width:139px; height:5px; border-radius:3px; background:var(--textPrimary); opacity:.28; }
+
+/* ---------- Authentication: warm editorial identity ---------------------- */
+.phone.brand {
+  --canvas:#F7F3EC; --surface:#FFFDF8; --surfaceSubtle:#EFE7DA;
+  --textPrimary:#1D1D1B; --textSecondary:#71675D; --borderDivider:#DED3C3;
+  --borderControl:#978879; --brand:#A83A1B; --brandSubtle:#F5E3D7;
+  --onBrand:#FFFDF8; --positive:#2E7D59; --negative:#A33B2E; --warning:#8A5A22;
+  --focus:#A83A1B; --warnSubtle:#F6EBDD; --negSubtle:#F8E4DF; --posSubtle:#E7F1EA;
+  --shadow:0 1px 2px rgba(45,31,20,.05); --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",sans-serif;
+  --authGutter:var(--pageGutter); --authFieldPadding:var(--s4); --authCardGap:var(--s4);
+  background:radial-gradient(circle at 12% 6%, rgba(168,58,27,.07), transparent 25%),var(--canvas);
+}
+.dk .phone.brand {
+  --canvas:#1E1916; --surface:#28211C; --surfaceSubtle:#332A23;
+  --textPrimary:#F7F3EC; --textSecondary:#CBBEAD; --borderDivider:#4A3B30;
+  --borderControl:#9E8976; --brand:#E1865C; --brandSubtle:#42261D; --onBrand:#241710;
+  --positive:#75BF92; --negative:#F09A86; --warning:#E7B978; --focus:#E1865C;
+  --warnSubtle:#392A1A; --negSubtle:#42221D; --posSubtle:#1D3525;
+}
+.phone.brand .nav { min-height:52px; padding:4px var(--authGutter) 6px; }
+.phone.auth .nav .ttl { color:var(--textPrimary); font:600 21px/24px Georgia,"Times New Roman",serif; letter-spacing:-.35px; }
+.phone.brand .lgttl { padding-left:var(--authGutter); padding-right:var(--authGutter); }
+.phone.brand .scroll.pad { padding-left:var(--authGutter); padding-right:var(--authGutter); }
+.phone.brand .card { margin:0 var(--authGutter) var(--authCardGap); border:1px solid var(--borderDivider); border-radius:var(--rSurface); box-shadow:none; }
+.phone.brand .field { padding:var(--authFieldPadding); }
+.phone.brand .btn { position:relative; min-height:var(--controlHeight); padding:5px var(--s4); border-radius:var(--rControl); box-shadow:0 6px 14px rgba(113,39,18,.14); }
+.phone.brand .btn.sm { min-height:var(--controlHeight); padding:5px var(--s3); }
+.phone.brand .btn::after { content:""; position:absolute; inset:-8px 0; }
+.phone.brand .btn.sec { background:transparent; border:1px solid var(--brand); color:var(--brand); box-shadow:none; }
+.phone.brand .btn.off { border-color:transparent; box-shadow:none; }
+.phone.brand .caret { background:var(--brand); }
+.phone.brand .search { margin-left:var(--authGutter); margin-right:var(--authGutter); }
+.phone.brand .seclabel { padding-left:var(--authGutter); padding-right:var(--authGutter); }
+.phone.brand .banner { margin:0 var(--authGutter) var(--authCardGap); border-radius:var(--rControl); }
+.phone.brand .success { padding:var(--sectionGap) var(--authGutter) var(--authGutter); }
+.phone.brand .empty { padding-left:var(--authGutter); padding-right:var(--authGutter); }
+.phone.brand .stale { padding-left:var(--authGutter); padding-right:var(--authGutter); }
+.phone.brand .dialog { border-radius:var(--rSheet); }
+.phone.brand .t-large { font-size:calc(32px*var(--sc)); line-height:calc(38px*var(--sc)); }
+.phone.brand .t-body { font-size:calc(16px*var(--sc)); line-height:calc(24px*var(--sc)); }
+.phone.brand .t-supp { font-size:calc(15px*var(--sc)); line-height:calc(22px*var(--sc)); }
+.phone.brand .t-cap { font-size:calc(12px*var(--sc)); line-height:calc(16px*var(--sc)); }
+.phone.brand .a1 { background:#1D1D1B; }.phone.brand .a2 { background:#A83A1B; }
+.phone.brand .a3 { background:#2E7D59; }.phone.brand .a4 { background:#775040; }
+.phone.brand .a5 { background:#A33B2E; }.phone.brand .a6 { background:#3E6E78; }
+.phone.brand .a7 { background:#756B60; }.phone.brand .a8 { background:#9B5A38; }
+.auth-page-head { padding:4px var(--authGutter) var(--s5); }
+.auth-actions,.brand-actions { padding:0 var(--authGutter); }
+.auth-actions.stack,.brand-actions.stack { padding-top:var(--s2); }
+.brand-actions.split { display:flex; gap:var(--s2); padding-bottom:var(--s1); }
+.brand-actions.split > .btn { flex:1; }
+.brand-profile-head { padding:var(--s2) var(--authGutter) var(--s4); display:flex; gap:14px; align-items:center; }
+.brand-balance { padding:var(--s4); }
+.auth-legal { margin:var(--s3) var(--authGutter) 0; text-align:center; }
+.auth-text-action { padding:var(--s5) var(--authGutter); text-align:center; }
+.auth-lockup { display:flex; align-items:center; justify-content:center; gap:8px; color:var(--textPrimary); }
+.auth-lockup.hero { justify-content:flex-start; gap:12px; }
+.auth-wordmark { font:500 21px/1 Georgia,"Times New Roman",serif; letter-spacing:-.65px; }
+.auth-lockup.hero .auth-wordmark { font-size:56px; letter-spacing:-2.4px; }
+.auth-mark { width:27px; height:30px; display:flex; flex-direction:column; justify-content:center; gap:4px; position:relative; padding-right:7px; }
+.auth-mark i { display:block; height:2px; background:var(--brand); }
+.auth-mark i:nth-child(1) { width:100%; }
+.auth-mark i:nth-child(2) { width:72%; }
+.auth-mark i:nth-child(3) { width:43%; }
+.auth-mark b { position:absolute; top:0; right:1px; width:2px; height:100%; background:var(--brand); }
+.auth-mark b::before,.auth-mark b::after { content:""; position:absolute; right:-3px; width:8px; height:2px; background:var(--brand); }
+.auth-mark b::before { top:0; }.auth-mark b::after { bottom:0; }
+.auth-lockup.hero .auth-mark { width:42px; height:47px; gap:6px; padding-right:11px; }
+.auth-lockup.hero .auth-mark i,.auth-lockup.hero .auth-mark b::before,.auth-lockup.hero .auth-mark b::after { height:3px; }
+.auth-lockup.hero .auth-mark b { width:3px; right:2px; }
+.auth-rule { width:48px; height:1px; background:var(--brand); margin:27px 0 16px; }
+.auth-kicker { color:var(--brand); font-size:10px; line-height:14px; font-weight:700; letter-spacing:1.8px; }
+.auth-welcome-title { margin-top:10px; font:500 32px/37px Georgia,"Times New Roman",serif; letter-spacing:-.8px; }
+.auth-principle { display:flex; gap:var(--s3); align-items:flex-start; margin-bottom:var(--s5); }
+.auth-principle-mark { flex:0 0 auto; width:26px; height:26px; border:1px solid var(--borderDivider); display:flex; align-items:center; justify-content:center; }
+.auth-principle-mark i { width:10px; height:2px; background:var(--brand); }
+
+/* ---------- navigation --------------------------------------------------- */
+.nav {
+  position:relative; flex:0 0 auto; padding:2px var(--s4) 6px; display:flex; align-items:center;
+  gap:var(--s2); min-height:44px;
+}
+.nav .lead, .nav .trail { display:flex; align-items:center; gap:var(--s4); flex:0 0 auto; }
+.nav .trail { margin-left:auto; }
+.nav .mid { position:absolute; left:50%; transform:translateX(-50%); width:calc(100% - 128px); min-width:0; text-align:center; }
+.nav .mid .ttl { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:calc(17px*var(--sc)); line-height:calc(22px*var(--sc)); font-weight:600; }
+.nav .mid .sub { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:calc(13px*var(--sc)); line-height:calc(16px*var(--sc)); color:var(--textSecondary); }
+.nav .act { color:var(--brand); font-size:calc(17px*var(--sc)); font-weight:400; cursor:default; }
+.nav .act.semi { font-weight:600; }
+.nav .act.off { color:var(--textSecondary); opacity:.45; }
+.nav .back { color:var(--brand); display:flex; align-items:center; gap:2px; font-size:calc(17px*var(--sc)); }
+.nav.brd { border-bottom:1px solid var(--borderDivider); padding-bottom:10px; }
+
+/* Large-title header, used on the four list tab roots */
+.lgttl { flex:0 0 auto; padding:2px var(--s4) 4px; }
+.lgttl .row1 { display:flex; align-items:flex-end; justify-content:space-between; gap:var(--s3); }
+
+/* ---------- scroll region ----------------------------------------------- */
+/* min-height:0 is load-bearing: without it the flex item refuses to shrink
+   below its content height and pushes the tab bar off the frame. */
+.scroll { flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden; padding-bottom:var(--s6); }
+.scroll::-webkit-scrollbar { width:0; height:0; }
+.scroll { scrollbar-width:none; }
+.scroll.pad { padding-left:var(--s4); padding-right:var(--s4); }
+/* fadeout marks content continuing below the fold */
+.fold { position:absolute; left:0; right:0; height:34px; pointer-events:none;
+  background:linear-gradient(to bottom, transparent, var(--canvas)); }
+
+/* ---------- tab bar ------------------------------------------------------ */
+.tabbar {
+  flex:0 0 auto; display:flex; padding:8px 0 2px;
+  background:var(--surface); border-top:1px solid var(--borderDivider);
+}
+.tab { flex:1 1 0; display:flex; flex-direction:column; align-items:center; gap:3px;
+  color:var(--textSecondary); }
+.tab.on { color:var(--brand); }
+.tab .lbl { font-size:calc(10px*var(--sc)); line-height:calc(13px*var(--sc)); font-weight:500; }
+.tab svg { width:26px; height:24px; display:block; }
+.tab svg * { stroke:currentColor; fill:none; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
+.tab.on svg .fillable { fill:currentColor; fill-opacity:.16; }
+
+/* ---------- Card (§4.1) — the Direction A surface primitive -------------- */
+/* Inset 16 from the screen edge. Used for BOTH field groups and lists (L1). */
+.card {
+  background:var(--surface); border-radius:var(--rSurface); box-shadow:var(--shadow);
+  margin:0 var(--s4) var(--s4); overflow:hidden;
+}
+.card.flat { box-shadow:none; border:1px solid var(--borderDivider); }
+.card.sub { background:var(--surfaceSubtle); box-shadow:none; }
+.card.nom { margin:0; border-radius:0; }
+
+/* Section label — sits on canvas, deliberately OUTSIDE the card (§4.2b) */
+.seclabel { padding:var(--s6) var(--s4) var(--s2); color:var(--textSecondary); }
+.seclabel.first { padding-top:var(--s4); }
+.seclabel .rgt { float:right; text-transform:none; letter-spacing:0; font-weight:400; }
+
+/* ---------- Row (§4.2) -------------------------------------------------- */
+.row {
+  display:flex; align-items:center; gap:var(--s3);
+  padding:var(--s3) var(--s4); min-height:52px;
+  border-top:1px solid var(--borderDivider);
+}
+.row:first-child { border-top:0; }
+/* List cards use 12/12. The card is already inset 16, so a second 16 doubles
+   the gutter to 32 and pushes dense rows onto an extra line. See §4.0. */
+.card.list .row { padding:var(--s3); }
+.row.top { align-items:flex-start; }
+.row .grow { flex:1 1 auto; min-width:0; }
+.row .lbl { color:var(--textPrimary); }
+.row .val { text-align:right; flex:0 0 auto; }
+.row .val .v2 { color:var(--textSecondary); }
+/* A value that is a PHRASE stacks under its label; a value that is a DATUM sits
+   in the right-hand column. `.val` is flex:0 0 auto, so a phrase on the right
+   takes the width it wants and starves the label: measured "Files" squeezed to
+   3px against "CSV and JSON, plus original attachments", and "Notes" to 12px.
+   Widening the label instead would truncate the phrase, and a half-sentence is
+   worse than no column. So the phrase gets the full row width on its own line. */
+.row.stack { flex-direction:column; align-items:stretch; gap:2px; }
+.row.stack .val { text-align:left; }
+.row.tapmark { position:relative; }
+
+.chev { flex:0 0 auto; width:8px; height:14px; opacity:.55; }
+.chev svg { display:block; width:8px; height:14px; }
+.chev svg path { stroke:var(--textSecondary); stroke-width:2; fill:none; stroke-linecap:round; stroke-linejoin:round; }
+
+.avatar {
+  flex:0 0 auto; width:36px; height:36px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:13px; font-weight:700; color:#fff; letter-spacing:.3px;
+}
+.avatar.lg { width:56px; height:56px; font-size:20px; }
+.avatar.xl { width:72px; height:72px; font-size:26px; }
+.avatar.sq { border-radius:var(--rControl); }
+/* Initials are text, so they must grow with Dynamic Type — but they cannot grow
+   past the circle. The circle therefore grows too, at a fraction of the text's
+   rate: 36 -> 48, not 36 -> 72. Full doubling would cost 36px of every row's
+   width at the size where width is already the scarce resource. */
+.x2 .avatar { width:48px; height:48px; font-size:18px; }
+.x2 .avatar.lg { width:68px; height:68px; font-size:26px; }
+.x2 .avatar.xl { width:88px; height:88px; font-size:34px; }
+.a1{background:#3757C5}.a2{background:#8A4B0F}.a3{background:#156B4A}.a4{background:#7B3AA8}
+.a5{background:#B42318}.a6{background:#1F6F8B}.a7{background:#5B6270}.a8{background:#A8452C}
+
+/* ---------- LedgerRow (§4.2c) — the densest row in the product ----------- */
+.lrow .nm { display:block; }
+.lrow .brk { display:block; margin-top:2px; color:var(--textSecondary); }
+/* One line per ledger, never wrapping. The ledger NAME truncates; the amount
+   phrase never does, because clipped money is forbidden. The ISO code is
+   absent here on purpose because the enclosing section scopes the currency. */
+.lrow .brk .ln { display:flex; gap:4px; align-items:baseline; min-width:0; }
+.lrow .brk .lg { flex:0 1 auto; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.lrow .brk .mo { flex:0 0 auto; white-space:nowrap; }
+.lrow .bal { flex:0 0 auto; text-align:right; }
+.lrow .bal .dir { display:block; color:var(--textSecondary); }
+.lrow .bal .amt { display:block; white-space:nowrap; }
+/* At 200% text the row stacks. Measured: with the balance still in a right-hand
+   column the identity column collapses to 139px while the amount phrase "you
+   owe 240.00" needs 181px, so the breakdown clipped — and clipped money is
+   forbidden at every text size, not just the default one. Wrapping the
+   breakdown line alone does not fix it; the money is wider than the column
+   whichever line it is on. So the balance drops below the name and the identity
+   column gets the full row width. This is the accommodation iOS makes at
+   accessibility sizes: horizontal pairs become vertical stacks rather than
+   shrink. Only at .x2 — at normal size the pair fits and stacking would add a
+   line to every row for nothing. */
+.x2 .lrow { flex-wrap:wrap; align-items:flex-start; }
+/* 60% basis, not 100%: at 100% the chevron was pushed onto a third line of its
+   own, which reads as a stray glyph. It grows to fill, so the effect is the
+   balance and the chevron sharing line two. */
+.x2 .lrow .bal { flex:1 1 60%; text-align:left; margin-top:var(--s2); }
+.x2 .lrow .chev { align-self:center; }
+.x2 .lrow .bal .dir { display:inline; margin-right:.4em; }
+.x2 .lrow .bal .amt { display:inline; }
+.x2 .lrow .brk .ln { flex-wrap:wrap; }
+.x2 .lrow .brk .lg { flex:1 1 100%; }
+
+/* Same accommodation for the ordinary label/value row. At 200% "Description"
+   is one 34px word that cannot wrap and cannot shrink, so a right-hand value
+   beside it clips the label by a few pixels — and in the expense detail it
+   squeezed "Alina Rehman (you)" from 124px into 77px. The value drops below the
+   label instead. LedgerRow and ExpenseRow are excluded because they each have a
+   more specific rule above. */
+.x2 .row:not(.lrow):not(.erow) { flex-wrap:wrap; }
+.x2 .row:not(.lrow):not(.erow) .val { flex:1 1 100%; text-align:left; margin-top:2px; }
+.x2 .row:not(.lrow):not(.erow) .chev { align-self:center; }
+
+/* ---------- ExpenseRow — a dated entry in a ledger ----------------------- */
+/* The meta line sits under the TITLE, not under the amount. Putting it under
+   the amount made .val ~240px wide and squeezed the title column to 44px, so
+   "Ski passes" clipped while the amount had room to spare. Measured on
+   13-group-ledger before the fix. Title and meta truncate; the amount does
+   not, and it is the only thing in the right column. */
+.erow .ti { display:block; }
+.erow .me { display:block; margin-top:1px; color:var(--textSecondary);
+            white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.erow .val .mn { display:block; white-space:nowrap; }
+/* Second line of the trailing column: the share amount, or the time. Right
+   aligned so it sits decimal-under-decimal with the amount above it, and never
+   allowed to wrap — if it did not fit it would be lying about a number. */
+.erow .val .sb { display:block; white-space:nowrap; margin-top:1px;
+                 color:var(--textSecondary); }
+.x2 .erow .me { white-space:normal; }
+/* `.wrap` where the meta line is an instruction rather than a summary. A summary
+   ("Aug 3 · Sam paid · your share 15.00") can lose its tail to an ellipsis and
+   still be useful; an instruction ("Make someone else an owner, or delete the
+   group") cannot, because the actionable half is at the end. */
+.erow.wrap .me { white-space:normal; }
+
+/* ---------- MoneyText (§4.4) — currency and value never break apart ------ */
+.mt { display:inline-flex; align-items:baseline; gap:var(--s2); white-space:nowrap; }
+.mt .iso { color:var(--textSecondary); }
+.mt.big .iso { font-size:calc(20px*var(--sc)); line-height:calc(25px*var(--sc)); font-weight:600; }
+.mt.big .v   { font-size:calc(34px*var(--sc)); line-height:calc(41px*var(--sc)); font-weight:700; letter-spacing:-.4px; }
+
+/* ---------- statement lines --------------------------------------------- */
+/* Never a bare signed number: direction is always spelled out. §Accessibility */
+.stmt { display:flex; flex-direction:column; gap:2px; }
+.stmt .dir { color:var(--textSecondary); }
+
+/* ---------- buttons and footer ------------------------------------------ */
+.btn {
+  display:flex; align-items:center; justify-content:center; gap:var(--s2);
+  min-height:50px; padding:var(--s3) var(--s4); border-radius:var(--rControl);
+  background:var(--brand); color:var(--onBrand);
+  font-size:calc(17px*var(--sc)); line-height:calc(22px*var(--sc)); font-weight:600;
+}
+.btn.sec { background:var(--surfaceSubtle); color:var(--brand); }
+.btn.out { background:transparent; color:var(--brand); border:1px solid var(--borderControl); }
+.btn.dstr { background:var(--negative); color:#fff; }
+.dk .btn.dstr { color:#2C1A18; }
+.btn.dstr-out { background:transparent; color:var(--negative); border:1px solid var(--negative); }
+.btn.off { background:var(--surfaceSubtle); color:var(--textSecondary); }
+.btn.sm { min-height:38px; padding:var(--s2) var(--s3); font-size:calc(15px*var(--sc)); border-radius:10px; }
+.btn.spin::before {
+  content:""; width:16px; height:16px; border-radius:50%; flex:0 0 auto;
+  border:2px solid currentColor; border-top-color:transparent; opacity:.9;
+}
+
+.footer {
+  flex:0 0 auto; padding:var(--s3) var(--s4) var(--s2);
+  background:var(--canvas); border-top:1px solid var(--borderDivider);
+}
+.footer.plain { background:var(--surface); }
+/* PrimaryAction reason slot — the binding consequence of variant A1. When the
+   reconciliation panel is scrolled out of view this is the only thing adjacent
+   to the disabled action, so it must state the exact correction. */
+.reason { display:flex; gap:var(--s2); align-items:flex-start; padding:0 2px var(--s2); }
+.reason .gl { flex:0 0 auto; width:16px; height:16px; border-radius:50%; margin-top:2px;
+  background:var(--negative); position:relative; }
+.reason .gl::after { content:"!"; position:absolute; inset:0; color:var(--surface);
+  font:700 11px/16px var(--font); text-align:center; }
+.dk .reason .gl::after { color:#2C1A18; }
+.reason.warn .gl { background:var(--warning); }
+.reason .txt { color:var(--negative); }
+.reason.warn .txt { color:var(--warning); }
+.reason.ok .gl { background:var(--positive); }
+.reason.ok .gl::after { content:"\2713"; font-size:10px; }
+.reason.ok .txt { color:var(--textSecondary); }
+
+/* ---------- fields ------------------------------------------------------ */
+.field { padding:var(--s3) var(--s4); border-top:1px solid var(--borderDivider); }
+.field:first-child { border-top:0; }
+.field .flbl { color:var(--textSecondary); display:block; }
+.field .fval { display:flex; align-items:baseline; gap:var(--s2); margin-top:1px; }
+.field .fval .ph { color:var(--textSecondary); }
+.field.err { background:var(--negSubtle); }
+.field .ferr { display:flex; gap:6px; align-items:flex-start; margin-top:4px; color:var(--negative); }
+.field .ferr::before { content:"!"; flex:0 0 auto; width:14px; height:14px; border-radius:50%;
+  background:var(--negative); color:var(--surface); font:700 10px/14px var(--font); text-align:center; }
+.dk .field .ferr::before { color:#2C1A18; }
+.field .fhint { display:block; margin-top:4px; color:var(--textSecondary); }
+
+.input {
+  border:1px solid var(--borderControl); border-radius:var(--rControl);
+  padding:var(--s3) var(--s4); min-height:50px; display:flex; align-items:center;
+  background:var(--surface); gap:var(--s2);
+}
+.input.foc { border-color:var(--focus); box-shadow:0 0 0 3px color-mix(in srgb, var(--focus) 26%, transparent); }
+.input .ph { color:var(--textSecondary); }
+.caret { display:inline-block; width:2px; height:calc(22px*var(--sc)); background:var(--brand);
+  vertical-align:-4px; }
+.caret.big { height:calc(38px*var(--sc)); width:2px; vertical-align:-6px; }
+
+/* AmountEditor (§4.5) */
+.amt-ed { padding:var(--s4); }
+.amt-ed .lb { color:var(--textSecondary); display:block; margin-bottom:2px; }
+
+/* search field — native list search */
+.search { margin:0 var(--s4) var(--s3); background:var(--surfaceSubtle); border-radius:10px;
+  padding:9px var(--s3); display:flex; align-items:center; gap:var(--s2); color:var(--textSecondary); }
+.search svg { width:15px; height:15px; flex:0 0 auto; }
+.search svg * { stroke:currentColor; fill:none; stroke-width:1.8; }
+.search .q { color:var(--textPrimary); }
+
+/* switch */
+.sw { flex:0 0 auto; width:51px; height:31px; border-radius:16px; background:var(--borderControl);
+  position:relative; }
+.sw::after { content:""; position:absolute; top:2px; left:2px; width:27px; height:27px;
+  border-radius:50%; background:#fff; box-shadow:0 1px 2px rgba(0,0,0,.25); }
+.sw.on { background:var(--positive); }
+.sw.on::after { left:22px; }
+
+/* radio / check marks */
+.tick { flex:0 0 auto; width:22px; height:22px; }
+.tick svg { width:22px; height:22px; display:block; }
+.tick svg .r { stroke:var(--borderControl); stroke-width:1.6; fill:none; }
+.tick.on svg .r { stroke:var(--brand); fill:var(--brand); }
+.tick svg .k { stroke:var(--onBrand); stroke-width:2.2; fill:none; stroke-linecap:round; stroke-linejoin:round; }
+.tick.off svg .k { display:none; }
+.tick.box svg .r { rx:5; }
+
+/* segmented control */
+.seg { display:flex; background:var(--surfaceSubtle); border-radius:9px; padding:2px; gap:2px; }
+.seg .sg { flex:1 1 0; text-align:center; padding:7px 6px; border-radius:7px;
+  color:var(--textSecondary); font-size:calc(14px*var(--sc)); font-weight:500; }
+.seg .sg.on { background:var(--surface); color:var(--textPrimary); font-weight:600;
+  box-shadow:0 1px 2px rgba(23,26,34,.12); }
+.dk .seg .sg.on { box-shadow:none; border:1px solid var(--borderDivider); }
+
+/* pills / badges */
+.badge { display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:999px;
+  background:var(--surfaceSubtle); color:var(--textSecondary);
+  font-size:calc(12px*var(--sc)); line-height:calc(16px*var(--sc)); font-weight:600; }
+.badge.b-pos { background:var(--posSubtle); color:var(--positive); }
+.badge.b-neg { background:var(--negSubtle); color:var(--negative); }
+.badge.b-warn{ background:var(--warnSubtle); color:var(--warning); }
+.badge.b-brand{ background:var(--brandSubtle); color:var(--brand); }
+/* inline-block, not inline: the only caller puts the dot inside a line of text,
+   and an inline box ignores width/height, so it was rendering 0px wide — the
+   unread marker was invisible on every activity row that had one. */
+.dot { display:inline-block; vertical-align:middle; width:8px; height:8px;
+       border-radius:50%; background:var(--brand); flex:0 0 auto; }
+
+/* ContextMarker (§4.6) — Shared vs Personal is never implied by position */
+.ctx { margin:0 var(--s4) var(--s3); background:var(--surfaceSubtle); border-radius:var(--rControl);
+  padding:10px var(--s3); display:flex; align-items:center; gap:var(--s2); }
+.ctx .who { flex:1 1 auto; min-width:0; color:var(--textSecondary); }
+.ctx .who b { color:var(--textPrimary); font-weight:600; }
+.ctx .chg { color:var(--brand); font-weight:600; flex:0 0 auto; }
+
+/* ReconciliationPanel — Total → Paid → Allocated, the signature interaction */
+.recon .rrow { display:flex; justify-content:space-between; align-items:baseline; gap:var(--s3);
+  padding:9px var(--s4); }
+.recon .rrow.hd { padding-top:var(--s3); }
+.recon .rrow .k { color:var(--textSecondary); }
+.recon .sep { height:1px; background:var(--borderDivider); margin:var(--s2) var(--s4); }
+.recon .out { padding:var(--s3) var(--s4) var(--s4); }
+.recon .out.bad { background:var(--negSubtle); }
+.recon .out.good { background:var(--posSubtle); }
+.recon .out .l1 { display:flex; gap:var(--s2); align-items:flex-start; }
+
+/* banners */
+.banner { margin:0 var(--s4) var(--s3); border-radius:var(--rControl); padding:var(--s3);
+  display:flex; gap:var(--s3); align-items:flex-start; background:var(--brandSubtle); }
+.banner.w { background:var(--warnSubtle); }
+.banner.e { background:var(--negSubtle); }
+.banner .bt { flex:1 1 auto; }
+.banner .bt .h { display:block; font-weight:600; }
+.banner .ba { flex:0 0 auto; color:var(--brand); font-weight:600; align-self:center; }
+.banner.w .ba { color:var(--warning); }
+.banner.e .ba { color:var(--negative); }
+.banner .ic { flex:0 0 auto; width:20px; height:20px; border-radius:50%; background:var(--brand);
+  color:var(--onBrand); font:700 13px/20px var(--font); text-align:center; }
+.banner.w .ic { background:var(--warning); }
+.banner.e .ic { background:var(--negative); }
+.banner.strip { margin:0; border-radius:0; }
+
+/* empty state */
+.empty { padding:var(--s12) var(--s6) var(--s6); text-align:center; }
+.empty .gl { width:64px; height:64px; margin:0 auto var(--s4); border-radius:20px;
+  background:var(--surfaceSubtle); display:flex; align-items:center; justify-content:center; }
+.empty .gl svg { width:30px; height:30px; }
+.empty .gl svg * { stroke:var(--textSecondary); fill:none; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
+.empty h3 { margin:0 0 var(--s2); font-size:calc(20px*var(--sc)); line-height:calc(25px*var(--sc)); font-weight:600; }
+.empty p { margin:0 0 var(--s6); color:var(--textSecondary);
+  font-size:calc(15px*var(--sc)); line-height:calc(21px*var(--sc)); }
+
+/* loading skeleton — must match final geometry, not a generic spinner */
+.sk { background:var(--skeleton); border-radius:6px; height:12px; }
+.sk.av { width:36px; height:36px; border-radius:50%; flex:0 0 auto; }
+.sk.t1 { width:42%; height:15px; }
+.sk.t2 { width:64%; margin-top:7px; }
+.sk.t3 { width:28%; }
+.sk.money { width:82px; height:15px; margin-left:auto; }
+
+/* sheets and dialogs presented over a dimmed parent */
+.overlay { position:absolute; inset:0; background:var(--scrim); }
+.sheet {
+  position:absolute; left:0; right:0; bottom:0; background:var(--surface);
+  border-radius:20px 20px 0 0; box-shadow:var(--shadowSheet);
+  display:flex; flex-direction:column; max-height:88%;
+}
+.sheet .grab { height:22px; display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
+.sheet .grab::after { content:""; width:36px; height:5px; border-radius:3px; background:var(--borderDivider); }
+.sheet .shd { padding:2px var(--s4) var(--s3); display:flex; align-items:center; gap:var(--s3); flex:0 0 auto; }
+.sheet .shd .st { flex:1 1 auto; font-size:calc(17px*var(--sc)); font-weight:600; }
+.sheet .sbody { overflow-y:auto; flex:1 1 auto; }
+.sheet .sbody::-webkit-scrollbar { width:0; }
+.sheet .sfoot { flex:0 0 auto; padding:var(--s3) var(--s4) var(--s6); border-top:1px solid var(--borderDivider); }
+
+.dialog {
+  position:absolute; left:var(--s6); right:var(--s6); top:50%; transform:translateY(-50%);
+  background:var(--surface); border-radius:var(--rSurface); overflow:hidden;
+  box-shadow:0 20px 50px rgba(0,0,0,.3);
+}
+.dialog .dbody { padding:var(--s6) var(--s4) var(--s4); text-align:center; }
+.dialog .dbody h4 { margin:0 0 var(--s2); font-size:calc(17px*var(--sc)); line-height:calc(22px*var(--sc)); font-weight:650; }
+.dialog .dbody p { margin:0; color:var(--textSecondary);
+  font-size:calc(14px*var(--sc)); line-height:calc(19px*var(--sc)); }
+.dialog .dbody .facts { text-align:left; margin-top:var(--s4); background:var(--surfaceSubtle);
+  border-radius:10px; padding:var(--s3); }
+.dialog .dacts { display:flex; border-top:1px solid var(--borderDivider); }
+.dialog .dacts > * { flex:1 1 0; text-align:center; padding:13px var(--s2);
+  font-size:calc(17px*var(--sc)); color:var(--brand); }
+.dialog .dacts > * + * { border-left:1px solid var(--borderDivider); }
+.dialog .dacts .d { color:var(--negative); font-weight:600; }
+.dialog .dacts .off { color:var(--textSecondary); opacity:.5; }
+.dialog.stackacts .dacts { flex-direction:column; }
+.dialog.stackacts .dacts > * + * { border-left:0; border-top:1px solid var(--borderDivider); }
+
+/* action sheet */
+.actionsheet { position:absolute; left:var(--s2); right:var(--s2); bottom:var(--s2); }
+.actionsheet .grp { background:var(--surface); border-radius:14px; overflow:hidden; margin-bottom:var(--s2); }
+.actionsheet .grp .it { padding:16px var(--s4); text-align:center; color:var(--brand);
+  font-size:calc(17px*var(--sc)); border-top:1px solid var(--borderDivider); }
+.actionsheet .grp .it:first-child { border-top:0; }
+.actionsheet .grp .hd { padding:12px var(--s4); text-align:center; color:var(--textSecondary);
+  font-size:calc(13px*var(--sc)); line-height:calc(17px*var(--sc)); }
+.actionsheet .grp .it.cancel { font-weight:600; }
+
+/* success state */
+.success { padding:var(--s8) var(--s6) var(--s6); text-align:center; }
+.success .mark { width:72px; height:72px; border-radius:50%; margin:0 auto var(--s4);
+  background:var(--posSubtle); display:flex; align-items:center; justify-content:center; }
+.success .mark svg { width:34px; height:34px; }
+.success .mark svg * { stroke:var(--positive); fill:none; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; }
+
+/* charts — Personal reports. Provisional vocabulary, see README open question 1.
+   Every bar is accompanied by its exact textual value; the chart never carries
+   a number on its own. */
+.bars { display:flex; align-items:flex-end; gap:8px; height:104px; padding:var(--s4) var(--s4) 0; }
+.bars .b { flex:1 1 0; display:flex; flex-direction:column; justify-content:flex-end; height:100%; gap:5px; }
+.bars .b .stack { display:flex; flex-direction:column; justify-content:flex-end; gap:2px; height:100%; }
+.bars .b .in { background:var(--positive); border-radius:3px 3px 0 0; min-height:2px; }
+.bars .b .ex { background:var(--negative); border-radius:0 0 3px 3px; min-height:2px; opacity:.85; }
+.bars .b .m { text-align:center; color:var(--textSecondary); font-size:calc(10px*var(--sc));
+  line-height:calc(13px*var(--sc)); }
+.bars .b.on .m { color:var(--textPrimary); font-weight:600; }
+.legend { display:flex; gap:var(--s4); padding:var(--s3) var(--s4) 0; }
+.legend .lg { display:flex; align-items:center; gap:6px; color:var(--textSecondary); }
+.legend .lg i { width:10px; height:10px; border-radius:3px; flex:0 0 auto; }
+
+/* category breakdown bar */
+.catbar { height:6px; border-radius:3px; background:var(--surfaceSubtle); overflow:hidden; }
+.catbar i { display:block; height:100%; background:var(--brand); }
+.catrow .top { display:flex; justify-content:space-between; align-items:baseline; gap:var(--s3); margin-bottom:6px; }
+
+/* progress (upload) */
+.prog { height:6px; border-radius:3px; background:var(--surfaceSubtle); overflow:hidden; }
+.prog i { display:block; height:100%; background:var(--brand); border-radius:3px; }
+
+/* receipt thumb */
+.thumb { width:100%; aspect-ratio:4/3; background:
+  repeating-linear-gradient(135deg, var(--surfaceSubtle) 0 12px, var(--canvas) 12px 24px);
+  border-radius:var(--rControl); display:flex; align-items:center; justify-content:center;
+  color:var(--textSecondary); }
+.thumb.sm { width:56px; aspect-ratio:1; border-radius:10px; flex:0 0 auto; }
+
+/* offline / stale strip */
+.stale { display:flex; gap:6px; align-items:center; justify-content:center;
+  padding:7px var(--s4); background:var(--warnSubtle); color:var(--warning); }
+.stale .d { width:7px; height:7px; border-radius:50%; background:var(--warning); flex:0 0 auto; }
+
+/* 44pt touch-target annotation overlay, used in the scaling archetypes */
+.tt { position:relative; }
+.tt::after { content:""; position:absolute; right:2px; top:50%; transform:translateY(-50%);
+  width:44px; height:44px; border:1px dashed var(--brand); border-radius:6px; opacity:.6; }
+
+/* generic list of key/value facts inside a card */
+.facts .f { display:flex; justify-content:space-between; gap:var(--s3); padding:7px 0; }
+.facts .f .k { color:var(--textSecondary); }
+.facts .f:first-child { padding-top:0; }
+.facts .f:last-child { padding-bottom:0; }

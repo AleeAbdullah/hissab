@@ -5,7 +5,7 @@ import { Text } from 'react-native';
 
 import { Button, ErrorMessage, Field, Notice, Screen } from '@/components/ui';
 import { resetPassword } from '@/features/auth/api';
-import { useAppTheme } from '@/theme/use-app-theme';
+import { useAppTheme } from '@/theme/theme';
 
 export default function ResetPasswordScreen() {
   const { token = '' } = useLocalSearchParams<{ token?: string }>();

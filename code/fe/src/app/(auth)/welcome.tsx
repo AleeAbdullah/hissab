@@ -1,7 +1,7 @@
 import { Text, View } from 'react-native';
 
 import { Button, Screen } from '@/components/ui';
-import { useAppTheme } from '@/theme/use-app-theme';
+import { useAppTheme } from '@/theme/theme';
 
 const points = [
   ['Know what is settled', 'Balances stay grouped by currency, never silently converted.'],

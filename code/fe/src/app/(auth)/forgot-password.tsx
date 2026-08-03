@@ -4,7 +4,7 @@ import { Text, View } from 'react-native';
 
 import { Button, ErrorMessage, Field, Screen } from '@/components/ui';
 import { forgotPassword } from '@/features/auth/api';
-import { useAppTheme } from '@/theme/use-app-theme';
+import { useAppTheme } from '@/theme/theme';
 
 export default function ForgotPasswordScreen() {
   const { colors } = useAppTheme();

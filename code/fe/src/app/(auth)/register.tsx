@@ -6,7 +6,7 @@ import { Text } from 'react-native';
 import { Button, ErrorMessage, Field, Screen } from '@/components/ui';
 import { register } from '@/features/auth/api';
 import { CurrencyPicker } from '@/features/auth/currency-picker';
-import { useAppTheme } from '@/theme/use-app-theme';
+import { useAppTheme } from '@/theme/theme';
 
 export default function RegisterScreen() {
   const router = useRouter();

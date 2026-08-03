@@ -1,5 +1,5 @@
 import { Stack } from 'expo-router/stack';
-import { useAppTheme } from '@/theme/use-app-theme';
+import { useAppTheme } from '@/theme/theme';
 
 export default function GroupsLayout() {
   const { colors } = useAppTheme();

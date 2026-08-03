@@ -4,10 +4,15 @@ import { StatusBar } from 'expo-status-bar';
 
 import { queryClient } from '@/api/query-client';
 import { SessionProvider } from '@/features/auth/session';
+import { AppTheme, useAppTheme } from '@/theme/theme';
+
+import '../../global.css';
+
 function Navigation() {
+  const { dark } = useAppTheme();
   return (
     <>
-      <StatusBar style="auto" />
+      <StatusBar style={dark ? 'light' : 'dark'} />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="(auth)" />
@@ -23,7 +28,9 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <SessionProvider>
-        <Navigation />
+        <AppTheme>
+          <Navigation />
+        </AppTheme>
       </SessionProvider>
     </QueryClientProvider>
   );

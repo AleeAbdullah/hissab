@@ -6,7 +6,7 @@ import { Pressable, Text, TextInput, View } from 'react-native';
 
 import { Avatar, Button, Card, ErrorMessage, Loading, Row, Screen, SectionLabel } from '@/components/ui';
 import { connectionsQuery, pendingRequestsQuery } from '@/features/connections/api';
-import { useAppTheme } from '@/theme/use-app-theme';
+import { useAppTheme } from '@/theme/theme';
 
 export default function FriendsScreen() {
   const { colors } = useAppTheme();

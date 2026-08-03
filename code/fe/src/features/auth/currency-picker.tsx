@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { FlatList, Modal, Pressable, Text, TextInput, View } from 'react-native';
 
-import { useAppTheme } from '@/theme/use-app-theme';
+import { useAppTheme } from '@/theme/theme';
 
 const fallbackCurrencies = ['AED', 'AUD', 'CAD', 'EUR', 'GBP', 'INR', 'PKR', 'USD'];
 

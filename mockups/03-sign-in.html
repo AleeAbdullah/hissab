@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en" class="lt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>03 · Sign in — hissab</title>
+<link rel="stylesheet" href="_tokens.css">
+<link rel="stylesheet" href="_frame.css">
+</head>
+<body>
+<header class="sheet-head">
+  <div class="crumb"><a href="00-index.html">← All screens</a></div>
+  <h1>Sign in<span class="sid">A04</span></h1>
+  <p class="note">Credential-first, two fields, recovery one tap away. The failure message is deliberately non-enumerating — it never reveals whether the email exists.</p>
+</header>
+<main class="board">
+<figure class="fr "><figcaption><b>Filled</b> Caret on the focused field. Forgot password is a peer of the action, not hidden in a menu.</figcaption><div class="phone brand auth"><div class="statusbar"><span>9:41</span><span class="ind"><i></i><i class="b"></i></span></div><div class="nav "><div class="lead"><span class="back"><svg viewBox="0 0 10 18" width="10" height="18" style="display:block"><path d="M8 2 2.5 9 8 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div><div class="mid"><div class="ttl"><div class="auth-lockup"><span class="auth-wordmark">Hissab</span><span class="auth-mark" aria-hidden="true"><i></i><i></i><i></i><b></b></span></div></div></div><div class="trail"></div></div>
+<div class="scroll">
+  <div class="auth-page-head"><div class="t-large">Sign in</div></div>
+  
+  <div class="card">
+    <div class="field"><span class="flbl t-cap">Email</span>
+      <div class="fval"><span class="t-body">alina@example.com</span></div></div>
+    <div class="field"><span class="flbl t-cap">Password</span>
+      <div class="fval"><span class="t-body">••••••••••</span><span class="caret"></span></div></div>
+  </div>
+  <div class="auth-actions"><div class="btn">Sign in</div></div>
+  <div class="auth-text-action">
+    <span class="t-body c-brand semi">Forgot password?</span>
+  </div>
+</div><div class="homebar"></div></div></figure>
+<figure class="fr "><figcaption><b>Rejected</b> One message for both wrong email and wrong password, so the screen cannot be used to discover who has an account.</figcaption><div class="phone brand auth"><div class="statusbar"><span>9:41</span><span class="ind"><i></i><i class="b"></i></span></div><div class="nav "><div class="lead"><span class="back"><svg viewBox="0 0 10 18" width="10" height="18" style="display:block"><path d="M8 2 2.5 9 8 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div><div class="mid"><div class="ttl"><div class="auth-lockup"><span class="auth-wordmark">Hissab</span><span class="auth-mark" aria-hidden="true"><i></i><i></i><i></i><b></b></span></div></div></div><div class="trail"></div></div>
+<div class="scroll">
+  <div class="auth-page-head"><div class="t-large">Sign in</div></div>
+  <div class="banner e"><span class="ic">!</span><span class="bt t-supp">Email or password is incorrect.</span></div>
+  <div class="card">
+    <div class="field"><span class="flbl t-cap">Email</span>
+      <div class="fval"><span class="t-body">alina@example.com</span></div></div>
+    <div class="field"><span class="flbl t-cap">Password</span>
+      <div class="fval"><span class="t-body">••••••</span><span class="caret"></span></div></div>
+  </div>
+  <div class="auth-actions"><div class="btn">Sign in</div></div>
+  <div class="auth-text-action">
+    <span class="t-body c-brand semi">Forgot password?</span>
+  </div>
+</div><div class="homebar"></div></div></figure>
+<figure class="fr "><figcaption><b>Offline</b> Connectivity is required. The action disables and the reason sits adjacent to it — the same pattern the expense editor uses.</figcaption><div class="phone brand auth"><div class="statusbar"><span>9:41</span><span class="ind"><i></i><i class="b"></i></span></div><div class="nav "><div class="lead"><span class="back"><svg viewBox="0 0 10 18" width="10" height="18" style="display:block"><path d="M8 2 2.5 9 8 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div><div class="mid"><div class="ttl"><div class="auth-lockup"><span class="auth-wordmark">Hissab</span><span class="auth-mark" aria-hidden="true"><i></i><i></i><i></i><b></b></span></div></div></div><div class="trail"></div></div>
+<div class="scroll">
+  <div class="auth-page-head"><div class="t-large">Sign in</div></div>
+  <div class="banner e"><span class="ic">!</span><span class="bt t-supp"><span class="h">No connection</span>Signing in needs a connection. Nothing has been sent.</span><span class="ba t-supp">Retry</span></div>
+  <div class="card">
+    <div class="field"><span class="flbl t-cap">Email</span>
+      <div class="fval"><span class="t-body">alina@example.com</span></div></div>
+    <div class="field"><span class="flbl t-cap">Password</span>
+      <div class="fval"><span class="t-body">••••••••••</span><span class="caret"></span></div></div>
+  </div>
+  <div class="auth-actions"><div class="reason" style="padding:0 2px 10px"><span class="gl"></span><span class="txt t-cap">Reconnect to sign in.</span></div><div class="btn off">Sign in</div></div>
+  <div class="auth-text-action">
+    <span class="t-body c-brand semi">Forgot password?</span>
+  </div>
+</div><div class="homebar"></div></div></figure>
+</main>
+<button class="mode-btn" data-mode-toggle>Dark mode</button>
+<script src="_app.js"></script>
+</body>
+</html>

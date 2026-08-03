@@ -8,7 +8,7 @@ import { queryClient } from '@/api/query-client';
 import { ErrorMessage, Field, Loading, Notice, Screen } from '@/components/ui';
 import { profileQuery, updateProfile } from '@/features/account/api';
 import { CurrencyPicker } from '@/features/auth/currency-picker';
-import { useAppTheme } from '@/theme/use-app-theme';
+import { useAppTheme } from '@/theme/theme';
 
 export default function ProfileScreen() {
   const query = useQuery(profileQuery);

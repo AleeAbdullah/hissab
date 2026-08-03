@@ -5,7 +5,7 @@ import { Alert, Text, View } from 'react-native';
 import { profileQuery, sessionsQuery } from '@/features/account/api';
 import { signOut } from '@/features/auth/api';
 import { Avatar, Button, Card, ErrorMessage, Loading, Row, Screen, SectionLabel } from '@/components/ui';
-import { useAppTheme } from '@/theme/use-app-theme';
+import { useAppTheme } from '@/theme/theme';
 
 export default function AccountScreen() {
   const { colors } = useAppTheme();

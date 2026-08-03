@@ -5,7 +5,7 @@ import { queryClient } from '@/api/query-client';
 import type { ConnectionRequest } from '@/api/contracts';
 import { Avatar, Button, Card, ErrorMessage, Loading, Screen, SectionLabel } from '@/components/ui';
 import { acceptRequest, cancelRequest, connectionsQuery, declineRequest, pendingRequestsQuery } from '@/features/connections/api';
-import { useAppTheme } from '@/theme/use-app-theme';
+import { useAppTheme } from '@/theme/theme';
 
 export default function RequestsScreen() {
   const { colors } = useAppTheme();

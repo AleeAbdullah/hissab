@@ -5,7 +5,7 @@ import { Text, View } from 'react-native';
 import { queryClient } from '@/api/query-client';
 import { Avatar, Button, Card, ErrorMessage, Field, Screen } from '@/components/ui';
 import { connectionsQuery, findCandidate, pendingRequestsQuery, sendRequest } from '@/features/connections/api';
-import { useAppTheme } from '@/theme/use-app-theme';
+import { useAppTheme } from '@/theme/theme';
 
 export default function NewConnectionScreen() {
   const { colors } = useAppTheme();

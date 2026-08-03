@@ -11,15 +11,15 @@ import {
   View,
 } from 'react-native';
 
-import { useAppTheme } from '@/theme/use-app-theme';
+import { useAppTheme } from '@/theme/theme';
 
 export function Screen({ children }: PropsWithChildren) {
-  const { colors } = useAppTheme();
   return (
     <ScrollView
+      className="flex-1 bg-canvas"
       contentInsetAdjustmentBehavior="automatic"
       keyboardShouldPersistTaps="handled"
-      style={{ flex: 1, backgroundColor: colors.canvas }}
+      style={{ flex: 1 }}
       contentContainerStyle={{ padding: 16, gap: 16, flexGrow: 1 }}
     >
       {children}
@@ -28,15 +28,13 @@ export function Screen({ children }: PropsWithChildren) {
 }
 
 export function Card({ children }: PropsWithChildren) {
-  const { colors } = useAppTheme();
   return (
     <View
+      className="bg-surface"
       style={{
-        backgroundColor: colors.surface,
         borderRadius: 16,
         borderCurve: 'continuous',
         overflow: 'hidden',
-        boxShadow: '0 1px 2px rgba(23,26,34,0.05)',
       }}
     >
       {children}
@@ -108,6 +106,7 @@ export function Row({
 }
 
 export function Avatar({ name, large }: { name: string; large?: boolean }) {
+  const { colors } = useAppTheme();
   const initials = name
     .trim()
     .split(/\s+/)
@@ -116,8 +115,8 @@ export function Avatar({ name, large }: { name: string; large?: boolean }) {
     .join('') || '?';
   const size = large ? 56 : 36;
   return (
-    <View accessibilityLabel={`${name} avatar`} style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: '#1F6F8B', alignItems: 'center', justifyContent: 'center' }}>
-      <Text selectable style={{ color: '#FFFFFF', fontWeight: '700', fontSize: large ? 20 : 13 }}>{initials}</Text>
+    <View accessibilityLabel={`${name} avatar`} style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center' }}>
+      <Text selectable style={{ color: colors.onBrand, fontWeight: '700', fontSize: large ? 20 : 13 }}>{initials}</Text>
     </View>
   );
 }

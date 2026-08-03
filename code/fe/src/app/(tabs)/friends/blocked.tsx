@@ -4,7 +4,7 @@ import { Alert, Text, View } from 'react-native';
 import { queryClient } from '@/api/query-client';
 import { Avatar, Button, Card, ErrorMessage, Loading, Screen } from '@/components/ui';
 import { blocksQuery, unblock } from '@/features/connections/api';
-import { useAppTheme } from '@/theme/use-app-theme';
+import { useAppTheme } from '@/theme/theme';
 
 export default function BlockedScreen() {
   const { colors } = useAppTheme();

@@ -2,7 +2,7 @@ import type { Href } from 'expo-router';
 import { Text, View } from 'react-native';
 
 import { Button, Screen } from '@/components/ui';
-import { useAppTheme } from '@/theme/use-app-theme';
+import { useAppTheme } from '@/theme/theme';
 
 export function ComingLaterScreen({
   purpose,

@@ -2,7 +2,7 @@ import { Stack } from 'expo-router/stack';
 import { Text } from 'react-native';
 
 import { Button, Screen } from '@/components/ui';
-import { useAppTheme } from '@/theme/use-app-theme';
+import { useAppTheme } from '@/theme/theme';
 
 export default function NotFoundScreen() {
   const { colors } = useAppTheme();

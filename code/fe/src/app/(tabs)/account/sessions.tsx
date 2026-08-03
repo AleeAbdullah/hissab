@@ -4,7 +4,7 @@ import { Alert, Text, View } from 'react-native';
 import { queryClient } from '@/api/query-client';
 import { Button, Card, ErrorMessage, Loading, Screen, SectionLabel } from '@/components/ui';
 import { revokeOtherSessions, revokeSession, sessionsQuery } from '@/features/account/api';
-import { useAppTheme } from '@/theme/use-app-theme';
+import { useAppTheme } from '@/theme/theme';
 
 const date = (value: string | null) => value ? new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) : 'Not yet';
 

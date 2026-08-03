@@ -1,5 +1,6 @@
 import { client } from './generated/client.gen';
 import { authRefresh } from './generated/sdk.gen';
+import { errorMessage } from './error-message';
 import { runSingleRefresh } from './refresh-lock';
 import { clearTokens, getTokens, setTokens } from './session-store';
 import type { AuthTokens } from './contracts';
@@ -79,14 +80,4 @@ function unwrap<T>(result: Result): T {
     throw new ApiError(errorMessage(result.error), result.response?.status);
   }
   return result.data as T;
-}
-
-function errorMessage(error: unknown) {
-  if (typeof error === 'string' && error) return error;
-  if (error && typeof error === 'object' && 'message' in error) {
-    const message = (error as { message?: unknown }).message;
-    if (Array.isArray(message)) return message.join('\n');
-    if (typeof message === 'string') return message;
-  }
-  return 'Something went wrong. Check your connection and try again.';
 }

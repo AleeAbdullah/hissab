@@ -3,7 +3,7 @@ import { NativeTabs } from 'expo-router/unstable-native-tabs';
 
 import { Loading } from '@/components/ui';
 import { useSession } from '@/features/auth/session';
-import { useAppTheme } from '@/theme/use-app-theme';
+import { useAppTheme } from '@/theme/theme';
 
 export default function TabLayout() {
   const session = useSession();
