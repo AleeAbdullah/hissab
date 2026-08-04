@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Text, View } from 'react-native';
 
+import type { SupportedCurrency } from '@/api/contracts';
 import { Button, Card, ErrorMessage, Screen } from '@/components/ui';
 import { register } from '@/features/auth/api';
 import { AuthPageHeader } from '@/features/auth/components/auth-page-header';
@@ -16,7 +17,7 @@ export default function RegisterScreen() {
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [defaultCurrency, setDefaultCurrency] = useState<string>();
+  const [defaultCurrency, setDefaultCurrency] = useState<SupportedCurrency>();
   const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone ?? 'UTC');
   const mutation = useMutation({ mutationFn: register, onSuccess: () => router.replace('/friends') });
   const valid = displayName.trim().length > 0 && email.includes('@') && password.length >= 12 && Boolean(defaultCurrency) && timezone.length > 0;

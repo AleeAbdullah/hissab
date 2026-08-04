@@ -1,13 +1,19 @@
 import { Transform } from 'class-transformer';
+import { ApiProperty } from '@nestjs/swagger';
 import {
   IsEmail,
+  IsIn,
   IsOptional,
   IsString,
   Length,
-  Matches,
   MaxLength,
   MinLength,
 } from 'class-validator';
+
+import {
+  SUPPORTED_CURRENCIES,
+  type SupportedCurrency,
+} from '../../../common/money';
 
 export class RegisterDto {
   @Transform(({ value }: { value: unknown }) =>
@@ -29,8 +35,9 @@ export class RegisterDto {
   @Length(1, 100)
   displayName!: string;
 
-  @Matches(/^[A-Z]{3}$/)
-  defaultCurrency!: string;
+  @ApiProperty({ enum: SUPPORTED_CURRENCIES })
+  @IsIn(SUPPORTED_CURRENCIES)
+  defaultCurrency!: SupportedCurrency;
 
   @IsString()
   @MaxLength(100)

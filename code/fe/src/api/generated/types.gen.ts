@@ -5,10 +5,10 @@ export type ClientOptions = {
 };
 
 export type RegisterDto = {
+    defaultCurrency: 'PKR' | 'USD' | 'GBP' | 'EUR' | 'AED' | 'SAR';
     email: string;
     password: string;
     displayName: string;
-    defaultCurrency: string;
     timezone: string;
     deviceName?: string;
 };
@@ -38,14 +38,85 @@ export type ChangePasswordDto = {
 };
 
 export type UpdateProfileDto = {
+    defaultCurrency?: 'PKR' | 'USD' | 'GBP' | 'EUR' | 'AED' | 'SAR';
     displayName?: string;
-    defaultCurrency?: string;
     timezone?: string;
     personalReportMode?: 'OWED_SHARE' | 'CASH_OUT_OF_POCKET';
 };
 
 export type CreateConnectionRequestDto = {
     receiverUserId: string;
+};
+
+export type EqualExpenseSplitDto = {
+    method: 'EQUAL';
+    participantUserIds: Array<string>;
+};
+
+export type ExpenseAllocationDto = {
+    userId: string;
+    amountMinor: string;
+};
+
+export type ExactExpenseSplitDto = {
+    method: 'EXACT';
+    allocations: Array<ExpenseAllocationDto>;
+};
+
+export type CreateExpenseDto = {
+    categoryCode: 'FOOD_AND_DRINK' | 'GROCERIES' | 'TRANSPORT' | 'ACCOMMODATION' | 'UTILITIES' | 'ENTERTAINMENT' | 'SHOPPING' | 'HEALTHCARE' | 'OTHER';
+    description: string;
+    totalMinor: string;
+    occurredAt: string;
+    payers: Array<ExpenseAllocationDto>;
+    split: ({
+        method: 'EQUAL';
+    } & EqualExpenseSplitDto) | ({
+        method: 'EXACT';
+    } & ExactExpenseSplitDto);
+    currency: 'PKR' | 'USD' | 'GBP' | 'EUR' | 'AED' | 'SAR';
+};
+
+export type ReplaceExpenseDto = {
+    categoryCode: 'FOOD_AND_DRINK' | 'GROCERIES' | 'TRANSPORT' | 'ACCOMMODATION' | 'UTILITIES' | 'ENTERTAINMENT' | 'SHOPPING' | 'HEALTHCARE' | 'OTHER';
+    description: string;
+    totalMinor: string;
+    occurredAt: string;
+    payers: Array<ExpenseAllocationDto>;
+    split: ({
+        method: 'EQUAL';
+    } & EqualExpenseSplitDto) | ({
+        method: 'EXACT';
+    } & ExactExpenseSplitDto);
+    expectedVersion: number;
+};
+
+export type CreateGroupDto = {
+    name: string;
+};
+
+export type UpdateGroupDto = {
+    name: string;
+};
+
+export type InviteGroupUserDto = {
+    userId: string;
+};
+
+export type CreateSettlementDto = {
+    fromUserId: string;
+    toUserId: string;
+    amountMinor: string;
+    occurredAt: string;
+    currency: 'PKR' | 'USD' | 'GBP' | 'EUR' | 'AED' | 'SAR';
+};
+
+export type ReplaceSettlementDto = {
+    fromUserId: string;
+    toUserId: string;
+    amountMinor: string;
+    occurredAt: string;
+    expectedVersion: number;
 };
 
 export type HealthLiveData = {
@@ -72,6 +143,12 @@ export type HealthReadyResponses = {
 
 export type AuthRegisterData = {
     body: RegisterDto;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
     path?: never;
     query?: never;
     url: '/v1/auth/register';
@@ -87,6 +164,12 @@ export type AuthRegisterResponse = AuthRegisterResponses[keyof AuthRegisterRespo
 
 export type AuthSignInData = {
     body: SignInDto;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
     path?: never;
     query?: never;
     url: '/v1/auth/sign-in';
@@ -102,6 +185,12 @@ export type AuthSignInResponse = AuthSignInResponses[keyof AuthSignInResponses];
 
 export type AuthRefreshData = {
     body: RefreshDto;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
     path?: never;
     query?: never;
     url: '/v1/auth/refresh';
@@ -117,6 +206,12 @@ export type AuthRefreshResponse = AuthRefreshResponses[keyof AuthRefreshResponse
 
 export type AuthSignOutData = {
     body?: never;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
     path?: never;
     query?: never;
     url: '/v1/auth/sign-out';
@@ -128,6 +223,12 @@ export type AuthSignOutResponses = {
 
 export type AuthRevokeOtherSessionsData = {
     body?: never;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
     path?: never;
     query?: never;
     url: '/v1/auth/sessions';
@@ -154,6 +255,12 @@ export type AuthListSessionsResponse = AuthListSessionsResponses[keyof AuthListS
 
 export type AuthRevokeSessionData = {
     body?: never;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
     path: {
         sessionId: string;
     };
@@ -167,6 +274,12 @@ export type AuthRevokeSessionResponses = {
 
 export type AuthForgotPasswordData = {
     body: ForgotPasswordDto;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
     path?: never;
     query?: never;
     url: '/v1/auth/password/forgot';
@@ -178,6 +291,12 @@ export type AuthForgotPasswordResponses = {
 
 export type AuthResetPasswordData = {
     body: ResetPasswordDto;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
     path?: never;
     query?: never;
     url: '/v1/auth/password/reset';
@@ -189,6 +308,12 @@ export type AuthResetPasswordResponses = {
 
 export type AuthChangePasswordData = {
     body: ChangePasswordDto;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
     path?: never;
     query?: never;
     url: '/v1/auth/password';
@@ -215,6 +340,12 @@ export type UsersGetProfileResponse = UsersGetProfileResponses[keyof UsersGetPro
 
 export type UsersUpdateProfileData = {
     body: UpdateProfileDto;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
     path?: never;
     query?: never;
     url: '/v1/users/me';
@@ -248,6 +379,12 @@ export type ConnectionsListRequestsResponse = ConnectionsListRequestsResponses[k
 
 export type ConnectionsSendRequestData = {
     body: CreateConnectionRequestDto;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
     path?: never;
     query?: never;
     url: '/v1/connection-requests';
@@ -276,6 +413,12 @@ export type ConnectionsFindCandidateResponse = ConnectionsFindCandidateResponses
 
 export type ConnectionsAcceptRequestData = {
     body?: never;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
     path: {
         requestId: string;
     };
@@ -289,6 +432,12 @@ export type ConnectionsAcceptRequestResponses = {
 
 export type ConnectionsDeclineRequestData = {
     body?: never;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
     path: {
         requestId: string;
     };
@@ -302,6 +451,12 @@ export type ConnectionsDeclineRequestResponses = {
 
 export type ConnectionsCancelRequestData = {
     body?: never;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
     path: {
         requestId: string;
     };
@@ -345,6 +500,12 @@ export type ConnectionsListBlocksResponse = ConnectionsListBlocksResponses[keyof
 
 export type ConnectionsUnblockData = {
     body?: never;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
     path: {
         userId: string;
     };
@@ -358,6 +519,12 @@ export type ConnectionsUnblockResponses = {
 
 export type ConnectionsBlockData = {
     body?: never;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
     path: {
         userId: string;
     };
@@ -368,3 +535,494 @@ export type ConnectionsBlockData = {
 export type ConnectionsBlockResponses = {
     200: unknown;
 };
+
+export type BalancesListUserBalancesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/v1/balances';
+};
+
+export type BalancesListUserBalancesResponses = {
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type BalancesListUserBalancesResponse = BalancesListUserBalancesResponses[keyof BalancesListUserBalancesResponses];
+
+export type BalancesListLedgerBalancesData = {
+    body?: never;
+    path: {
+        ledgerId: string;
+    };
+    query?: never;
+    url: '/v1/ledgers/{ledgerId}/balances';
+};
+
+export type BalancesListLedgerBalancesResponses = {
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type BalancesListLedgerBalancesResponse = BalancesListLedgerBalancesResponses[keyof BalancesListLedgerBalancesResponses];
+
+export type ExpensesListCategoriesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/v1/shared-expense-categories';
+};
+
+export type ExpensesListCategoriesResponses = {
+    200: Array<{
+        [key: string]: unknown;
+    }>;
+};
+
+export type ExpensesListCategoriesResponse = ExpensesListCategoriesResponses[keyof ExpensesListCategoriesResponses];
+
+export type ExpensesListExpensesData = {
+    body?: never;
+    path: {
+        ledgerId: string;
+    };
+    query?: {
+        cursor?: string;
+        limit?: number;
+    };
+    url: '/v1/ledgers/{ledgerId}/expenses';
+};
+
+export type ExpensesListExpensesResponses = {
+    200: unknown;
+};
+
+export type ExpensesCreateExpenseData = {
+    body: CreateExpenseDto;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        ledgerId: string;
+    };
+    query?: never;
+    url: '/v1/ledgers/{ledgerId}/expenses';
+};
+
+export type ExpensesCreateExpenseResponses = {
+    201: {
+        [key: string]: unknown;
+    };
+};
+
+export type ExpensesCreateExpenseResponse = ExpensesCreateExpenseResponses[keyof ExpensesCreateExpenseResponses];
+
+export type ExpensesDeleteExpenseData = {
+    body?: never;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        expenseId: string;
+    };
+    query: {
+        expectedVersion: number;
+    };
+    url: '/v1/expenses/{expenseId}';
+};
+
+export type ExpensesDeleteExpenseResponses = {
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type ExpensesDeleteExpenseResponse = ExpensesDeleteExpenseResponses[keyof ExpensesDeleteExpenseResponses];
+
+export type ExpensesGetExpenseData = {
+    body?: never;
+    path: {
+        expenseId: string;
+    };
+    query?: never;
+    url: '/v1/expenses/{expenseId}';
+};
+
+export type ExpensesGetExpenseResponses = {
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type ExpensesGetExpenseResponse = ExpensesGetExpenseResponses[keyof ExpensesGetExpenseResponses];
+
+export type ExpensesReplaceExpenseData = {
+    body: ReplaceExpenseDto;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        expenseId: string;
+    };
+    query?: never;
+    url: '/v1/expenses/{expenseId}';
+};
+
+export type ExpensesReplaceExpenseResponses = {
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type ExpensesReplaceExpenseResponse = ExpensesReplaceExpenseResponses[keyof ExpensesReplaceExpenseResponses];
+
+export type GroupsListGroupsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/v1/groups';
+};
+
+export type GroupsListGroupsResponses = {
+    200: Array<{
+        [key: string]: unknown;
+    }>;
+};
+
+export type GroupsListGroupsResponse = GroupsListGroupsResponses[keyof GroupsListGroupsResponses];
+
+export type GroupsCreateGroupData = {
+    body: CreateGroupDto;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/groups';
+};
+
+export type GroupsCreateGroupResponses = {
+    201: {
+        [key: string]: unknown;
+    };
+};
+
+export type GroupsCreateGroupResponse = GroupsCreateGroupResponses[keyof GroupsCreateGroupResponses];
+
+export type GroupsGetGroupData = {
+    body?: never;
+    path: {
+        groupId: string;
+    };
+    query?: never;
+    url: '/v1/groups/{groupId}';
+};
+
+export type GroupsGetGroupResponses = {
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type GroupsGetGroupResponse = GroupsGetGroupResponses[keyof GroupsGetGroupResponses];
+
+export type GroupsUpdateGroupData = {
+    body: UpdateGroupDto;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        groupId: string;
+    };
+    query?: never;
+    url: '/v1/groups/{groupId}';
+};
+
+export type GroupsUpdateGroupResponses = {
+    200: unknown;
+};
+
+export type GroupsListMembersData = {
+    body?: never;
+    path: {
+        groupId: string;
+    };
+    query?: never;
+    url: '/v1/groups/{groupId}/members';
+};
+
+export type GroupsListMembersResponses = {
+    200: Array<{
+        [key: string]: unknown;
+    }>;
+};
+
+export type GroupsListMembersResponse = GroupsListMembersResponses[keyof GroupsListMembersResponses];
+
+export type GroupsListInvitationsData = {
+    body?: never;
+    path: {
+        groupId: string;
+    };
+    query?: never;
+    url: '/v1/groups/{groupId}/invitations';
+};
+
+export type GroupsListInvitationsResponses = {
+    200: Array<{
+        [key: string]: unknown;
+    }>;
+};
+
+export type GroupsListInvitationsResponse = GroupsListInvitationsResponses[keyof GroupsListInvitationsResponses];
+
+export type GroupsInviteUserData = {
+    body: InviteGroupUserDto;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        groupId: string;
+    };
+    query?: never;
+    url: '/v1/groups/{groupId}/invitations';
+};
+
+export type GroupsInviteUserResponses = {
+    201: unknown;
+};
+
+export type GroupsCancelInvitationData = {
+    body?: never;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        groupId: string;
+        userId: string;
+    };
+    query?: never;
+    url: '/v1/groups/{groupId}/invitations/{userId}';
+};
+
+export type GroupsCancelInvitationResponses = {
+    200: unknown;
+};
+
+export type GroupsLeaveGroupData = {
+    body?: never;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        groupId: string;
+    };
+    query?: never;
+    url: '/v1/groups/{groupId}/leave';
+};
+
+export type GroupsLeaveGroupResponses = {
+    200: unknown;
+};
+
+export type GroupsArchiveGroupData = {
+    body?: never;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        groupId: string;
+    };
+    query?: never;
+    url: '/v1/groups/{groupId}/archive';
+};
+
+export type GroupsArchiveGroupResponses = {
+    200: unknown;
+};
+
+export type GroupInvitationsListIncomingData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/v1/group-invitations';
+};
+
+export type GroupInvitationsListIncomingResponses = {
+    200: Array<{
+        [key: string]: unknown;
+    }>;
+};
+
+export type GroupInvitationsListIncomingResponse = GroupInvitationsListIncomingResponses[keyof GroupInvitationsListIncomingResponses];
+
+export type GroupInvitationsAcceptData = {
+    body?: never;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        groupId: string;
+    };
+    query?: never;
+    url: '/v1/group-invitations/{groupId}/accept';
+};
+
+export type GroupInvitationsAcceptResponses = {
+    200: unknown;
+};
+
+export type GroupInvitationsDeclineData = {
+    body?: never;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        groupId: string;
+    };
+    query?: never;
+    url: '/v1/group-invitations/{groupId}/decline';
+};
+
+export type GroupInvitationsDeclineResponses = {
+    200: unknown;
+};
+
+export type SettlementsListSettlementsData = {
+    body?: never;
+    path: {
+        ledgerId: string;
+    };
+    query?: {
+        cursor?: string;
+        limit?: number;
+    };
+    url: '/v1/ledgers/{ledgerId}/settlements';
+};
+
+export type SettlementsListSettlementsResponses = {
+    200: unknown;
+};
+
+export type SettlementsCreateSettlementData = {
+    body: CreateSettlementDto;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        ledgerId: string;
+    };
+    query?: never;
+    url: '/v1/ledgers/{ledgerId}/settlements';
+};
+
+export type SettlementsCreateSettlementResponses = {
+    201: {
+        [key: string]: unknown;
+    };
+};
+
+export type SettlementsCreateSettlementResponse = SettlementsCreateSettlementResponses[keyof SettlementsCreateSettlementResponses];
+
+export type SettlementsDeleteSettlementData = {
+    body?: never;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        settlementId: string;
+    };
+    query: {
+        expectedVersion: number;
+    };
+    url: '/v1/settlements/{settlementId}';
+};
+
+export type SettlementsDeleteSettlementResponses = {
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type SettlementsDeleteSettlementResponse = SettlementsDeleteSettlementResponses[keyof SettlementsDeleteSettlementResponses];
+
+export type SettlementsGetSettlementData = {
+    body?: never;
+    path: {
+        settlementId: string;
+    };
+    query?: never;
+    url: '/v1/settlements/{settlementId}';
+};
+
+export type SettlementsGetSettlementResponses = {
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type SettlementsGetSettlementResponse = SettlementsGetSettlementResponses[keyof SettlementsGetSettlementResponses];
+
+export type SettlementsReplaceSettlementData = {
+    body: ReplaceSettlementDto;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        settlementId: string;
+    };
+    query?: never;
+    url: '/v1/settlements/{settlementId}';
+};
+
+export type SettlementsReplaceSettlementResponses = {
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type SettlementsReplaceSettlementResponse = SettlementsReplaceSettlementResponses[keyof SettlementsReplaceSettlementResponses];

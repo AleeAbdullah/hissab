@@ -1,12 +1,11 @@
 import { Transform } from 'class-transformer';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsIn, IsOptional, IsString, Length, MaxLength } from 'class-validator';
+
 import {
-  IsIn,
-  IsOptional,
-  IsString,
-  Length,
-  Matches,
-  MaxLength,
-} from 'class-validator';
+  SUPPORTED_CURRENCIES,
+  type SupportedCurrency,
+} from '../../../common/money';
 
 export class UpdateProfileDto {
   @IsOptional()
@@ -18,8 +17,9 @@ export class UpdateProfileDto {
   displayName?: string;
 
   @IsOptional()
-  @Matches(/^[A-Z]{3}$/)
-  defaultCurrency?: string;
+  @ApiPropertyOptional({ enum: SUPPORTED_CURRENCIES })
+  @IsIn(SUPPORTED_CURRENCIES)
+  defaultCurrency?: SupportedCurrency;
 
   @IsOptional()
   @IsString()

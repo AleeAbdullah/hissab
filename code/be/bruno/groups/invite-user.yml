@@ -1,0 +1,24 @@
+info:
+  name: Invite user
+  type: http
+  seq: 7
+
+http:
+  method: POST
+  url: "{{baseUrl}}/v1/groups/{{groupId}}/invitations"
+  headers:
+    - name: Content-Type
+      value: application/json
+    - name: Idempotency-Key
+      value: "{{$randomUUID}}"
+  body:
+    type: json
+    data: |-
+      {
+        "userId": "{{invitedUserId}}"
+      }
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+docs: Sends an in-app invitation to an existing Hissab user.

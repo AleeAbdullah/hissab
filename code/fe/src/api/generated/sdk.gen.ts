@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AuthChangePasswordData, AuthChangePasswordResponses, AuthForgotPasswordData, AuthForgotPasswordResponses, AuthListSessionsData, AuthListSessionsResponses, AuthRefreshData, AuthRefreshResponses, AuthRegisterData, AuthRegisterResponses, AuthResetPasswordData, AuthResetPasswordResponses, AuthRevokeOtherSessionsData, AuthRevokeOtherSessionsResponses, AuthRevokeSessionData, AuthRevokeSessionResponses, AuthSignInData, AuthSignInResponses, AuthSignOutData, AuthSignOutResponses, ConnectionsAcceptRequestData, ConnectionsAcceptRequestResponses, ConnectionsBlockData, ConnectionsBlockResponses, ConnectionsCancelRequestData, ConnectionsCancelRequestResponses, ConnectionsDeclineRequestData, ConnectionsDeclineRequestResponses, ConnectionsFindCandidateData, ConnectionsFindCandidateResponses, ConnectionsListBlocksData, ConnectionsListBlocksResponses, ConnectionsListConnectionsData, ConnectionsListConnectionsResponses, ConnectionsListRequestsData, ConnectionsListRequestsResponses, ConnectionsSendRequestData, ConnectionsSendRequestResponses, ConnectionsUnblockData, ConnectionsUnblockResponses, HealthLiveData, HealthLiveResponses, HealthReadyData, HealthReadyResponses, UsersGetProfileData, UsersGetProfileResponses, UsersUpdateProfileData, UsersUpdateProfileResponses } from './types.gen';
+import type { AuthChangePasswordData, AuthChangePasswordResponses, AuthForgotPasswordData, AuthForgotPasswordResponses, AuthListSessionsData, AuthListSessionsResponses, AuthRefreshData, AuthRefreshResponses, AuthRegisterData, AuthRegisterResponses, AuthResetPasswordData, AuthResetPasswordResponses, AuthRevokeOtherSessionsData, AuthRevokeOtherSessionsResponses, AuthRevokeSessionData, AuthRevokeSessionResponses, AuthSignInData, AuthSignInResponses, AuthSignOutData, AuthSignOutResponses, BalancesListLedgerBalancesData, BalancesListLedgerBalancesResponses, BalancesListUserBalancesData, BalancesListUserBalancesResponses, ConnectionsAcceptRequestData, ConnectionsAcceptRequestResponses, ConnectionsBlockData, ConnectionsBlockResponses, ConnectionsCancelRequestData, ConnectionsCancelRequestResponses, ConnectionsDeclineRequestData, ConnectionsDeclineRequestResponses, ConnectionsFindCandidateData, ConnectionsFindCandidateResponses, ConnectionsListBlocksData, ConnectionsListBlocksResponses, ConnectionsListConnectionsData, ConnectionsListConnectionsResponses, ConnectionsListRequestsData, ConnectionsListRequestsResponses, ConnectionsSendRequestData, ConnectionsSendRequestResponses, ConnectionsUnblockData, ConnectionsUnblockResponses, ExpensesCreateExpenseData, ExpensesCreateExpenseResponses, ExpensesDeleteExpenseData, ExpensesDeleteExpenseResponses, ExpensesGetExpenseData, ExpensesGetExpenseResponses, ExpensesListCategoriesData, ExpensesListCategoriesResponses, ExpensesListExpensesData, ExpensesListExpensesResponses, ExpensesReplaceExpenseData, ExpensesReplaceExpenseResponses, GroupInvitationsAcceptData, GroupInvitationsAcceptResponses, GroupInvitationsDeclineData, GroupInvitationsDeclineResponses, GroupInvitationsListIncomingData, GroupInvitationsListIncomingResponses, GroupsArchiveGroupData, GroupsArchiveGroupResponses, GroupsCancelInvitationData, GroupsCancelInvitationResponses, GroupsCreateGroupData, GroupsCreateGroupResponses, GroupsGetGroupData, GroupsGetGroupResponses, GroupsInviteUserData, GroupsInviteUserResponses, GroupsLeaveGroupData, GroupsLeaveGroupResponses, GroupsListGroupsData, GroupsListGroupsResponses, GroupsListInvitationsData, GroupsListInvitationsResponses, GroupsListMembersData, GroupsListMembersResponses, GroupsUpdateGroupData, GroupsUpdateGroupResponses, HealthLiveData, HealthLiveResponses, HealthReadyData, HealthReadyResponses, SettlementsCreateSettlementData, SettlementsCreateSettlementResponses, SettlementsDeleteSettlementData, SettlementsDeleteSettlementResponses, SettlementsGetSettlementData, SettlementsGetSettlementResponses, SettlementsListSettlementsData, SettlementsListSettlementsResponses, SettlementsReplaceSettlementData, SettlementsReplaceSettlementResponses, UsersGetProfileData, UsersGetProfileResponses, UsersUpdateProfileData, UsersUpdateProfileResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -55,13 +55,13 @@ export const authRefresh = <ThrowOnError extends boolean = false>(options: Optio
     }
 });
 
-export const authSignOut = <ThrowOnError extends boolean = false>(options?: Options<AuthSignOutData, ThrowOnError>): RequestResult<AuthSignOutResponses, unknown, ThrowOnError> => (options?.client ?? client).post<AuthSignOutResponses, unknown, ThrowOnError>({
+export const authSignOut = <ThrowOnError extends boolean = false>(options: Options<AuthSignOutData, ThrowOnError>): RequestResult<AuthSignOutResponses, unknown, ThrowOnError> => (options.client ?? client).post<AuthSignOutResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/v1/auth/sign-out',
     ...options
 });
 
-export const authRevokeOtherSessions = <ThrowOnError extends boolean = false>(options?: Options<AuthRevokeOtherSessionsData, ThrowOnError>): RequestResult<AuthRevokeOtherSessionsResponses, unknown, ThrowOnError> => (options?.client ?? client).delete<AuthRevokeOtherSessionsResponses, unknown, ThrowOnError>({
+export const authRevokeOtherSessions = <ThrowOnError extends boolean = false>(options: Options<AuthRevokeOtherSessionsData, ThrowOnError>): RequestResult<AuthRevokeOtherSessionsResponses, unknown, ThrowOnError> => (options.client ?? client).delete<AuthRevokeOtherSessionsResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/v1/auth/sessions',
     ...options
@@ -185,4 +185,188 @@ export const connectionsBlock = <ThrowOnError extends boolean = false>(options: 
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/v1/blocks/{userId}',
     ...options
+});
+
+export const balancesListUserBalances = <ThrowOnError extends boolean = false>(options?: Options<BalancesListUserBalancesData, ThrowOnError>): RequestResult<BalancesListUserBalancesResponses, unknown, ThrowOnError> => (options?.client ?? client).get<BalancesListUserBalancesResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/balances',
+    ...options
+});
+
+export const balancesListLedgerBalances = <ThrowOnError extends boolean = false>(options: Options<BalancesListLedgerBalancesData, ThrowOnError>): RequestResult<BalancesListLedgerBalancesResponses, unknown, ThrowOnError> => (options.client ?? client).get<BalancesListLedgerBalancesResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/ledgers/{ledgerId}/balances',
+    ...options
+});
+
+export const expensesListCategories = <ThrowOnError extends boolean = false>(options?: Options<ExpensesListCategoriesData, ThrowOnError>): RequestResult<ExpensesListCategoriesResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ExpensesListCategoriesResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/shared-expense-categories',
+    ...options
+});
+
+export const expensesListExpenses = <ThrowOnError extends boolean = false>(options: Options<ExpensesListExpensesData, ThrowOnError>): RequestResult<ExpensesListExpensesResponses, unknown, ThrowOnError> => (options.client ?? client).get<ExpensesListExpensesResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/ledgers/{ledgerId}/expenses',
+    ...options
+});
+
+export const expensesCreateExpense = <ThrowOnError extends boolean = false>(options: Options<ExpensesCreateExpenseData, ThrowOnError>): RequestResult<ExpensesCreateExpenseResponses, unknown, ThrowOnError> => (options.client ?? client).post<ExpensesCreateExpenseResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/ledgers/{ledgerId}/expenses',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const expensesDeleteExpense = <ThrowOnError extends boolean = false>(options: Options<ExpensesDeleteExpenseData, ThrowOnError>): RequestResult<ExpensesDeleteExpenseResponses, unknown, ThrowOnError> => (options.client ?? client).delete<ExpensesDeleteExpenseResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/expenses/{expenseId}',
+    ...options
+});
+
+export const expensesGetExpense = <ThrowOnError extends boolean = false>(options: Options<ExpensesGetExpenseData, ThrowOnError>): RequestResult<ExpensesGetExpenseResponses, unknown, ThrowOnError> => (options.client ?? client).get<ExpensesGetExpenseResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/expenses/{expenseId}',
+    ...options
+});
+
+export const expensesReplaceExpense = <ThrowOnError extends boolean = false>(options: Options<ExpensesReplaceExpenseData, ThrowOnError>): RequestResult<ExpensesReplaceExpenseResponses, unknown, ThrowOnError> => (options.client ?? client).put<ExpensesReplaceExpenseResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/expenses/{expenseId}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const groupsListGroups = <ThrowOnError extends boolean = false>(options?: Options<GroupsListGroupsData, ThrowOnError>): RequestResult<GroupsListGroupsResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GroupsListGroupsResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/groups',
+    ...options
+});
+
+export const groupsCreateGroup = <ThrowOnError extends boolean = false>(options: Options<GroupsCreateGroupData, ThrowOnError>): RequestResult<GroupsCreateGroupResponses, unknown, ThrowOnError> => (options.client ?? client).post<GroupsCreateGroupResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/groups',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const groupsGetGroup = <ThrowOnError extends boolean = false>(options: Options<GroupsGetGroupData, ThrowOnError>): RequestResult<GroupsGetGroupResponses, unknown, ThrowOnError> => (options.client ?? client).get<GroupsGetGroupResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/groups/{groupId}',
+    ...options
+});
+
+export const groupsUpdateGroup = <ThrowOnError extends boolean = false>(options: Options<GroupsUpdateGroupData, ThrowOnError>): RequestResult<GroupsUpdateGroupResponses, unknown, ThrowOnError> => (options.client ?? client).patch<GroupsUpdateGroupResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/groups/{groupId}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const groupsListMembers = <ThrowOnError extends boolean = false>(options: Options<GroupsListMembersData, ThrowOnError>): RequestResult<GroupsListMembersResponses, unknown, ThrowOnError> => (options.client ?? client).get<GroupsListMembersResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/groups/{groupId}/members',
+    ...options
+});
+
+export const groupsListInvitations = <ThrowOnError extends boolean = false>(options: Options<GroupsListInvitationsData, ThrowOnError>): RequestResult<GroupsListInvitationsResponses, unknown, ThrowOnError> => (options.client ?? client).get<GroupsListInvitationsResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/groups/{groupId}/invitations',
+    ...options
+});
+
+export const groupsInviteUser = <ThrowOnError extends boolean = false>(options: Options<GroupsInviteUserData, ThrowOnError>): RequestResult<GroupsInviteUserResponses, unknown, ThrowOnError> => (options.client ?? client).post<GroupsInviteUserResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/groups/{groupId}/invitations',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const groupsCancelInvitation = <ThrowOnError extends boolean = false>(options: Options<GroupsCancelInvitationData, ThrowOnError>): RequestResult<GroupsCancelInvitationResponses, unknown, ThrowOnError> => (options.client ?? client).delete<GroupsCancelInvitationResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/groups/{groupId}/invitations/{userId}',
+    ...options
+});
+
+export const groupsLeaveGroup = <ThrowOnError extends boolean = false>(options: Options<GroupsLeaveGroupData, ThrowOnError>): RequestResult<GroupsLeaveGroupResponses, unknown, ThrowOnError> => (options.client ?? client).post<GroupsLeaveGroupResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/groups/{groupId}/leave',
+    ...options
+});
+
+export const groupsArchiveGroup = <ThrowOnError extends boolean = false>(options: Options<GroupsArchiveGroupData, ThrowOnError>): RequestResult<GroupsArchiveGroupResponses, unknown, ThrowOnError> => (options.client ?? client).post<GroupsArchiveGroupResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/groups/{groupId}/archive',
+    ...options
+});
+
+export const groupInvitationsListIncoming = <ThrowOnError extends boolean = false>(options?: Options<GroupInvitationsListIncomingData, ThrowOnError>): RequestResult<GroupInvitationsListIncomingResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GroupInvitationsListIncomingResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/group-invitations',
+    ...options
+});
+
+export const groupInvitationsAccept = <ThrowOnError extends boolean = false>(options: Options<GroupInvitationsAcceptData, ThrowOnError>): RequestResult<GroupInvitationsAcceptResponses, unknown, ThrowOnError> => (options.client ?? client).post<GroupInvitationsAcceptResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/group-invitations/{groupId}/accept',
+    ...options
+});
+
+export const groupInvitationsDecline = <ThrowOnError extends boolean = false>(options: Options<GroupInvitationsDeclineData, ThrowOnError>): RequestResult<GroupInvitationsDeclineResponses, unknown, ThrowOnError> => (options.client ?? client).post<GroupInvitationsDeclineResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/group-invitations/{groupId}/decline',
+    ...options
+});
+
+export const settlementsListSettlements = <ThrowOnError extends boolean = false>(options: Options<SettlementsListSettlementsData, ThrowOnError>): RequestResult<SettlementsListSettlementsResponses, unknown, ThrowOnError> => (options.client ?? client).get<SettlementsListSettlementsResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/ledgers/{ledgerId}/settlements',
+    ...options
+});
+
+export const settlementsCreateSettlement = <ThrowOnError extends boolean = false>(options: Options<SettlementsCreateSettlementData, ThrowOnError>): RequestResult<SettlementsCreateSettlementResponses, unknown, ThrowOnError> => (options.client ?? client).post<SettlementsCreateSettlementResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/ledgers/{ledgerId}/settlements',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const settlementsDeleteSettlement = <ThrowOnError extends boolean = false>(options: Options<SettlementsDeleteSettlementData, ThrowOnError>): RequestResult<SettlementsDeleteSettlementResponses, unknown, ThrowOnError> => (options.client ?? client).delete<SettlementsDeleteSettlementResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/settlements/{settlementId}',
+    ...options
+});
+
+export const settlementsGetSettlement = <ThrowOnError extends boolean = false>(options: Options<SettlementsGetSettlementData, ThrowOnError>): RequestResult<SettlementsGetSettlementResponses, unknown, ThrowOnError> => (options.client ?? client).get<SettlementsGetSettlementResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/settlements/{settlementId}',
+    ...options
+});
+
+export const settlementsReplaceSettlement = <ThrowOnError extends boolean = false>(options: Options<SettlementsReplaceSettlementData, ThrowOnError>): RequestResult<SettlementsReplaceSettlementResponses, unknown, ThrowOnError> => (options.client ?? client).put<SettlementsReplaceSettlementResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/settlements/{settlementId}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });

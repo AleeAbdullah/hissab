@@ -1,0 +1,16 @@
+info:
+  name: Decline invitation
+  type: http
+  seq: 11
+
+http:
+  method: POST
+  url: "{{baseUrl}}/v1/group-invitations/{{groupId}}/decline"
+  headers:
+    - name: Idempotency-Key
+      value: "{{$randomUUID}}"
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+docs: Declines a pending invitation.

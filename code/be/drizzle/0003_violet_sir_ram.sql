@@ -1,0 +1,1 @@
+CREATE INDEX "expenses_ledger_root_version_idx" ON "expenses" USING btree ("ledger_id","root_expense_id","version" DESC NULLS LAST);

@@ -1,0 +1,28 @@
+info:
+  name: Replace settlement
+  type: http
+  seq: 4
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/v1/settlements/{{settlementId}}"
+  headers:
+    - name: Content-Type
+      value: application/json
+    - name: Idempotency-Key
+      value: "{{$randomUUID}}"
+  body:
+    type: json
+    data: |-
+      {
+        "fromUserId": "{{fromUserId}}",
+        "toUserId": "{{toUserId}}",
+        "amountMinor": "{{amountMinor}}",
+        "occurredAt": "{{occurredAt}}",
+        "expectedVersion": {{expectedVersion}}
+      }
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+docs: Reverses and replaces a settlement. Ledger and currency remain immutable.

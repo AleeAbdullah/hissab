@@ -18,10 +18,26 @@ Do not silently resolve conflicts. Keep current behavior safe, report the confli
 - Keep exactly five tabs: Friends, Groups, Activity, Personal, Account.
 - Shared and Personal are separate contexts. Shared activity must not silently become a personal transaction or vice versa.
 - Never combine different currencies into one total. Show totals per currency.
+- The v1 currency allowlist is PKR, USD, GBP, EUR, AED, and SAR. Reject other currencies at API and database trust boundaries.
 - The target shared-expense model supports multiple payers and Equal or Exact splits only.
+- Shared-expense APIs operate on both direct friend ledgers and group ledgers.
+- Shared expenses use a fixed system category list in v1. User- and group-defined shared categories are out of scope.
+- Shared-expense system categories are Food & Drink, Groceries, Transport, Accommodation, Utilities, Entertainment, Shopping, Healthcare, and Other.
+- Every shared expense must reference one approved system category.
 - Percentage and share-based splits are post-v1.
 - A settlement records an external payment; it does not execute one.
+- Any active ledger member may record a settlement between two active members. Only the recorder may edit or tombstone it.
+- Settlement edits use optimistic versions and reversal-plus-replacement history. Ledger and currency are immutable across revisions.
+- The backend accepts overpayments as credit without a confirmation gate. Overpayment warnings are an app responsibility.
+- Authoritative balances are computed from immutable ledger postings, grouped by ledger, user, and currency; do not persist mutable balance projections.
 - Debt simplification is read-only, optional, and scoped to one currency.
+- Group types are not part of v1.
+- Group invitations are in-app only and target existing Hissab users. An invited user cannot participate until they explicitly accept.
+- Groups have no roles. Every active member has the same group-management privileges.
+- Leaving a group and archiving a group are blocked by unsettled balances. Users cannot be removed from groups.
+- Any active group member may update the group, invite users, cancel invitations, or archive a fully settled group.
+- Invitees may accept or decline. A new invitation may be sent after a previous invitation reaches a terminal state.
+- Groups cannot be hard-deleted. The last settled member leaving archives the group automatically.
 - Personal reports default to the user's owed share. A toggle may show cash out of pocket.
 - Settlements are excluded from personal income and expense reports.
 
@@ -32,14 +48,17 @@ Implemented now:
 - health, authentication, users, idempotency, and an outbox skeleton;
 - registration, sign-in, password reset primitives, and password change;
 - profile, preferences, session listing, and session revocation;
-- exact-email user discovery, friend requests, direct connections, blocking, and unblocking.
+- exact-email user discovery, friend requests, direct connections, blocking, and unblocking;
+- group creation, reads, name updates, equal-privilege membership, invitations, leaving, and archival;
+- fixed shared-expense categories and immutable shared expenses for direct and group ledgers;
+- computed per-ledger, per-user, per-currency balance APIs and lifecycle guards;
+- immutable external settlement records with reversal-based edits and tombstone deletion.
 
 Incomplete or intentionally unavailable:
 
 - password-reset email delivery;
 - outbox delivery handlers;
-- initiating a block in the app until authoritative balances exist;
-- groups, expenses, balances, payments, personal transactions, categories, attachments, activity, and notifications;
+- personal transactions and categories, attachments, activity queries, and notifications;
 - query persistence, offline financial writes, and local SQLite drafts.
 
 Routes for unimplemented modules must show an honest Coming Later state. Never invent financial data to make a screen look complete.
@@ -48,7 +67,7 @@ Routes for unimplemented modules must show an honest Coming Later state. Never i
 
 Build only when the relevant work is requested:
 
-- groups, membership, ownership rules, and invitations;
+- groups, membership administration rules, and invitations;
 - multi-payer expenses with immutable payer and split allocations;
 - per-currency balances, settlements, edit/delete flows, and activity;
 - realtime updates, push notifications, and reminders;
@@ -75,13 +94,19 @@ Explicitly post-v1 or out of scope:
 
 - Store monetary values as integers in minor units with an explicit ISO currency.
 - For every expense, payer allocations must sum to the total and participant splits must sum to the total.
+- Expense payers and participants are independent active-member sets. A user's net posting is paid minus owed; the same user may appear in either or both sets, and zero allocations are omitted.
+- Equal splits use integer floor division in minor units. Assign remainder units one at a time to participants in ascending user-ID order.
+- Every shared expense must have at least one participant with a positive owed allocation. Omit zero-value participant allocations.
 - Validate money and membership rules at API and database trust boundaries, not only in UI.
 - Financial events and allocation snapshots are immutable.
 - Editing a financial record creates a reversal and replacement; it does not rewrite history.
 - Deletion is a soft delete or tombstone and remains auditable.
 - Every mutation requires an idempotency key.
 - Financial edits require an optimistic version and must surface conflicts.
+- Any active ledger member may create a shared expense. Only the expense creator may edit or tombstone it.
+- An expense's ledger and currency are immutable across revisions.
 - Overpayment is allowed. Warn before confirmation and represent the result as credit.
+- Overpayment confirmation is enforced by the app, not by settlement APIs.
 - Duplicate personal transactions may trigger a warning but must never be auto-merged.
 - Financial writes require a network connection. Cached reads and local drafts may be added later, but queued automatic financial mutations are not allowed.
 - Account deletion is blocked by unresolved balances or required memberships. Once allowed, anonymize personal data while retaining the financial audit trail.
@@ -107,7 +132,7 @@ Explicitly post-v1 or out of scope:
 - Native dialogs own confirmation and destructive-action prompts.
 - Use native platform chrome and predictive-back behavior where supported.
 - Use `Hissab` capitalization everywhere.
-- Friends may show connection state now; balances remain unavailable until the financial core exists.
+- Friends may show connection state and authoritative per-currency balances; never combine currencies.
 - Session screens must not infer device location from unavailable data.
 - “Revoke other sessions” is one backend mutation, not a client loop.
 - Terms and Privacy controls remain non-interactive until real URLs are approved.
@@ -118,7 +143,7 @@ Explicitly post-v1 or out of scope:
 - Do not treat stale mockup copy as a business rule. Runtime facts in this file and code take precedence.
 - Copper is the locked primary brand and action color: `#A83A1B`. Use Ink `#1D1D1B` for core text and Paper `#F7F3EC` for warm light surfaces.
 - Reserve green `#2E7D59` for positive money and success states; it is not a second brand color.
-- Apply the Copper/Paper system group by group as mockups are reviewed. It is implemented in Authentication, Friends, and Groups.
+- Apply the Copper/Paper system group by group as mockups are reviewed. It is implemented in Authentication, Friends, Groups, and Shared expenses.
 - Use a 4-point spacing grid: 20-point page gutters, 16-point card gaps and field padding, and 32-point major sections. Controls use 12-point radii, cards use 16, sheets/dialogs use 20, and visible button bodies are 32 points high with a 48 dp/44 pt minimum touch region.
 - Center inline navigation titles against the screen, not between unequal leading and trailing controls. Keep tab-root large titles left-aligned.
 - Use serif typography only for the Hissab wordmark and editorial welcome heading. Keep product UI in a sans serif: page titles 32/38, body 16/24, supporting text 15/22, and labels 12/16.
@@ -135,13 +160,7 @@ Explicitly post-v1 or out of scope:
 Do not guess these:
 
 - final wordmark and app icon;
-- group types and whether they change behavior;
-- invitation transport and when invited users may participate;
-- owner transfer, member removal, leaving, group deletion, and unsettled-balance rules;
-- minimum expense participant count;
-- supported currencies;
 - attachment types, limits, upload lifecycle, and background behavior;
-- payment edit/version rules;
 - personal-transaction concurrency rules;
 - activity filters, reminder wording/cooldown, and duplicate-warning heuristic;
 - export format/delivery and deletion confirmation credentials;
@@ -149,6 +168,8 @@ Do not guess these:
 - localization, RTL, and tablet support.
 
 ## Verification
+
+Automated test files and test runners are intentionally not maintained. Product testing is manual.
 
 Backend changes:
 

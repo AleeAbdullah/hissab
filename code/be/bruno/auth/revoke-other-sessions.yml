@@ -1,0 +1,16 @@
+info:
+  name: Revoke other sessions
+  type: http
+  seq: 10
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/v1/auth/sessions"
+  headers:
+    - name: Idempotency-Key
+      value: "{{$randomUUID}}"
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+docs: Revokes every session except the authenticated session in one mutation.

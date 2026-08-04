@@ -1,0 +1,35 @@
+info:
+  name: Replace shared expense
+  type: http
+  seq: 5
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/v1/expenses/{{expenseId}}"
+  headers:
+    - name: Content-Type
+      value: application/json
+    - name: Idempotency-Key
+      value: "{{$randomUUID}}"
+  body:
+    type: json
+    data: |-
+      {
+        "categoryCode": "FOOD_AND_DRINK",
+        "description": "Updated dinner",
+        "totalMinor": "{{amountMinor}}",
+        "occurredAt": "{{occurredAt}}",
+        "payers": [
+          { "userId": "{{fromUserId}}", "amountMinor": "{{amountMinor}}" }
+        ],
+        "split": {
+          "method": "EQUAL",
+          "participantUserIds": ["{{fromUserId}}", "{{toUserId}}"]
+        },
+        "expectedVersion": {{expectedVersion}}
+      }
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+docs: Reverses and replaces an expense. Ledger and currency remain immutable.

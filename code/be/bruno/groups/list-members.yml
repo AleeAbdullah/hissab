@@ -1,0 +1,13 @@
+info:
+  name: List group members
+  type: http
+  seq: 5
+
+http:
+  method: GET
+  url: "{{baseUrl}}/v1/groups/{{groupId}}/members"
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+docs: Lists the group's membership records.

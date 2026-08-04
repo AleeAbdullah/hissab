@@ -24,7 +24,7 @@ const citext = customType<{ data: string }>({
 });
 
 const currencyCheck = (column: AnyPgColumn) =>
-  sql`${column}::text ~ '^[A-Z]{3}$'`;
+  sql`${column}::text IN ('PKR', 'USD', 'GBP', 'EUR', 'AED', 'SAR')`;
 
 export const userStatusEnum = pgEnum('user_status', [
   'ACTIVE',
@@ -44,16 +44,12 @@ export const connectionRequestStatusEnum = pgEnum('connection_request_status', [
 ]);
 export const ledgerTypeEnum = pgEnum('ledger_type', ['DIRECT', 'GROUP']);
 export const ledgerStatusEnum = pgEnum('ledger_status', ['ACTIVE', 'ARCHIVED']);
-export const ledgerMemberRoleEnum = pgEnum('ledger_member_role', [
-  'OWNER',
-  'ADMIN',
-  'MEMBER',
-]);
 export const ledgerMemberStatusEnum = pgEnum('ledger_member_status', [
   'INVITED',
   'ACTIVE',
+  'DECLINED',
+  'CANCELLED',
   'LEFT',
-  'REMOVED',
 ]);
 export const expenseStatusEnum = pgEnum('expense_status', [
   'ACTIVE',
@@ -408,8 +404,12 @@ export const ledgerMembers = pgTable(
     userId: uuid('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'restrict' }),
-    role: ledgerMemberRoleEnum('role').notNull().default('MEMBER'),
     status: ledgerMemberStatusEnum('status').notNull().default('ACTIVE'),
+    invitedByUserId: uuid('invited_by_user_id').references(() => users.id, {
+      onDelete: 'restrict',
+    }),
+    invitedAt: timestamp('invited_at', { withTimezone: true }),
+    joinedAt: timestamp('joined_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -424,24 +424,40 @@ export const ledgerMembers = pgTable(
     }),
     index('ledger_members_user_status_idx').on(table.userId, table.status),
     index('ledger_members_ledger_status_idx').on(table.ledgerId, table.status),
+    check(
+      'ledger_members_lifecycle_shape_check',
+      sql`(${table.status} IN ('INVITED', 'DECLINED', 'CANCELLED')
+          AND ${table.invitedByUserId} IS NOT NULL
+          AND ${table.invitedAt} IS NOT NULL)
+        OR (${table.status} IN ('ACTIVE', 'LEFT')
+          AND ${table.joinedAt} IS NOT NULL)`,
+    ),
   ],
 );
 
-export const groupProfiles = pgTable('group_profiles', {
-  ledgerId: uuid('ledger_id')
-    .primaryKey()
-    .references(() => ledgers.id, { onDelete: 'restrict' }),
-  name: text('name').notNull(),
-  groupType: text('group_type'),
-  imageObjectKey: text('image_object_key'),
-  simplifyDebts: boolean('simplify_debts').notNull().default(false),
-  createdAt: timestamp('created_at', { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-  updatedAt: timestamp('updated_at', { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-});
+export const groupProfiles = pgTable(
+  'group_profiles',
+  {
+    ledgerId: uuid('ledger_id')
+      .primaryKey()
+      .references(() => ledgers.id, { onDelete: 'restrict' }),
+    name: text('name').notNull(),
+    imageObjectKey: text('image_object_key'),
+    simplifyDebts: boolean('simplify_debts').notNull().default(false),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    check(
+      'group_profiles_name_length_check',
+      sql`char_length(btrim(${table.name})) BETWEEN 1 AND 100`,
+    ),
+  ],
+);
 
 export const categories = pgTable(
   'categories',
@@ -450,6 +466,7 @@ export const categories = pgTable(
     ownerUserId: uuid('owner_user_id').references(() => users.id, {
       onDelete: 'restrict',
     }),
+    code: text('code'),
     name: text('name').notNull(),
     kind: categoryKindEnum('kind').notNull(),
     iconKey: text('icon_key').notNull(),
@@ -467,12 +484,19 @@ export const categories = pgTable(
       'categories_system_owner_check',
       sql`(${table.ownerUserId} IS NULL) = ${table.isSystem}`,
     ),
+    check(
+      'categories_system_code_check',
+      sql`${table.isSystem} = (${table.code} IS NOT NULL)`,
+    ),
     uniqueIndex('categories_owned_name_kind_uq')
       .on(table.ownerUserId, table.name, table.kind)
       .where(sql`${table.ownerUserId} IS NOT NULL`),
     uniqueIndex('categories_system_name_kind_uq')
       .on(table.name, table.kind)
       .where(sql`${table.ownerUserId} IS NULL`),
+    uniqueIndex('categories_system_code_uq')
+      .on(table.code)
+      .where(sql`${table.isSystem}`),
   ],
 );
 
@@ -494,6 +518,13 @@ export const expenses = pgTable(
   'expenses',
   {
     id: uuid('id').primaryKey().defaultRandom(),
+    rootExpenseId: uuid('root_expense_id')
+      .notNull()
+      .references((): AnyPgColumn => expenses.id, { onDelete: 'restrict' }),
+    replacesExpenseId: uuid('replaces_expense_id').references(
+      (): AnyPgColumn => expenses.id,
+      { onDelete: 'restrict' },
+    ),
     ledgerId: uuid('ledger_id')
       .notNull()
       .references(() => ledgers.id, { onDelete: 'restrict' }),
@@ -503,9 +534,9 @@ export const expenses = pgTable(
     description: text('description').notNull(),
     totalMinor: bigint('total_minor', { mode: 'bigint' }).notNull(),
     currency: char('currency', { length: 3 }).notNull(),
-    categoryId: uuid('category_id').references(() => categories.id, {
-      onDelete: 'restrict',
-    }),
+    categoryId: uuid('category_id')
+      .notNull()
+      .references(() => categories.id, { onDelete: 'restrict' }),
     occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull(),
     status: expenseStatusEnum('status').notNull().default('ACTIVE'),
     version: integer('version').notNull().default(1),
@@ -520,9 +551,21 @@ export const expenses = pgTable(
     check('expenses_positive_total_check', sql`${table.totalMinor} > 0`),
     check('expenses_currency_check', currencyCheck(table.currency)),
     check('expenses_version_check', sql`${table.version} >= 1`),
+    uniqueIndex('expenses_root_version_uq').on(
+      table.rootExpenseId,
+      table.version,
+    ),
+    uniqueIndex('expenses_replaces_expense_uq')
+      .on(table.replacesExpenseId)
+      .where(sql`${table.replacesExpenseId} IS NOT NULL`),
     index('expenses_ledger_active_occurred_idx')
       .on(table.ledgerId, table.occurredAt.desc(), table.id)
       .where(sql`${table.status} = 'ACTIVE'`),
+    index('expenses_ledger_root_version_idx').on(
+      table.ledgerId,
+      table.rootExpenseId,
+      table.version.desc(),
+    ),
   ],
 );
 
@@ -566,10 +609,7 @@ export const expenseSplits = pgTable(
       name: 'expense_splits_pk',
       columns: [table.expenseId, table.userId],
     }),
-    check(
-      'expense_splits_nonnegative_owed_check',
-      sql`${table.owedMinor} >= 0`,
-    ),
+    check('expense_splits_positive_owed_check', sql`${table.owedMinor} > 0`),
   ],
 );
 
@@ -577,9 +617,19 @@ export const payments = pgTable(
   'payments',
   {
     id: uuid('id').primaryKey().defaultRandom(),
+    rootPaymentId: uuid('root_payment_id')
+      .notNull()
+      .references((): AnyPgColumn => payments.id, { onDelete: 'restrict' }),
+    replacesPaymentId: uuid('replaces_payment_id').references(
+      (): AnyPgColumn => payments.id,
+      { onDelete: 'restrict' },
+    ),
     ledgerId: uuid('ledger_id')
       .notNull()
       .references(() => ledgers.id, { onDelete: 'restrict' }),
+    createdByUserId: uuid('created_by_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
     fromUserId: uuid('from_user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'restrict' }),
@@ -606,10 +656,22 @@ export const payments = pgTable(
     check('payments_positive_amount_check', sql`${table.amountMinor} > 0`),
     check('payments_currency_check', currencyCheck(table.currency)),
     check('payments_version_check', sql`${table.version} >= 1`),
+    uniqueIndex('payments_root_version_uq').on(
+      table.rootPaymentId,
+      table.version,
+    ),
+    uniqueIndex('payments_replaces_payment_uq')
+      .on(table.replacesPaymentId)
+      .where(sql`${table.replacesPaymentId} IS NOT NULL`),
     index('payments_ledger_occurred_idx').on(
       table.ledgerId,
       table.occurredAt.desc(),
       table.id,
+    ),
+    index('payments_ledger_root_version_idx').on(
+      table.ledgerId,
+      table.rootPaymentId,
+      table.version.desc(),
     ),
   ],
 );
@@ -695,15 +757,15 @@ export const financialEvents = pgTable(
     uniqueIndex('financial_events_reverses_event_uq')
       .on(table.reversesEventId)
       .where(sql`${table.reversesEventId} IS NOT NULL`),
-    uniqueIndex('financial_events_expense_created_uq')
+    uniqueIndex('financial_events_expense_effect_uq')
       .on(table.expenseId)
       .where(
-        sql`${table.expenseId} IS NOT NULL AND ${table.eventType} = 'CREATED'`,
+        sql`${table.expenseId} IS NOT NULL AND ${table.eventType} <> 'REVERSAL'`,
       ),
-    uniqueIndex('financial_events_payment_created_uq')
+    uniqueIndex('financial_events_payment_effect_uq')
       .on(table.paymentId)
       .where(
-        sql`${table.paymentId} IS NOT NULL AND ${table.eventType} = 'CREATED'`,
+        sql`${table.paymentId} IS NOT NULL AND ${table.eventType} <> 'REVERSAL'`,
       ),
     index('financial_events_ledger_order_idx').on(
       table.ledgerId,
@@ -739,7 +801,7 @@ export const eventAllocations = pgTable(
           AND ${table.amountMinor} > 0
           AND ${table.splitMethod} IS NULL)
         OR (${table.role} = 'PARTICIPANT'
-          AND ${table.amountMinor} >= 0
+          AND ${table.amountMinor} > 0
           AND ${table.splitMethod} IS NOT NULL)`,
     ),
   ],
@@ -763,37 +825,12 @@ export const ledgerPostings = pgTable(
       table.financialEventId,
       table.userId,
     ),
+    check(
+      'ledger_postings_nonzero_amount_check',
+      sql`${table.amountMinor} <> 0`,
+    ),
     check('ledger_postings_currency_check', currencyCheck(table.currency)),
     index('ledger_postings_user_idx').on(table.userId),
-  ],
-);
-
-export const balanceProjections = pgTable(
-  'balance_projections',
-  {
-    ledgerId: uuid('ledger_id')
-      .notNull()
-      .references(() => ledgers.id, { onDelete: 'restrict' }),
-    userId: uuid('user_id')
-      .notNull()
-      .references(() => users.id, { onDelete: 'restrict' }),
-    currency: char('currency', { length: 3 }).notNull(),
-    netMinor: bigint('net_minor', { mode: 'bigint' })
-      .notNull()
-      .default(sql`0`),
-    lastFinancialEventId: uuid('last_financial_event_id')
-      .notNull()
-      .references(() => financialEvents.id, { onDelete: 'restrict' }),
-    updatedAt: timestamp('updated_at', { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-  },
-  (table) => [
-    primaryKey({
-      name: 'balance_projections_pk',
-      columns: [table.ledgerId, table.userId, table.currency],
-    }),
-    check('balance_projections_currency_check', currencyCheck(table.currency)),
   ],
 );
 

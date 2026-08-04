@@ -1,0 +1,16 @@
+info:
+  name: Accept invitation
+  type: http
+  seq: 10
+
+http:
+  method: POST
+  url: "{{baseUrl}}/v1/group-invitations/{{groupId}}/accept"
+  headers:
+    - name: Idempotency-Key
+      value: "{{$randomUUID}}"
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+docs: Accepts an invitation; participation begins only after this mutation succeeds.

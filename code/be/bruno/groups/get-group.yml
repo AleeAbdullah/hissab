@@ -1,0 +1,13 @@
+info:
+  name: Get group
+  type: http
+  seq: 3
+
+http:
+  method: GET
+  url: "{{baseUrl}}/v1/groups/{{groupId}}"
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+docs: Reads one group visible to the authenticated user.

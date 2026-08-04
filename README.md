@@ -2,7 +2,7 @@
 
 Hissab is a mobile app for tracking shared expenses and manual personal finances. It records who paid, who owes, and how people settle; it does not hold or transfer money.
 
-The repository contains an Expo mobile app and a NestJS API. Authentication, profiles, sessions, connection discovery, friend requests, direct connections, and blocking are implemented. Groups, expenses, balances, settlements, activity, and personal-finance reporting are under development.
+The repository contains an Expo mobile app and a NestJS API. The API implements authentication, profiles, sessions, connections and blocks, equal-privilege groups and invitations, immutable shared expenses, computed per-currency balances, and external settlements. Activity queries and delivery, personal finance, attachments, and notifications are still under development.
 
 ## Repository
 
@@ -42,6 +42,21 @@ pnpm start:dev
 - Health: `http://localhost:3000/health/live` and `/health/ready`
 - Swagger: `http://localhost:3000/docs`
 - OpenAPI: `http://localhost:3000/docs/openapi.json`
+
+### Implemented API
+
+All authenticated mutations require an `Idempotency-Key` header. Money is sent as an integer minor-unit string with one of `PKR`, `USD`, `GBP`, `EUR`, `AED`, or `SAR`.
+
+| Area | Routes |
+| --- | --- |
+| Groups | `/v1/groups`, `/v1/groups/:groupId`, membership and invitation routes, leave, and archive |
+| Shared expenses | `/v1/shared-expense-categories`, `/v1/ledgers/:ledgerId/expenses`, `/v1/expenses/:expenseId` |
+| Balances | `/v1/balances`, `/v1/ledgers/:ledgerId/balances` |
+| Settlements | `/v1/ledgers/:ledgerId/settlements`, `/v1/settlements/:settlementId` |
+
+Expense and settlement edits use optimistic `expectedVersion` values and create reversals plus replacement snapshots. Deletions create auditable tombstones. Settlement records describe external payments; Hissab never moves money.
+
+The generated OpenAPI document is the authoritative route and request contract. `code/be/bruno/` contains matching requests for manual API verification; select its `Local` environment and populate the access token and resource IDs.
 
 The outbox worker can run with `OUTBOX_ENABLED=true pnpm start:worker:dev`; delivery handlers are not implemented yet.
 

@@ -185,6 +185,17 @@ export class ConnectionsService {
       },
       async (transaction) => {
         await this.repository.lockPair(transaction, userId, blockedUserId);
+        if (
+          await this.repository.hasUnsettledDirectBalance(
+            transaction,
+            userId,
+            blockedUserId,
+          )
+        ) {
+          throw new ConflictException(
+            'The connection cannot be blocked until all balances are settled.',
+          );
+        }
         await this.repository.createBlock(transaction, userId, blockedUserId);
         await this.repository.cancelPendingPairRequests(
           transaction,

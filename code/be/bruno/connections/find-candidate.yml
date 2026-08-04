@@ -1,0 +1,17 @@
+info:
+  name: Find connection candidate
+  type: http
+  seq: 10
+
+http:
+  method: GET
+  url: "{{baseUrl}}/v1/connection-candidate?email={{email}}"
+  params:
+    - name: email
+      value: "{{email}}"
+      type: query
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+docs: Performs rate-limited exact-email discovery using the API's neutral response contract.

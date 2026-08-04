@@ -1,0 +1,24 @@
+info:
+  name: Create group
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{baseUrl}}/v1/groups"
+  headers:
+    - name: Content-Type
+      value: application/json
+    - name: Idempotency-Key
+      value: "{{$randomUUID}}"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Trip"
+      }
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+docs: Creates an equal-privilege group with the authenticated user as its first member.

@@ -9,10 +9,14 @@ import { RequestIdMiddleware } from './common/http/request-id.middleware';
 import { validateEnvironment } from './config/environment';
 import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './modules/auth';
+import { BalancesModule } from './modules/balances';
 import { ConnectionsModule } from './modules/connections/connections.module';
+import { ExpensesModule } from './modules/expenses';
+import { GroupsModule } from './modules/groups';
 import { HealthModule } from './modules/health/health.module';
 import { IdempotencyModule } from './modules/idempotency';
 import { OutboxModule } from './modules/outbox';
+import { SettlementsModule } from './modules/settlements';
 import { UsersModule } from './modules/users';
 
 @Module({
@@ -32,6 +36,10 @@ import { UsersModule } from './modules/users';
     AuthModule,
     UsersModule,
     ConnectionsModule,
+    BalancesModule,
+    ExpensesModule,
+    GroupsModule,
+    SettlementsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

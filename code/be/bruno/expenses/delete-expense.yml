@@ -1,0 +1,16 @@
+info:
+  name: Tombstone shared expense
+  type: http
+  seq: 6
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/v1/expenses/{{expenseId}}?expectedVersion={{expectedVersion}}"
+  headers:
+    - name: Idempotency-Key
+      value: "{{$randomUUID}}"
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+docs: Reverses the current expense effect and appends an auditable tombstone.

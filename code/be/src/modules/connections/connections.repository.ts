@@ -9,7 +9,9 @@ import {
 } from '../../database/database.service';
 import {
   connectionRequests,
+  financialEvents,
   ledgerMembers,
+  ledgerPostings,
   ledgers,
   userBlocks,
   users,
@@ -241,17 +243,22 @@ export class ConnectionsRepository {
     }
 
     for (const userId of [low, high]) {
+      const now = new Date();
       await transaction
         .insert(ledgerMembers)
         .values({
           ledgerId,
           userId,
-          role: 'MEMBER',
           status: 'ACTIVE',
+          joinedAt: now,
         })
         .onConflictDoUpdate({
           target: [ledgerMembers.ledgerId, ledgerMembers.userId],
-          set: { role: 'MEMBER', status: 'ACTIVE', updatedAt: new Date() },
+          set: {
+            status: 'ACTIVE',
+            joinedAt: sql`coalesce(${ledgerMembers.joinedAt}, ${now})`,
+            updatedAt: now,
+          },
         });
     }
 
@@ -326,6 +333,41 @@ export class ConnectionsRepository {
           eq(ledgers.directHighUserId, high),
         ),
       );
+  }
+
+  async hasUnsettledDirectBalance(
+    transaction: DatabaseTransaction,
+    firstUserId: string,
+    secondUserId: string,
+  ): Promise<boolean> {
+    const [low, high] = this.canonicalPair(firstUserId, secondUserId);
+    const [ledger] = await transaction
+      .select({ id: ledgers.id })
+      .from(ledgers)
+      .where(
+        and(
+          eq(ledgers.type, 'DIRECT'),
+          eq(ledgers.directLowUserId, low),
+          eq(ledgers.directHighUserId, high),
+        ),
+      )
+      .limit(1)
+      .for('update');
+    if (!ledger) {
+      return false;
+    }
+    const [balance] = await transaction
+      .select({ currency: ledgerPostings.currency })
+      .from(ledgerPostings)
+      .innerJoin(
+        financialEvents,
+        eq(financialEvents.id, ledgerPostings.financialEventId),
+      )
+      .where(eq(financialEvents.ledgerId, ledger.id))
+      .groupBy(ledgerPostings.userId, ledgerPostings.currency)
+      .having(sql`sum(${ledgerPostings.amountMinor}) <> 0`)
+      .limit(1);
+    return Boolean(balance);
   }
 
   async findCandidate(

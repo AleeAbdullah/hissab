@@ -1,23 +1,19 @@
 import { useMemo, useState } from 'react';
 import { FlatList, Modal, Pressable, Text, TextInput, View } from 'react-native';
 
+import type { SupportedCurrency } from '@/api/contracts';
 import { useAppTheme } from '@/theme/theme';
 
 import { AuthField } from './components/auth-field';
 
-const fallbackCurrencies = ['AED', 'AUD', 'CAD', 'EUR', 'GBP', 'INR', 'PKR', 'USD'];
+const supportedCurrencies: SupportedCurrency[] = ['PKR', 'USD', 'GBP', 'EUR', 'AED', 'SAR'];
 
-function currencies() {
-  const supportedValuesOf = (Intl as unknown as { supportedValuesOf?: (key: string) => string[] }).supportedValuesOf;
-  return supportedValuesOf?.('currency') ?? fallbackCurrencies;
-}
-
-export function CurrencyPicker({ value, onChange, first }: { value?: string; onChange: (value: string) => void; first?: boolean }) {
+export function CurrencyPicker({ value, onChange, first }: { value?: SupportedCurrency; onChange: (value: SupportedCurrency) => void; first?: boolean }) {
   const { colors } = useAppTheme();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const codes = useMemo(
-    () => currencies().filter((code) => code.includes(search.trim().toUpperCase())),
+    () => supportedCurrencies.filter((code) => code.includes(search.trim().toUpperCase())),
     [search],
   );
 

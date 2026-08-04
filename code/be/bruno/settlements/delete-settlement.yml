@@ -1,0 +1,16 @@
+info:
+  name: Tombstone settlement
+  type: http
+  seq: 5
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/v1/settlements/{{settlementId}}?expectedVersion={{expectedVersion}}"
+  headers:
+    - name: Idempotency-Key
+      value: "{{$randomUUID}}"
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+docs: Reverses the current settlement effect and appends an auditable tombstone.

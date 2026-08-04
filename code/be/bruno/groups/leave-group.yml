@@ -1,0 +1,16 @@
+info:
+  name: Leave group
+  type: http
+  seq: 12
+
+http:
+  method: POST
+  url: "{{baseUrl}}/v1/groups/{{groupId}}/leave"
+  headers:
+    - name: Idempotency-Key
+      value: "{{$randomUUID}}"
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+docs: Leaves a group when the authenticated member has no unsettled balance.

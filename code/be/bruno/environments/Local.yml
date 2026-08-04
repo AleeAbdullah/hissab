@@ -48,3 +48,33 @@ variables:
   - name: requestStatus
     value: PENDING
     description: ""
+  - name: groupId
+    value: 00000000-0000-4000-8000-000000000000
+    description: ""
+  - name: invitedUserId
+    value: 00000000-0000-4000-8000-000000000000
+    description: ""
+  - name: ledgerId
+    value: 00000000-0000-4000-8000-000000000000
+    description: ""
+  - name: expenseId
+    value: 00000000-0000-4000-8000-000000000000
+    description: ""
+  - name: settlementId
+    value: 00000000-0000-4000-8000-000000000000
+    description: ""
+  - name: fromUserId
+    value: 00000000-0000-4000-8000-000000000000
+    description: ""
+  - name: toUserId
+    value: 00000000-0000-4000-8000-000000000000
+    description: ""
+  - name: occurredAt
+    value: 2026-08-04T12:00:00.000Z
+    description: ""
+  - name: amountMinor
+    value: "1000"
+    description: ""
+  - name: expectedVersion
+    value: "1"
+    description: ""

@@ -1,0 +1,16 @@
+info:
+  name: Archive group
+  type: http
+  seq: 13
+
+http:
+  method: POST
+  url: "{{baseUrl}}/v1/groups/{{groupId}}/archive"
+  headers:
+    - name: Idempotency-Key
+      value: "{{$randomUUID}}"
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+docs: Archives a fully settled group. Any active member may perform this mutation.

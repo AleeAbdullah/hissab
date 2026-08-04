@@ -1,0 +1,16 @@
+info:
+  name: Cancel invitation
+  type: http
+  seq: 8
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/v1/groups/{{groupId}}/invitations/{{invitedUserId}}"
+  headers:
+    - name: Idempotency-Key
+      value: "{{$randomUUID}}"
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+docs: Cancels a pending group invitation.

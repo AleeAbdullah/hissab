@@ -1,0 +1,35 @@
+info:
+  name: Create shared expense
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{baseUrl}}/v1/ledgers/{{ledgerId}}/expenses"
+  headers:
+    - name: Content-Type
+      value: application/json
+    - name: Idempotency-Key
+      value: "{{$randomUUID}}"
+  body:
+    type: json
+    data: |-
+      {
+        "categoryCode": "FOOD_AND_DRINK",
+        "description": "Dinner",
+        "totalMinor": "{{amountMinor}}",
+        "occurredAt": "{{occurredAt}}",
+        "payers": [
+          { "userId": "{{fromUserId}}", "amountMinor": "{{amountMinor}}" }
+        ],
+        "split": {
+          "method": "EQUAL",
+          "participantUserIds": ["{{fromUserId}}", "{{toUserId}}"]
+        },
+        "currency": "{{defaultCurrency}}"
+      }
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+docs: Creates an immutable shared expense snapshot in a direct or group ledger.
