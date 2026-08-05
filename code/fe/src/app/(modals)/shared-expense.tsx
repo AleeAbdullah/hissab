@@ -1,2 +1,24 @@
-import { ComingLaterScreen } from '@/features/coming-later/screen';
-export default function SharedExpenseScreen() { return <ComingLaterScreen purpose="Saving a shared expense needs ledger, expense and attachment APIs." links={[{ label: 'Choose ledger', href: '/ledger-picker' }, { label: 'Choose currency', href: '/currency-picker' }, { label: 'Choose category', href: '/category-picker' }, { label: 'Configure payers', href: '/payers' }, { label: 'Configure split', href: '/split' }, { label: 'Add receipt', href: '/receipt' }]} />; }
+import { useMutation } from '@tanstack/react-query';
+import { router } from 'expo-router';
+
+import { queryClient } from '@/api/query-client';
+import { ErrorMessage, Notice, Screen } from '@/components/ui';
+import { userBalancesQuery } from '@/features/balances/api';
+import { createExpense } from '@/features/expenses/api';
+import { ExpenseEditor } from '@/features/expenses/components/expense-editor';
+import { useLedgerDraft } from '@/features/ledger/draft';
+
+export default function SharedExpenseScreen() {
+  const { clearDraft, draft } = useLedgerDraft();
+  const create = useMutation({
+    mutationFn: (body: Parameters<typeof createExpense>[1]) => createExpense(draft!.ledgerId, body),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['ledgers', draft!.ledgerId] });
+      await queryClient.invalidateQueries({ queryKey: userBalancesQuery.queryKey });
+      clearDraft();
+      router.back();
+    },
+  });
+  if (!draft) return <Screen><Notice title="Choose a ledger">Open Add expense from an active group or friend ledger.</Notice></Screen>;
+  return <Screen>{create.error ? <ErrorMessage error={create.error} /> : null}<ExpenseEditor currentUserId={draft.currentUserId} defaultCurrency={draft.defaultCurrency} members={draft.members} saving={create.isPending} onSave={(body) => create.mutate(body)} /></Screen>;
+}

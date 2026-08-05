@@ -5,6 +5,8 @@ import { useMemo, useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 
 import { Avatar, Button, Card, ErrorMessage, Loading, Row, Screen, SectionLabel } from '@/components/ui';
+import { userBalancesQuery } from '@/features/balances/api';
+import { ledgerBalanceDescriptions } from '@/features/balances/format';
 import { connectionsQuery, pendingRequestsQuery } from '@/features/connections/api';
 import { useAppTheme } from '@/theme/theme';
 
@@ -13,6 +15,7 @@ export default function FriendsScreen() {
   const [search, setSearch] = useState('');
   const connections = useQuery(connectionsQuery);
   const requests = useQuery(pendingRequestsQuery);
+  const balances = useQuery(userBalancesQuery);
   const filtered = useMemo(
     () => (connections.data ?? []).filter((friend) => `${friend.displayName} ${friend.email ?? ''}`.toLowerCase().includes(search.trim().toLowerCase())),
     [connections.data, search],
@@ -33,7 +36,7 @@ export default function FriendsScreen() {
           ),
         }}
       />
-      {connections.error || requests.error ? <ErrorMessage error={connections.error ?? requests.error} /> : null}
+      {connections.error || requests.error || balances.error ? <ErrorMessage error={connections.error ?? requests.error ?? balances.error} /> : null}
       <TextInput
         accessibilityLabel="Search friends"
         placeholder="Search"
@@ -53,7 +56,7 @@ export default function FriendsScreen() {
             <Row
               key={friend.userId}
               title={friend.displayName}
-              subtitle="Balances coming later"
+              subtitle={balances.isLoading ? 'Loading balance…' : balances.error ? 'Balance unavailable' : ledgerBalanceDescriptions(balances.data, friend.ledgerId).join(' · ') || 'No recorded balance'}
               href={{ pathname: '/friends/[friendId]', params: { friendId: friend.userId } }}
               leading={<Avatar name={friend.displayName} />}
             />

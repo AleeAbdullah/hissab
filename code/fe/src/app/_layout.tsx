@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 
 import { queryClient } from '@/api/query-client';
 import { SessionProvider } from '@/features/auth/session';
+import { LedgerDraftProvider } from '@/features/ledger/draft';
 import { AppTheme, useAppTheme } from '@/theme/theme';
 
 import '../../global.css';
@@ -29,7 +30,7 @@ export default function RootLayout() {
     <QueryClientProvider client={queryClient}>
       <SessionProvider>
         <AppTheme>
-          <Navigation />
+          <LedgerDraftProvider><Navigation /></LedgerDraftProvider>
         </AppTheme>
       </SessionProvider>
     </QueryClientProvider>

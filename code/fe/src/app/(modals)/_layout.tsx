@@ -7,8 +7,8 @@ export default function ModalLayout() {
   return (
     <Stack screenOptions={{ headerBackButtonDisplayMode: 'minimal', contentStyle: { backgroundColor: colors.canvas } }}>
       <Stack.Screen name="connection-new" options={{ title: 'Add connection', presentation: 'formSheet', sheetGrabberVisible: true }} />
-      <Stack.Screen name="group-new" options={{ title: 'Create group' }} />
-      <Stack.Screen name="members-select" options={{ title: 'Select members' }} />
+      <Stack.Screen name="group-new" options={{ title: 'Create group', presentation: 'formSheet', sheetGrabberVisible: true }} />
+      <Stack.Screen name="members-select" options={{ title: 'Invite members', presentation: 'formSheet', sheetGrabberVisible: true }} />
       <Stack.Screen name="shared-expense" options={{ title: 'Add expense' }} />
       <Stack.Screen name="payers" options={{ title: 'Payers' }} />
       <Stack.Screen name="split" options={{ title: 'Split' }} />

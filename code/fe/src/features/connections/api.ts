@@ -1,5 +1,6 @@
 import {
   connectionsAcceptRequest,
+  connectionsBlock,
   connectionsCancelRequest,
   connectionsDeclineRequest,
   connectionsFindCandidate,
@@ -49,4 +50,8 @@ export function cancelRequest(requestId: string) {
 
 export function unblock(userId: string) {
   return request(() => connectionsUnblock({ path: { userId }, headers: { 'Idempotency-Key': idempotencyKey() } }));
+}
+
+export function block(userId: string) {
+  return request(() => connectionsBlock({ path: { userId }, headers: { 'Idempotency-Key': idempotencyKey() } }));
 }

@@ -5,9 +5,15 @@ info:
 
 http:
   method: GET
-  url: "{{baseUrl}}/v1/groups/{{groupId}}"
+  url: "{{baseUrl}}/v1/groups/2ae6f34a-87b4-44ad-b18a-28c3aa4bace5"
   auth:
     type: bearer
     token: "{{accessToken}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
 
 docs: Reads one group visible to the authenticated user.

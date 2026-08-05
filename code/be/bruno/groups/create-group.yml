@@ -15,10 +15,16 @@ http:
     type: json
     data: |-
       {
-        "name": "Trip"
+        "name": "Trip v1"
       }
   auth:
     type: bearer
     token: "{{accessToken}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
 
 docs: Creates an equal-privilege group with the authenticated user as its first member.
