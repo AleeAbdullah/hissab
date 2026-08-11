@@ -1,0 +1,7 @@
+info:
+  name: Notifications
+  type: folder
+  seq: 9
+
+auth:
+  type: inherit

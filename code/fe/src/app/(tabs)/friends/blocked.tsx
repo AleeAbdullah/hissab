@@ -4,6 +4,7 @@ import { Alert, Text, View } from 'react-native';
 import { queryClient } from '@/api/query-client';
 import { Avatar, Button, Card, ErrorMessage, Loading, Row, Screen, SectionLabel } from '@/components/ui';
 import { blocksQuery, unblock } from '@/features/connections/api';
+import { homeQuery } from '@/features/home/api';
 import { useAppTheme } from '@/theme/theme';
 
 export default function BlockedScreen() {
@@ -11,7 +12,10 @@ export default function BlockedScreen() {
   const query = useQuery(blocksQuery);
   const mutation = useMutation({
     mutationFn: unblock,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: blocksQuery.queryKey }),
+    onSuccess: () => Promise.all([
+      queryClient.invalidateQueries({ queryKey: blocksQuery.queryKey }),
+      queryClient.invalidateQueries({ queryKey: homeQuery.queryKey }),
+    ]),
   });
   if (query.isLoading) return <Loading />;
 

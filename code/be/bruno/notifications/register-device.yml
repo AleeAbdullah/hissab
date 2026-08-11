@@ -1,0 +1,24 @@
+info:
+  name: Register notification device
+  type: http
+  seq: 6
+
+http:
+  method: POST
+  url: "{{baseUrl}}/v1/notification-devices"
+  headers:
+    - name: Content-Type
+      value: application/json
+    - name: Idempotency-Key
+      value: "{{$randomUUID}}"
+  body:
+    type: json
+    data: |-
+      {
+        "token": "ExponentPushToken[replace_me]",
+        "platform": "ANDROID",
+        "deviceId": "replace-with-app-install-id"
+      }
+  auth:
+    type: bearer
+    token: "{{accessToken}}"

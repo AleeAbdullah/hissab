@@ -1,11 +1,13 @@
 import { Pressable, Text, View } from 'react-native';
 
+import type { DisplayCurrency } from '@/api/contracts';
 import { Field, SectionLabel } from '@/components/ui';
 import type { LedgerDraftMember } from '@/features/ledger/draft';
 import { useAppTheme } from '@/theme/theme';
 
 export function MemberAmounts({
   amounts,
+  displayCurrency,
   label,
   members,
   selectedUserIds,
@@ -14,6 +16,7 @@ export function MemberAmounts({
   onSelectionChange,
 }: {
   amounts: Record<string, string>;
+  displayCurrency: DisplayCurrency;
   label: string;
   members: LedgerDraftMember[];
   selectedUserIds: string[];
@@ -37,7 +40,7 @@ export function MemberAmounts({
                 </View>
                 <Text selectable style={{ color: colors.text, fontSize: 16, lineHeight: 24 }}>{member.displayName}</Text>
               </Pressable>
-              {selected && showAmounts ? <Field label={`${member.displayName} amount`} placeholder="0.00" keyboardType="decimal-pad" value={amounts[member.userId] ?? ''} onChangeText={(value) => onAmountsChange({ ...amounts, [member.userId]: value })} /> : null}
+              {selected && showAmounts ? <Field label={`${member.displayName} amount (${displayCurrency})`} placeholder="0.00" keyboardType="decimal-pad" value={amounts[member.userId] ?? ''} onChangeText={(value) => onAmountsChange({ ...amounts, [member.userId]: value })} /> : null}
             </View>
           );
         })}

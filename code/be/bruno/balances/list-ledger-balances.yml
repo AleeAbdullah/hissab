@@ -10,4 +10,4 @@ http:
     type: bearer
     token: "{{accessToken}}"
 
-docs: Computes every historically joined member's net balance per currency for one ledger.
+docs: Computes every historically joined member's net balance for one ledger.

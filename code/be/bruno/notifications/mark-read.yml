@@ -1,0 +1,16 @@
+info:
+  name: Mark notification read
+  type: http
+  seq: 2
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/v1/notifications/00000000-0000-4000-8000-000000000000/read"
+  headers:
+    - name: Idempotency-Key
+      value: "{{$randomUUID}}"
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+docs: Replace the placeholder UUID with an owned notification ID.

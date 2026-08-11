@@ -8,6 +8,7 @@ import { queryClient } from '@/api/query-client';
 import { ErrorMessage, Field, Loading, Notice, Screen } from '@/components/ui';
 import { profileQuery, updateProfile } from '@/features/account/api';
 import { CurrencyPicker } from '@/features/auth/currency-picker';
+import { homeQuery } from '@/features/home/api';
 import { useAppTheme } from '@/theme/theme';
 
 export default function ProfileScreen() {
@@ -20,14 +21,17 @@ export default function ProfileScreen() {
 function ProfileForm({ profile }: { profile: Profile }) {
   const { colors } = useAppTheme();
   const [displayName, setDisplayName] = useState(profile.displayName);
-  const [currency, setCurrency] = useState(profile.defaultCurrency);
+  const [displayCurrency, setDisplayCurrency] = useState(profile.displayCurrency);
   const [timezone, setTimezone] = useState(profile.timezone);
   const [mode, setMode] = useState(profile.personalReportMode);
   const mutation = useMutation({
-    mutationFn: () => updateProfile({ displayName: displayName.trim(), defaultCurrency: currency, timezone, personalReportMode: mode }),
-    onSuccess: (profile) => queryClient.setQueryData(profileQuery.queryKey, profile),
+    mutationFn: () => updateProfile({ displayName: displayName.trim(), displayCurrency, timezone, personalReportMode: mode }),
+    onSuccess: async (profile) => {
+      queryClient.setQueryData(profileQuery.queryKey, profile);
+      await queryClient.invalidateQueries({ queryKey: homeQuery.queryKey });
+    },
   });
-  const valid = displayName.trim().length > 0 && Boolean(currency) && timezone.length > 0;
+  const valid = displayName.trim().length > 0 && Boolean(displayCurrency) && timezone.length > 0;
 
   return (
     <Screen>
@@ -44,7 +48,7 @@ function ProfileForm({ profile }: { profile: Profile }) {
       {mutation.isSuccess ? <Notice title="Saved">Your profile and defaults are up to date.</Notice> : null}
       <Field label="Display name" value={displayName} onChangeText={setDisplayName} hint="Everyone you share a ledger with sees this name." />
       <Field label="Email" value={profile.email} editable={false} hint="Changing your email is not supported in this version." />
-      <CurrencyPicker value={currency} onChange={setCurrency} />
+      <CurrencyPicker value={displayCurrency} onChange={setDisplayCurrency} />
       <Field label="Timezone" value={timezone} onChangeText={setTimezone} />
       <Text selectable style={{ color: colors.secondary, fontSize: 13 }}>Report mode</Text>
       <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -54,7 +58,7 @@ function ProfileForm({ profile }: { profile: Profile }) {
           </Pressable>
         ))}
       </View>
-      <Text selectable style={{ color: colors.secondary, fontSize: 13, lineHeight: 18 }}>The default currency only pre-selects new expenses. It never converts or changes existing records. Profile photos are not supported; initials are generated from your name.</Text>
+      <Text selectable style={{ color: colors.secondary, fontSize: 13, lineHeight: 18 }}>Display currency changes the symbol Hissab uses for amounts. It does not convert stored values. Profile photos are not supported; initials are generated from your name.</Text>
     </Screen>
   );
 }

@@ -1,0 +1,13 @@
+info:
+  name: Get personal report
+  type: http
+  seq: 7
+
+http:
+  method: GET
+  url: "{{baseUrl}}/v1/personal/reports?mode=OWED_SHARE&bucket=MONTH"
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+docs: Returns manual and shared-allocation totals grouped in the user's timezone; settlements are excluded.

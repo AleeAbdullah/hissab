@@ -1,4 +1,4 @@
-export type SupportedCurrency =
+export type DisplayCurrency =
   | 'PKR'
   | 'USD'
   | 'GBP'
@@ -10,7 +10,7 @@ export type AuthUser = {
   id: string;
   email: string;
   displayName: string;
-  defaultCurrency: SupportedCurrency;
+  displayCurrency: DisplayCurrency;
   timezone: string;
 };
 
@@ -39,6 +39,58 @@ export type Session = {
   consumedAt: string | null;
   expiresAt: string;
   revokedAt: string | null;
+};
+
+export type NotificationPreferences = {
+  pushEnabled: boolean;
+  expenseActivityEnabled: boolean;
+  settlementActivityEnabled: boolean;
+  socialActivityEnabled: boolean;
+  remindersEnabled: boolean;
+  updatedAt: string;
+};
+
+export type InAppNotification = {
+  id: string;
+  actorUserId: string | null;
+  ledgerId: string | null;
+  kind: 'EXPENSE' | 'SETTLEMENT' | 'SOCIAL' | 'REMINDER';
+  eventType: string;
+  aggregateType: string;
+  aggregateId: string;
+  title: string;
+  body: string;
+  details: Record<string, unknown>;
+  readAt: string | null;
+  createdAt: string;
+};
+
+export type NotificationPage = {
+  items: InAppNotification[];
+  nextCursor: string | null;
+};
+
+export type NotificationDevice = {
+  id: string;
+  platform: 'IOS' | 'ANDROID';
+  deviceId: string | null;
+  enabled: boolean;
+  lastSeenAt: string;
+  revokedAt: string | null;
+};
+
+export type AccountDeletionResult = {
+  status: 'ANONYMIZED';
+  deletedAt: string;
+};
+
+export type Reminder = {
+  id: string;
+  ledgerId: string;
+  requesterUserId: string;
+  recipientUserId: string;
+  owedMinor: string;
+  createdAt: string;
 };
 
 export type Connection = {
@@ -164,7 +216,6 @@ export type SharedExpense = {
   createdByUserId: string;
   description: string;
   totalMinor: string;
-  currency: SupportedCurrency;
   category: SharedExpenseCategory;
   occurredAt: string;
   status: 'ACTIVE' | 'DELETED';
@@ -184,27 +235,21 @@ export type SharedExpensePage = {
 };
 
 export type UserBalances = {
-  currencies: {
-    currency: SupportedCurrency;
-    totalNetMinor: string;
-    ledgers: {
-      ledgerId: string;
-      ledgerType: 'DIRECT' | 'GROUP';
-      ledgerStatus: 'ACTIVE' | 'ARCHIVED';
-      netMinor: string;
-    }[];
+  totalNetMinor: string;
+  ledgers: {
+    ledgerId: string;
+    ledgerType: 'DIRECT' | 'GROUP';
+    ledgerStatus: 'ACTIVE' | 'ARCHIVED';
+    netMinor: string;
   }[];
 };
 
 export type LedgerBalances = {
   ledgerId: string;
-  currencies: {
-    currency: SupportedCurrency;
-    members: {
-      userId: string;
-      displayName: string;
-      netMinor: string;
-    }[];
+  members: {
+    userId: string;
+    displayName: string;
+    netMinor: string;
   }[];
 };
 
@@ -215,7 +260,6 @@ export type Settlement = {
   fromUserId: string;
   toUserId: string;
   amountMinor: string;
-  currency: SupportedCurrency;
   occurredAt: string;
   status: 'ACTIVE' | 'DELETED';
   version: number;
@@ -225,4 +269,147 @@ export type Settlement = {
 export type SettlementPage = {
   items: Settlement[];
   nextCursor: string | null;
+};
+
+export type ActivityArea = 'EXPENSE' | 'SETTLEMENT' | 'GROUP' | 'CONNECTION';
+
+export type ActivityUser = {
+  userId: string;
+  displayName: string;
+};
+
+export type ActivityLedger = {
+  id: string;
+  type: 'DIRECT' | 'GROUP';
+  status: 'ACTIVE' | 'ARCHIVED';
+  name: string;
+};
+
+export type ActivityExpenseDetails = {
+  version: number;
+  totalMinor: string;
+  description: string;
+  category: SharedExpenseCategory;
+  occurredAt: string;
+};
+
+export type ActivitySettlementDetails = {
+  version: number;
+  amountMinor: string;
+  from: ActivityUser;
+  to: ActivityUser;
+  occurredAt: string;
+};
+
+export type ActivityGroupDetails = {
+  name?: string;
+  subjectUser?: ActivityUser;
+  reason?: 'LAST_MEMBER_LEFT';
+};
+
+export type ActivityConnectionDetails = {
+  status: 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'CANCELLED' | 'BLOCKED' | 'UNBLOCKED';
+  ledgerId?: string;
+};
+
+export type ActivityItem = {
+  id: string;
+  area: ActivityArea;
+  eventType: string;
+  aggregateId: string;
+  actor: ActivityUser | null;
+  ledger: ActivityLedger | null;
+  counterparty: ActivityUser | null;
+  details: ActivityExpenseDetails | ActivitySettlementDetails | ActivityGroupDetails | ActivityConnectionDetails;
+  createdAt: string;
+};
+
+export type ActivityPage = {
+  items: ActivityItem[];
+  nextCursor: string | null;
+};
+
+export type HomeRecentKind =
+  | 'PERSONAL_INCOME'
+  | 'PERSONAL_EXPENSE'
+  | 'SHARED_EXPENSE'
+  | 'SHARED_SETTLEMENT';
+
+export type HomeRecentItem = {
+  kind: HomeRecentKind;
+  id: string;
+  amountMinor: string;
+  ledger: Pick<ActivityLedger, 'id' | 'type' | 'name'> | null;
+  actor: ActivityUser | null;
+  category: SharedExpenseCategory | null;
+  description: string | null;
+  from: ActivityUser | null;
+  to: ActivityUser | null;
+  occurredAt: string;
+  createdAt: string;
+};
+
+export type Home = {
+  currency: DisplayCurrency;
+  personal: { monthNetMinor: string };
+  shared: {
+    totalNetMinor: string;
+    unsettledLedgerCount: number;
+    peopleCount: number;
+  };
+  recent: HomeRecentItem[];
+};
+
+export type PersonalTransactionType = 'INCOME' | 'EXPENSE';
+
+export type PersonalIncomeCategoryCode =
+  | 'SALARY'
+  | 'FREELANCE'
+  | 'BUSINESS'
+  | 'GIFTS'
+  | 'REFUNDS'
+  | 'OTHER_INCOME';
+
+export type PersonalCategoryCode = SharedExpenseCategoryCode | PersonalIncomeCategoryCode;
+
+export type PersonalCategory = {
+  code: PersonalCategoryCode;
+  name: string;
+  kind: PersonalTransactionType;
+};
+
+export type PersonalTransaction = {
+  id: string;
+  type: PersonalTransactionType;
+  amountMinor: string;
+  category: Pick<PersonalCategory, 'code' | 'name'>;
+  description: string;
+  merchantOrSource: string | null;
+  occurredAt: string;
+  notes: string | null;
+  status: 'ACTIVE' | 'DELETED';
+  version: number;
+  createdAt: string;
+};
+
+export type PersonalTransactionPage = {
+  items: PersonalTransaction[];
+  nextCursor: string | null;
+};
+
+export type PersonalReportBucket = {
+  period: string;
+  incomeMinor: string;
+  expenseMinor: string;
+  netMinor: string;
+};
+
+export type PersonalReport = {
+  incomeMinor: string;
+  expenseMinor: string;
+  netMinor: string;
+  buckets: PersonalReportBucket[];
+  mode: 'OWED_SHARE' | 'CASH_OUT_OF_POCKET';
+  bucket: 'DAY' | 'MONTH';
+  timezone: string;
 };

@@ -52,7 +52,7 @@ export default function GroupMembersScreen() {
                 key={invitation.userId}
                 title={invitation.userDisplayName}
                 subtitle={`Invited by ${invitation.invitedByDisplayName}`}
-                trailing={<View style={{ width: 88 }}><Button title="Cancel" secondary destructive loading={cancel.isPending && cancel.variables === invitation.userId} disabled={cancel.isPending} onPress={() => Alert.alert('Cancel invitation?', `Remove ${invitation.userDisplayName}'s pending invitation to ${group.data.name}?`, [{ text: 'Keep invitation', style: 'cancel' }, { text: 'Cancel invitation', style: 'destructive', onPress: () => cancel.mutate(invitation.userId) }])} /></View>}
+                trailing={<View style={{ flexShrink: 0 }}><Button title="Cancel" secondary destructive loading={cancel.isPending && cancel.variables === invitation.userId} disabled={cancel.isPending} onPress={() => Alert.alert('Cancel invitation?', `Remove ${invitation.userDisplayName}'s pending invitation to ${group.data.name}?`, [{ text: 'Keep invitation', style: 'cancel' }, { text: 'Cancel invitation', style: 'destructive', onPress: () => cancel.mutate(invitation.userId) }])} /></View>}
               />
             ))}
           </Card>

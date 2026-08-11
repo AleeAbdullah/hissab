@@ -10,6 +10,7 @@ import { Reflector } from '@nestjs/core';
 
 import type { AuthenticatedRequest } from './authenticated-request';
 import { IS_PUBLIC_ROUTE } from './public.decorator';
+import { SessionAuthorizationService } from './session-authorization.service';
 
 interface AccessTokenPayload {
   sub?: unknown;
@@ -33,6 +34,7 @@ export class JwtAuthGuard implements CanActivate {
     private readonly reflector: Reflector,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly sessions: SessionAuthorizationService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -68,6 +70,9 @@ export class JwtAuthGuard implements CanActivate {
         typeof payload.sid !== 'string' ||
         typeof payload.jti !== 'string'
       ) {
+        throw this.unauthorized();
+      }
+      if (!(await this.sessions.isActive(payload.sub, payload.sid))) {
         throw this.unauthorized();
       }
 

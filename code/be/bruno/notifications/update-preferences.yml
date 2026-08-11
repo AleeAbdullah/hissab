@@ -1,0 +1,26 @@
+info:
+  name: Update notification preferences
+  type: http
+  seq: 5
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/v1/notification-preferences"
+  headers:
+    - name: Content-Type
+      value: application/json
+    - name: Idempotency-Key
+      value: "{{$randomUUID}}"
+  body:
+    type: json
+    data: |-
+      {
+        "pushEnabled": true,
+        "expenseActivityEnabled": true,
+        "settlementActivityEnabled": true,
+        "socialActivityEnabled": true,
+        "remindersEnabled": true
+      }
+  auth:
+    type: bearer
+    token: "{{accessToken}}"

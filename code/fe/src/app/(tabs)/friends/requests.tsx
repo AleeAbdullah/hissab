@@ -6,6 +6,7 @@ import type { ConnectionRequest } from '@/api/contracts';
 import { ErrorMessage, Loading, Screen, SectionLabel } from '@/components/ui';
 import { acceptRequest, cancelRequest, connectionsQuery, declineRequest, pendingRequestsQuery } from '@/features/connections/api';
 import { ConnectionRequestCard } from '@/features/connections/components/connection-request-card';
+import { homeQuery } from '@/features/home/api';
 import { useAppTheme } from '@/theme/theme';
 
 export default function RequestsScreen() {
@@ -18,6 +19,7 @@ export default function RequestsScreen() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: pendingRequestsQuery.queryKey }),
         queryClient.invalidateQueries({ queryKey: connectionsQuery.queryKey }),
+        queryClient.invalidateQueries({ queryKey: homeQuery.queryKey }),
       ]);
     },
   });

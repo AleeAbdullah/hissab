@@ -1,6 +1,5 @@
 import { Type } from 'class-transformer';
 import {
-  IsIn,
   IsInt,
   IsISO8601,
   IsOptional,
@@ -11,11 +10,6 @@ import {
   Min,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-
-import {
-  SUPPORTED_CURRENCIES,
-  type SupportedCurrency,
-} from '../../../common/money';
 
 const POSITIVE_MINOR_PATTERN = '^[1-9][0-9]*$';
 
@@ -38,11 +32,7 @@ class MutableSettlementFieldsDto {
   occurredAt!: string;
 }
 
-export class CreateSettlementDto extends MutableSettlementFieldsDto {
-  @ApiProperty({ enum: SUPPORTED_CURRENCIES, example: 'PKR' })
-  @IsIn(SUPPORTED_CURRENCIES)
-  currency!: SupportedCurrency;
-}
+export class CreateSettlementDto extends MutableSettlementFieldsDto {}
 
 export class ReplaceSettlementDto extends MutableSettlementFieldsDto {
   @ApiProperty({ minimum: 1 })

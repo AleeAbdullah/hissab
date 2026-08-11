@@ -38,15 +38,15 @@ export default function GroupDetailScreen() {
       </View>
       {balances.error ? <ErrorMessage error={balances.error} /> : null}
       <Card>
-        <Row title="Balances" subtitle={balances.isLoading ? 'Loading balance…' : balances.error ? 'Balance unavailable' : ledgerBalanceDescriptions(balances.data, groupId).join(' · ') || 'No recorded balance'} href={{ pathname: '/groups/[groupId]/balances', params: { groupId } }} />
+        <Row title="Balances" subtitle={balances.isLoading || profile.isLoading ? 'Loading balance…' : balances.error || profile.error || !profile.data ? 'Balance unavailable' : ledgerBalanceDescriptions(balances.data, groupId, profile.data.displayCurrency).join(' · ') || 'No recorded balance'} href={{ pathname: '/groups/[groupId]/balances', params: { groupId } }} />
         <Row title="Members" href={{ pathname: '/groups/[groupId]/members', params: { groupId } }} />
         {canManage ? <Row title="Edit group" href={{ pathname: '/groups/[groupId]/edit', params: { groupId } }} /> : null}
         {canManage ? <Row title="Group settings" href={{ pathname: '/groups/[groupId]/settings', params: { groupId } }} /> : null}
       </Card>
-      {canManage && profile.data && members.data ? <LedgerActions draft={{ ledgerId: groupId, ledgerName: group.data.name, currentUserId: profile.data.id, defaultCurrency: profile.data.defaultCurrency, members: members.data.filter((member) => member.status === 'ACTIVE').map((member) => ({ userId: member.userId, displayName: member.displayName })) }} /> : null}
+      {canManage && profile.data && members.data ? <LedgerActions draft={{ ledgerId: groupId, ledgerName: group.data.name, currentUserId: profile.data.id, displayCurrency: profile.data.displayCurrency, members: members.data.filter((member) => member.status === 'ACTIVE').map((member) => ({ userId: member.userId, displayName: member.displayName })) }} /> : null}
       {group.data.status === 'ARCHIVED' ? <Notice title="Read-only group">Archived groups keep their history and cannot be changed.</Notice> : null}
       {group.data.membershipStatus === 'LEFT' ? <Notice title="You left this group">You can still view its membership history, but cannot change it.</Notice> : null}
-      {members.data ? <LedgerActivity ledgerId={groupId} members={members.data.map((member) => ({ userId: member.userId, displayName: member.displayName }))} /> : null}
+      {members.data && profile.data ? <LedgerActivity displayCurrency={profile.data.displayCurrency} ledgerId={groupId} members={members.data.map((member) => ({ userId: member.userId, displayName: member.displayName }))} /> : null}
       {profile.error || members.error ? <ErrorMessage error={profile.error ?? members.error} /> : null}
       <Button title="View group balances" href={{ pathname: '/groups/[groupId]/balances', params: { groupId } }} />
       <Button title="View members" href={{ pathname: '/groups/[groupId]/members', params: { groupId } }} secondary />

@@ -13,7 +13,7 @@ export default function SignInScreen() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const mutation = useMutation({ mutationFn: signIn, onSuccess: () => router.replace('/friends') });
+  const mutation = useMutation({ mutationFn: signIn, onSuccess: () => router.replace('/home') });
   const valid = email.includes('@') && password.length > 0;
   const { colors } = useAppTheme();
 

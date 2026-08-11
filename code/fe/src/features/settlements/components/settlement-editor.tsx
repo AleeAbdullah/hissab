@@ -3,18 +3,16 @@ import { View } from 'react-native';
 
 import { Button, ErrorMessage, Field, Notice, SectionLabel } from '@/components/ui';
 import type { CreateSettlementDto } from '@/api/generated/types.gen';
-import type { LedgerBalances, Settlement, SupportedCurrency } from '@/api/contracts';
+import type { DisplayCurrency, LedgerBalances, Settlement } from '@/api/contracts';
 import { ChoiceChips } from '@/features/expenses/components/choice-chips';
 import { todayDate } from '@/features/expenses/form';
 import type { LedgerDraftMember } from '@/features/ledger/draft';
 import { buildSettlementBody, settlementInitialValues } from '@/features/settlements/form';
 
-const currencies: SupportedCurrency[] = ['PKR', 'USD', 'GBP', 'EUR', 'AED', 'SAR'];
-
 export function SettlementEditor({
   balances,
   currentUserId,
-  defaultCurrency,
+  displayCurrency,
   members,
   onSave,
   saving,
@@ -22,7 +20,7 @@ export function SettlementEditor({
 }: {
   balances?: LedgerBalances;
   currentUserId: string;
-  defaultCurrency: SupportedCurrency;
+  displayCurrency: DisplayCurrency;
   members: LedgerDraftMember[];
   onSave: (body: CreateSettlementDto, createsCredit: boolean) => void;
   saving: boolean;
@@ -31,13 +29,12 @@ export function SettlementEditor({
   const initial = settlement ? settlementInitialValues(settlement) : null;
   const otherUserId = members.find((member) => member.userId !== currentUserId)?.userId ?? '';
   const [amount, setAmount] = useState(initial?.amount ?? '');
-  const [currency, setCurrency] = useState<SupportedCurrency>(initial?.currency ?? defaultCurrency);
   const [fromUserId, setFromUserId] = useState(initial?.fromUserId ?? currentUserId);
   const [toUserId, setToUserId] = useState(initial?.toUserId ?? otherUserId);
   const [occurredDate, setOccurredDate] = useState(initial?.occurredDate ?? todayDate());
   const [validationError, setValidationError] = useState<string | null>(null);
   const save = () => {
-    const built = buildSettlementBody({ amount, currency, fromUserId, occurredDate, toUserId });
+    const built = buildSettlementBody({ amount, fromUserId, occurredDate, toUserId });
     if ('error' in built) return setValidationError(built.error);
     setValidationError(null);
     onSave(built.body, createsCredit(built.body, balances, settlement));
@@ -47,9 +44,8 @@ export function SettlementEditor({
     <View style={{ gap: 16 }}>
       <Notice title="External payment">Record money already paid or received elsewhere. Hissab does not move money.</Notice>
       {validationError ? <ErrorMessage error={new Error(validationError)} /> : null}
-      <Field label="Amount" placeholder="0.00" keyboardType="decimal-pad" value={amount} onChangeText={setAmount} />
+      <Field label={`Amount (${displayCurrency})`} placeholder="0.00" keyboardType="decimal-pad" value={amount} onChangeText={setAmount} />
       <Field label="Date" hint="YYYY-MM-DD" placeholder="2026-08-05" value={occurredDate} onChangeText={setOccurredDate} autoCapitalize="none" />
-      {settlement ? <Notice title="Currency locked">A settlement currency cannot change after it is recorded.</Notice> : <Choice label="CURRENCY" choices={currencies.map((value) => ({ label: value, value }))} value={currency} onChange={(value) => setCurrency(value as SupportedCurrency)} />}
       <Choice label="PAID BY" choices={members.map((member) => ({ label: member.displayName, value: member.userId }))} value={fromUserId} onChange={setFromUserId} />
       <Choice label="RECEIVED BY" choices={members.map((member) => ({ label: member.displayName, value: member.userId }))} value={toUserId} onChange={setToUserId} />
       <Button title={settlement ? 'Save changes' : 'Record payment'} loading={saving} disabled={saving || members.length < 2} onPress={save} />
@@ -62,10 +58,10 @@ function Choice({ label, choices, value, onChange }: { label: string; choices: {
 }
 
 function createsCredit(body: CreateSettlementDto, balances?: LedgerBalances, replacing?: Settlement) {
-  const members = balances?.currencies.find((item) => item.currency === body.currency)?.members;
+  const members = balances?.members;
   if (!members) return true;
   const net = new Map(members.map((member) => [member.userId, BigInt(member.netMinor)]));
-  if (replacing?.currency === body.currency) {
+  if (replacing) {
     net.set(replacing.fromUserId, (net.get(replacing.fromUserId) ?? 0n) - BigInt(replacing.amountMinor));
     net.set(replacing.toUserId, (net.get(replacing.toUserId) ?? 0n) + BigInt(replacing.amountMinor));
   }

@@ -74,10 +74,11 @@ def alloc_row(initials, name, word, amount, tone=1, on=True, sub=None,
     # No checkbox on read-only surfaces (expense detail): a tick there would
     # read as an editable control on a screen where nothing is editable.
     box = tick(on, box=True) if check else ""
+    shown_amount = amount if amount == "—" else f"${amount}"
     return (f'<div class="row">{box}{avatar(initials, tone)}'
             f'<span class="grow"><span class="t-body med{col}">{name}</span>{s}</span>'
             f'<span class="val"><span class="t-cap c-sec" style="display:block">{word}</span>'
-            f'<span class="t-body mono{col}">{amount}</span></span></div>')
+            f'<span class="t-body mono{col}">{shown_amount}</span></span></div>')
 
 
 def running(label, value, kind=""):
@@ -86,7 +87,7 @@ def running(label, value, kind=""):
     c = {"bad": "c-neg semi", "good": "c-sec", "warn": "c-warn semi"}[kind or "good"]
     return (f'<div class="row" style="background:var(--surfaceSubtle)">'
             f'<span class="grow t-supp c-sec">{label}</span>'
-            f'<span class="val t-supp mono {c}">{value}</span></div>')
+            f'<span class="val t-supp mono {c}">${value}</span></div>')
 
 
 def build():
@@ -106,7 +107,6 @@ def build():
         return (ctx_marker("shared", "Winter Trip")
                 + card(amount_editor(iso, amount, empty=empty_amt))
                 + card(d
-                       + nav_row("Currency", iso)
                        + nav_row("Date", date)
                        + nav_row("Category", cat))
                 + seclabel("Who paid and who owes")
@@ -125,8 +125,8 @@ def build():
         form("240.00", "Ski passes", "John Doe", "Equally · 5 people",
              cat="Entertainment", date="Jul 28, 2026",
              recon_html=recon("240.00", "240.00", "240.00", "USD",
-                              out=("good", "Balanced. John Doe paid 240.00; "
-                                           "your share is 48.00."))),
+                              out=("good", "Balanced. John Doe paid $240.00; "
+                                           "your share is $48.00."))),
         footer('<div class="btn">Save expense</div>'),
         trail_on=True)
 
@@ -134,25 +134,25 @@ def build():
         form("240.00", "Ski passes", "2 people", "Equally · 5 people",
              cat="Entertainment", date="Jul 28, 2026",
              recon_html=recon("240.00", "190.00", "240.00", "USD",
-                              out=("bad", "Paid is 50.00 short of the total. "
-                                          "Add 50.00 to a payer."))),
+                              out=("bad", "Paid is $50.00 short of the total. "
+                                          "Add $50.00 to a payer."))),
         footer('<div class="btn off">Save expense</div>',
-               "Paid is 50.00 short of the total. Add 50.00 to a payer."))
+               "Paid is $50.00 short of the total. Add $50.00 to a payer."))
 
     split_bad = addexp(
         form("240.00", "Ski passes", "John Doe", "Exact · 5 people",
              cat="Entertainment", date="Jul 28, 2026",
              recon_html=recon("240.00", "240.00", "252.00", "USD",
-                              out=("bad", "Allocated is 12.00 over the total. "
-                                          "Remove 12.00 from a share."))),
+                              out=("bad", "Allocated is $12.00 over the total. "
+                                          "Remove $12.00 from a share."))),
         footer('<div class="btn off">Save expense</div>',
-               "Allocated is 12.00 over the total. Remove 12.00 from a share."))
+               "Allocated is $12.00 over the total. Remove $12.00 from a share."))
 
     offline = addexp(
         form("240.00", "Ski passes", "John Doe", "Equally · 5 people",
              cat="Entertainment", date="Jul 28, 2026",
              recon_html=recon("240.00", "240.00", "240.00", "USD",
-                              out=("good", "Balanced. Your share is 48.00."))),
+                              out=("good", "Balanced. Your share is $48.00."))),
         footer('<div class="btn off">Save expense</div>',
                "Connect to the internet to save a shared expense.", kind="warn"),
         tail=stale_strip("Offline · shared expenses can only be saved when connected"))
@@ -161,7 +161,7 @@ def build():
         form("240.00", "Ski passes", "John Doe", "Equally · 5 people",
              cat="Entertainment", date="Jul 28, 2026",
              recon_html=recon("240.00", "240.00", "240.00", "USD",
-                              out=("good", "Balanced. Your share is 48.00."))),
+                              out=("good", "Balanced. Your share is $48.00."))),
         footer('<div class="btn spin off">Saving…</div>'))
 
     timeout = addexp(
@@ -172,7 +172,7 @@ def build():
         + form("240.00", "Ski passes", "John Doe", "Equally · 5 people",
                cat="Entertainment", date="Jul 28, 2026",
                recon_html=recon("240.00", "240.00", "240.00", "USD",
-                                out=("good", "Balanced. Your share is 48.00."))),
+                                out=("good", "Balanced. Your share is $48.00."))),
         footer('<div class="btn off">Save expense</div>',
                "Save is held until we know whether the first attempt "
                "succeeded.", kind="warn"))
@@ -181,14 +181,14 @@ def build():
         '<div class="success">'
         '<div class="mark"><svg viewBox="0 0 24 24"><path d="M3 12.5 9 18.5 21 5.5"/></svg></div>'
         '<div class="t-headline">Ski passes added</div>'
-        '<p class="t-supp c-sec" style="margin:8px 0 0">USD 720.00 in Winter Trip. '
+        '<p class="t-supp c-sec" style="margin:8px 0 0">$720.00 in Winter Trip. '
         'John Doe paid, so your balance with them changed.</p>'
         '</div>'
         + seclabel("Resulting balance", first=True)
         + card('<div class="row"><span class="grow"><span class="t-body med">John Doe</span>'
                '<span class="t-cap c-sec" style="display:block">Winter Trip</span></span>'
                '<span class="val"><span class="t-cap c-sec" style="display:block">You owe</span>'
-               '<span class="t-body semi mono c-neg">USD 240.00</span></span></div>'),
+               '<span class="t-body semi mono c-neg">$240.00</span></span></div>'),
         footer('<div style="display:flex;gap:8px">'
                '<span class="btn out" style="flex:1">View expense</span>'
                '<span class="btn" style="flex:1">Done</span></div>'),
@@ -197,11 +197,11 @@ def build():
     scaled = addexp(
         ctx_marker("shared", "Winter Trip")
         + card(amount_editor("USD", "240.00"))
-        + card(kv_row("Description", "Ski passes") + nav_row("Currency", "USD"))
+        + card(kv_row("Description", "Ski passes"))
         + recon("240.00", "190.00", "240.00", "USD",
-                out=("bad", "Paid is 50.00 short of the total.")),
+                out=("bad", "Paid is $50.00 short of the total.")),
         footer('<div class="btn off">Save expense</div>',
-               "Paid is 50.00 short of the total. Add 50.00 to a payer."))
+               "Paid is $50.00 short of the total. Add $50.00 to a payer."))
 
     write("17-add-expense.html", "17", "Add shared expense", "E01",
           "The form archetype and the screen the whole product turns on. Total → Paid → Allocated is "
@@ -259,7 +259,7 @@ def build():
         seclabel("Payer", first=True)
         + card(nav_row("One person paid", "", chev=False, lead=tick(False))
                + nav_row("Several people paid", "", chev=False, lead=tick(True)))
-        + seclabel("Paid amounts", right="USD")
+        + seclabel("Paid amounts")
         + listcard([
             alloc_row("AR", "Alina Rehman (you)", "Paid", "90.00", tone=6),
             alloc_row("JD", "John Doe", "Paid", "150.00", tone=2),
@@ -273,7 +273,7 @@ def build():
         seclabel("Payer", first=True)
         + card(nav_row("One person paid", "", chev=False, lead=tick(False))
                + nav_row("Several people paid", "", chev=False, lead=tick(True)))
-        + seclabel("Paid amounts", right="USD")
+        + seclabel("Paid amounts")
         + listcard([
             alloc_row("AR", "Alina Rehman (you)", "Paid", "90.00", tone=6),
             alloc_row("JD", "John Doe", "Paid", "100.00", tone=2),
@@ -306,7 +306,7 @@ def build():
     equal = sheet(
         "Split",
         SEG.format(a="on", b="")
-        + seclabel("Who is included", right="USD")
+        + seclabel("Who is included")
         + listcard([
             alloc_row("AR", "Alina Rehman (you)", "Owes", "48.00", tone=6),
             alloc_row("JD", "John Doe", "Owes", "48.00", tone=2),
@@ -320,7 +320,7 @@ def build():
     excluded = sheet(
         "Split",
         SEG.format(a="on", b="")
-        + seclabel("Who is included", right="USD")
+        + seclabel("Who is included")
         + listcard([
             alloc_row("AR", "Alina Rehman (you)", "Owes", "60.00", tone=6),
             alloc_row("JD", "John Doe", "Owes", "60.00", tone=2),
@@ -335,11 +335,11 @@ def build():
     remainder = sheet(
         "Split",
         SEG.format(a="on", b="")
-        + banner("100.00 does not divide by 3",
-                 "One person owes 33.34 and two owe 33.33 — Hissab assigns extra "
+        + banner("$100.00 does not divide by 3",
+                 "One person owes $33.34 and two owe $33.33 — Hissab assigns extra "
                  "minor units in ascending account-ID order, so the same split always "
                  "produces the same result.")
-        + seclabel("Who is included", right="USD")
+        + seclabel("Who is included")
         + listcard([
             alloc_row("AR", "Alina Rehman (you)", "Owes", "33.34", tone=6,
                       sub="Includes 1 extra cent · first in the fixed order"),
@@ -352,7 +352,7 @@ def build():
     exact_left = sheet(
         "Split",
         SEG.format(a="", b="on")
-        + seclabel("Exact shares", right="USD")
+        + seclabel("Exact shares")
         + listcard([
             alloc_row("AR", "Alina Rehman (you)", "Owes", "80.00", tone=6),
             alloc_row("JD", "John Doe", "Owes", "80.00", tone=2),
@@ -387,9 +387,9 @@ def build():
         search("", "Search friends and groups")
         + seclabel("Groups", first=True)
         + listcard([
-            select_row("WT", "Winter Trip", "5 members · USD", True, tone=1, box=False),
-            select_row("F3", "Flat 3B", "3 members · USD", False, tone=3, box=False),
-            select_row("LT", "Lahore trip", "4 members · PKR and USD", False, tone=4, box=False),
+            select_row("WT", "Winter Trip", "5 members", True, tone=1, box=False),
+            select_row("F3", "Flat 3B", "3 members", False, tone=3, box=False),
+            select_row("LT", "Lahore trip", "4 members", False, tone=4, box=False),
         ])
         + seclabel("Friends")
         + listcard([
@@ -399,22 +399,6 @@ def build():
         + '<p class="t-cap c-sec" style="margin:12px 20px">A direct expense is between the two of you '
         'only. Nobody else can see it, even if you share a group.</p>',
         '<div class="btn">Continue with Winter Trip</div>', trail="")
-
-    cur_pick = sheet(
-        "Currency",
-        search("", "Search supported currencies")
-        + seclabel("Supported currencies", first=True)
-        + listcard([
-            select_row(None, "US Dollar", "USD", True, box=False),
-            select_row(None, "Pakistani Rupee", "PKR", False, box=False),
-            select_row(None, "Pound Sterling", "GBP", False, box=False),
-            select_row(None, "Euro", "EUR", False, box=False),
-            select_row(None, "UAE Dirham", "AED", False, box=False),
-            select_row(None, "Saudi Riyal", "SAR", False, box=False),
-        ])
-        + '<p class="t-cap c-sec" style="margin:12px 20px">Changing the currency clears the payer and '
-        'split amounts, because minor units differ between currencies.</p>',
-        '<div class="btn">Use US Dollar</div>', trail="")
 
     def cat(name, on=False):
         return select_row(None, name, "", on, box=False)
@@ -430,18 +414,15 @@ def build():
         'category list. Categories cannot be added or renamed.</p>',
         '<div class="btn">Done</div>', trail="")
 
-    write("20-expense-pickers.html", "20", "Ledger, currency and category pickers",
-          "E02 · E07 · E16",
-          "Three selection sheets that share one shape: search, a shortlist of likely answers, then the "
-          "full list. Each one states the consequence of the choice before it is made — a direct expense "
-          "is private, a currency change clears amounts, income categories are not offered.",
+    write("20-expense-pickers.html", "20", "Ledger and category pickers",
+          "E02 · E07",
+          "Two selection sheets share one shape: search, a shortlist of likely answers, then the "
+          "full list. Each states the consequence of the choice before it is made — a direct expense "
+          "is private, and income categories are not offered.",
           [
               frame("Choose ledger", " Groups and friends in one searchable sheet, with the direct-"
                                      "expense privacy rule spelled out rather than assumed.",
                     phone(over(ctx_pick))),
-              frame("Currency", " Default and recent first, because the long list is almost never the "
-                                "answer. The destructive side effect is stated in the sheet.",
-                    phone(over(cur_pick))),
               frame("Category", " Expense-compatible categories only, and it says why the income ones "
                                 "are missing.", phone(over(cat_pick))),
           ])
@@ -531,7 +512,7 @@ def build():
                 f'<div class="t-cap c-sec">Winter Trip · Entertainment</div>'
                 f'<div class="t-title" style="margin-top:2px">Ski passes</div>'
                 f'<span class="mt big mono" style="margin-top:6px">'
-                f'<span class="iso">USD</span><span class="v">720.00</span></span>'
+                f'<span class="iso">$</span><span class="v">720.00</span></span>'
                 f'<div class="t-cap c-sec" style="margin-top:6px">Jul 28, 2026 · '
                 f'added by Alina Rehman</div></div>')
         if deleted:
@@ -540,25 +521,25 @@ def build():
                     f'<div class="t-title c-sec" style="margin-top:2px;'
                     f'text-decoration:line-through">Ski passes</div>'
                     f'<span class="mt big mono c-sec" style="margin-top:6px">'
-                    f'<span class="iso">USD</span><span class="v">720.00</span></span>'
+                    f'<span class="iso">$</span><span class="v">720.00</span></span>'
                     f'<div style="margin-top:8px"><span class="badge b-neg">Deleted</span></div></div>')
         payers = listcard([
-            alloc_row("JD", "John Doe", "Paid", "USD 720.00", tone=2, check=False),
+            alloc_row("JD", "John Doe", "Paid", "720.00", tone=2, check=False),
         ])
         owes = listcard([
-            alloc_row("AR", "Alina Rehman (you)", "Owes", "USD 144.00", tone=6, check=False),
-            alloc_row("JD", "John Doe", "Owes", "USD 144.00", tone=2, check=False),
-            alloc_row("SK", "Sam Kessler", "Owes", "USD 144.00", tone=1, check=False),
-            alloc_row("PN", "Priya Nair", "Owes", "USD 144.00", tone=3, check=False),
-            alloc_row("MK", "Maya Khan", "Owes", "USD 144.00", tone=4, check=False),
+            alloc_row("AR", "Alina Rehman (you)", "Owes", "144.00", tone=6, check=False),
+            alloc_row("JD", "John Doe", "Owes", "144.00", tone=2, check=False),
+            alloc_row("SK", "Sam Kessler", "Owes", "144.00", tone=1, check=False),
+            alloc_row("PN", "Priya Nair", "Owes", "144.00", tone=3, check=False),
+            alloc_row("MK", "Maya Khan", "Owes", "144.00", tone=4, check=False),
         ])
         eff = card('<div class="row"><span class="grow"><span class="t-body med">Your balance with '
                    'John Doe</span><span class="t-cap c-sec" style="display:block">Because of this '
                    'expense</span></span><span class="val">'
                    + ('<span class="t-cap c-sec" style="display:block">Reversed</span>'
-                      '<span class="t-body semi mono c-sec">USD 144.00</span>' if deleted else
+                      '<span class="t-body semi mono c-sec">$144.00</span>' if deleted else
                       '<span class="t-cap c-sec" style="display:block">You owe</span>'
-                      '<span class="t-body semi mono c-neg">USD 144.00</span>')
+                      '<span class="t-body semi mono c-neg">$144.00</span>')
                    + '</span></div>')
         audit = listcard([
             nav_row("Version", "3", chev=False),
@@ -609,12 +590,12 @@ def build():
                      '<div class="t-cap c-sec">Winter Trip · Entertainment</div>'
                      '<div class="t-title" style="margin-top:2px">Ski passes</div>'
                      '<span class="mt big mono" style="margin-top:6px">'
-                     '<span class="iso">USD</span><span class="v">720.00</span></span></div>'
+                     '<span class="iso">$</span><span class="v">720.00</span></span></div>'
                      + seclabel("Who owes", right="Equally · 5 people", first=True)
                      + listcard([
-                         alloc_row("AR", "Alina Rehman (you)", "Owes", "USD 144.00",
+                         alloc_row("AR", "Alina Rehman (you)", "Owes", "144.00",
                                    tone=6, check=False),
-                         alloc_row("JD", "John Doe", "Owes", "USD 144.00",
+                         alloc_row("JD", "John Doe", "Owes", "144.00",
                                    tone=2, check=False),
                      ])
                      + '</div>' + homebar())
@@ -645,21 +626,21 @@ def build():
             + ctx_marker("shared", "Winter Trip")
             + card(amount_editor("USD", "840.00", label="Amount", caret=False))
             + card(kv_row("Description", "Ski passes and lift hire")
-                   + nav_row("Currency", "USD") + nav_row("Date", "Jul 28, 2026")
+                   + nav_row("Date", "Jul 28, 2026")
                    + nav_row("Category", "Entertainment"))
             + seclabel("Who paid and who owes")
             + card(nav_row("Paid by", "John Doe") + nav_row("Split", "Equally · 5 people"))
             + recon("840.00", "840.00", "840.00", "USD",
-                    out=("good", "Balanced. Your share rises from 144.00 to 168.00."))
+                    out=("good", "Balanced. Your share rises from $144.00 to $168.00."))
             + seclabel("What changes", right="Version 3 → 4")
             + card('<div class="facts" style="padding:12px 16px">'
                    '<div class="f"><span class="k t-body">Amount</span>'
-                   '<span class="t-body mono">720.00 → 840.00</span></div>'
+                   '<span class="t-body mono">$720.00 → $840.00</span></div>'
                    '<div class="f"><span class="k t-body">Description</span>'
                    '<span class="t-body" style="text-align:right">Ski passes → Ski passes '
                    'and lift hire</span></div>'
                    '<div class="f"><span class="k t-body">Your share</span>'
-                   '<span class="t-body mono c-neg">144.00 → 168.00</span></div>'
+                   '<span class="t-body mono c-neg">$144.00 → $168.00</span></div>'
                    '<div class="f"><span class="k t-body">Everyone else</span>'
                    '<span class="t-body">4 shares change</span></div>'
                    '</div>')
@@ -677,9 +658,9 @@ def build():
                   'and cannot be restored.</p>'
                   '<div class="facts">'
                   '<div class="f"><span class="k t-cap">Expense</span>'
-                  '<span class="t-cap semi mono">USD 720.00</span></div>'
+                  '<span class="t-cap semi mono">$720.00</span></div>'
                   '<div class="f"><span class="k t-cap">Your balance with John Doe</span>'
-                  '<span class="t-cap semi mono">You owe 240.00 → 96.00</span></div>'
+                  '<span class="t-cap semi mono">You owe $240.00 → $96.00</span></div>'
                   '<div class="f"><span class="k t-cap">Other members affected</span>'
                   '<span class="t-cap semi">4 people</span></div>'
                   '<div class="f"><span class="k t-cap">Receipt</span>'
@@ -697,7 +678,7 @@ def build():
                 + seclabel("Current version, authoritative", right="Version 4", first=True)
                 + card('<div class="facts" style="padding:12px 16px">'
                        '<div class="f"><span class="k t-body">Amount</span>'
-                       '<span class="t-body mono">USD 900.00</span></div>'
+                       '<span class="t-body mono">$900.00</span></div>'
                        '<div class="f"><span class="k t-body">Description</span>'
                        '<span class="t-body">Ski passes and insurance</span></div>'
                        '<div class="f"><span class="k t-body">Saved</span>'
@@ -706,7 +687,7 @@ def build():
                 + seclabel("Your draft, kept on this device")
                 + card('<div class="facts" style="padding:12px 16px">'
                        '<div class="f"><span class="k t-body">Amount</span>'
-                       '<span class="t-body mono">USD 840.00</span></div>'
+                       '<span class="t-body mono">$840.00</span></div>'
                        '<div class="f"><span class="k t-body">Description</span>'
                        '<span class="t-body">Ski passes and lift hire</span></div>'
                        '</div>')

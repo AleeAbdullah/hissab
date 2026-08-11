@@ -52,7 +52,7 @@ export class AuthRepository {
         id: users.id,
         email: users.email,
         displayName: users.displayName,
-        defaultCurrency: users.defaultCurrency,
+        displayCurrency: users.displayCurrency,
         timezone: users.timezone,
         status: users.status,
         passwordHash: userIdentities.passwordHash,
@@ -76,7 +76,7 @@ export class AuthRepository {
       id: account.id,
       email: account.email,
       displayName: account.displayName,
-      defaultCurrency: account.defaultCurrency,
+      displayCurrency: account.displayCurrency,
       timezone: account.timezone,
       passwordHash: account.passwordHash,
       status: account.status,
@@ -89,7 +89,6 @@ export class AuthRepository {
       email: string;
       passwordHash: string;
       displayName: string;
-      defaultCurrency: string;
       timezone: string;
     },
   ): Promise<AuthUser> {
@@ -101,7 +100,6 @@ export class AuthRepository {
         id: userId,
         email: input.email,
         displayName: input.displayName,
-        defaultCurrency: input.defaultCurrency,
         timezone: input.timezone,
         status: 'ACTIVE',
         createdAt: now,
@@ -111,7 +109,7 @@ export class AuthRepository {
         id: users.id,
         email: users.email,
         displayName: users.displayName,
-        defaultCurrency: users.defaultCurrency,
+        displayCurrency: users.displayCurrency,
         timezone: users.timezone,
       });
 
@@ -145,7 +143,7 @@ export class AuthRepository {
         id: users.id,
         email: users.email,
         displayName: users.displayName,
-        defaultCurrency: users.defaultCurrency,
+        displayCurrency: users.displayCurrency,
         timezone: users.timezone,
       })
       .from(users)

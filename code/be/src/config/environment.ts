@@ -32,6 +32,10 @@ export interface EnvironmentVariables extends Record<string, unknown> {
   OUTBOX_LEASE_SECONDS: number;
   OUTBOX_MAX_ATTEMPTS: number;
   OUTBOX_ENABLED: boolean;
+  EXPO_PUSH_ENABLED: boolean;
+  EXPO_PUSH_ACCESS_TOKEN?: string;
+  EXPO_PUSH_SEND_URL: string;
+  EXPO_PUSH_RECEIPTS_URL: string;
   SWAGGER_ENABLED: boolean;
 }
 
@@ -275,6 +279,26 @@ export function validateEnvironment(
       'OUTBOX_ENABLED',
       config.OUTBOX_ENABLED,
       false,
+    ),
+    EXPO_PUSH_ENABLED: parseBoolean(
+      'EXPO_PUSH_ENABLED',
+      config.EXPO_PUSH_ENABLED,
+      false,
+    ),
+    EXPO_PUSH_ACCESS_TOKEN:
+      config.EXPO_PUSH_ACCESS_TOKEN === undefined ||
+      config.EXPO_PUSH_ACCESS_TOKEN === ''
+        ? undefined
+        : parseString('EXPO_PUSH_ACCESS_TOKEN', config.EXPO_PUSH_ACCESS_TOKEN),
+    EXPO_PUSH_SEND_URL: parseString(
+      'EXPO_PUSH_SEND_URL',
+      config.EXPO_PUSH_SEND_URL,
+      'https://exp.host/--/api/v2/push/send',
+    ),
+    EXPO_PUSH_RECEIPTS_URL: parseString(
+      'EXPO_PUSH_RECEIPTS_URL',
+      config.EXPO_PUSH_RECEIPTS_URL,
+      'https://exp.host/--/api/v2/push/getReceipts',
     ),
     SWAGGER_ENABLED: parseBoolean(
       'SWAGGER_ENABLED',

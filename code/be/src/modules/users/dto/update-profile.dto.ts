@@ -1,11 +1,18 @@
 import { Transform } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsIn, IsOptional, IsString, Length, MaxLength } from 'class-validator';
+import {
+  IsIn,
+  IsOptional,
+  IsString,
+  IsTimeZone,
+  Length,
+  MaxLength,
+} from 'class-validator';
 
 import {
-  SUPPORTED_CURRENCIES,
-  type SupportedCurrency,
-} from '../../../common/money';
+  DISPLAY_CURRENCIES,
+  type DisplayCurrency,
+} from '../../../common/display-currency';
 
 export class UpdateProfileDto {
   @IsOptional()
@@ -17,12 +24,13 @@ export class UpdateProfileDto {
   displayName?: string;
 
   @IsOptional()
-  @ApiPropertyOptional({ enum: SUPPORTED_CURRENCIES })
-  @IsIn(SUPPORTED_CURRENCIES)
-  defaultCurrency?: SupportedCurrency;
+  @ApiPropertyOptional({ enum: DISPLAY_CURRENCIES })
+  @IsIn(DISPLAY_CURRENCIES)
+  displayCurrency?: DisplayCurrency;
 
   @IsOptional()
   @IsString()
+  @IsTimeZone()
   @MaxLength(100)
   timezone?: string;
 

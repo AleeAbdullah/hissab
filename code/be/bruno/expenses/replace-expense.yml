@@ -32,4 +32,4 @@ http:
     type: bearer
     token: "{{accessToken}}"
 
-docs: Reverses and replaces an expense. Ledger and currency remain immutable.
+docs: Reverses and replaces an expense. Ledger remains immutable.

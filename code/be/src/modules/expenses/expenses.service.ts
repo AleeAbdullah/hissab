@@ -7,7 +7,6 @@ import {
 
 import type { DatabaseTransaction } from '../../database/database.service';
 import { activityEvents } from '../../database/schema';
-import { SUPPORTED_CURRENCIES } from '../../common/money';
 import { IdempotencyService } from '../idempotency';
 import { OutboxService } from '../outbox';
 import {
@@ -77,9 +76,6 @@ export class ExpensesService {
       },
       async (transaction) => {
         await this.requireWritableLedger(transaction, ledgerId, userId);
-        if (!SUPPORTED_CURRENCIES.includes(dto.currency)) {
-          throw new BadRequestException('Unsupported currency.');
-        }
         const prepared = this.prepareExpense(dto);
         await this.requireActiveAllocationMembers(
           transaction,
@@ -95,7 +91,6 @@ export class ExpensesService {
           createdByUserId: userId,
           description: prepared.description,
           totalMinor: prepared.totalMinor,
-          currency: dto.currency,
           categoryId: category.id,
           occurredAt: prepared.occurredAt,
           status: 'ACTIVE',
@@ -109,7 +104,7 @@ export class ExpensesService {
           eventType: 'CREATED',
           createdByUserId: userId,
           allocations: this.eventAllocations(prepared),
-          postings: this.postings(prepared, dto.currency),
+          postings: this.postings(prepared),
         });
         await this.recordChange(
           transaction,
@@ -118,7 +113,6 @@ export class ExpensesService {
           revision.rootExpenseId,
           'CREATED',
           revision.version,
-          dto.currency,
           prepared.totalMinor,
         );
         return this.toView(revision, category, prepared);
@@ -201,7 +195,6 @@ export class ExpensesService {
           createdByUserId: latest.createdByUserId,
           description: prepared.description,
           totalMinor: prepared.totalMinor,
-          currency: latest.currency,
           categoryId: category.id,
           occurredAt: prepared.occurredAt,
           status: 'ACTIVE',
@@ -215,7 +208,7 @@ export class ExpensesService {
           eventType: 'REPLACEMENT',
           createdByUserId: userId,
           allocations: this.eventAllocations(prepared),
-          postings: this.postings(prepared, latest.currency),
+          postings: this.postings(prepared),
         });
         await this.recordChange(
           transaction,
@@ -224,7 +217,6 @@ export class ExpensesService {
           rootExpenseId,
           'REPLACED',
           revision.version,
-          latest.currency,
           prepared.totalMinor,
         );
         return this.toView(revision, category, prepared);
@@ -277,7 +269,6 @@ export class ExpensesService {
           createdByUserId: latest.createdByUserId,
           description: latest.description,
           totalMinor: latest.totalMinor,
-          currency: latest.currency,
           categoryId: latest.categoryId,
           occurredAt: latest.occurredAt,
           status: 'DELETED',
@@ -292,7 +283,6 @@ export class ExpensesService {
           rootExpenseId,
           'DELETED',
           revision.version,
-          latest.currency,
           latest.totalMinor,
         );
         return this.toView(revision, category, {
@@ -443,10 +433,7 @@ export class ExpensesService {
     ];
   }
 
-  private postings(
-    prepared: PreparedExpense,
-    currency: string,
-  ): FinancialEventPosting[] {
+  private postings(prepared: PreparedExpense): FinancialEventPosting[] {
     const net = new Map<string, bigint>();
     for (const payer of prepared.payers) {
       net.set(payer.userId, (net.get(payer.userId) ?? 0n) + payer.amountMinor);
@@ -457,7 +444,7 @@ export class ExpensesService {
     return [...net]
       .filter(([, amountMinor]) => amountMinor !== 0n)
       .sort(([left], [right]) => left.localeCompare(right))
-      .map(([userId, amountMinor]) => ({ userId, amountMinor, currency }));
+      .map(([userId, amountMinor]) => ({ userId, amountMinor }));
   }
 
   private async requireWritableLedger(
@@ -581,7 +568,6 @@ export class ExpensesService {
       postings: effect.postings.map((posting) => ({
         userId: posting.userId,
         amountMinor: -posting.amountMinor,
-        currency: posting.currency,
       })),
     });
   }
@@ -604,7 +590,6 @@ export class ExpensesService {
       createdByUserId: revision.createdByUserId,
       description: revision.description,
       totalMinor: revision.totalMinor.toString(),
-      currency: revision.currency,
       category,
       occurredAt: revision.occurredAt,
       status: revision.status,
@@ -655,10 +640,9 @@ export class ExpensesService {
     expenseId: string,
     eventType: 'CREATED' | 'REPLACED' | 'DELETED',
     version: number,
-    currency: string,
     totalMinor: bigint,
   ): Promise<void> {
-    const payload = { version, currency, totalMinor: totalMinor.toString() };
+    const payload = { version, totalMinor: totalMinor.toString() };
     await transaction.insert(activityEvents).values({
       actorUserId,
       ledgerId,

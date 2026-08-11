@@ -18,7 +18,6 @@ http:
         "email": "{{email}}",
         "password": "{{password}}",
         "displayName": "{{displayName}}",
-        "defaultCurrency": "{{defaultCurrency}}",
         "timezone": "{{timezone}}",
         "deviceName": "{{deviceName}}"
       }

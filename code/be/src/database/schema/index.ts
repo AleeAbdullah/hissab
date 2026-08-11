@@ -23,7 +23,7 @@ const citext = customType<{ data: string }>({
   dataType: () => 'citext',
 });
 
-const currencyCheck = (column: AnyPgColumn) =>
+const displayCurrencyCheck = (column: AnyPgColumn) =>
   sql`${column}::text IN ('PKR', 'USD', 'GBP', 'EUR', 'AED', 'SAR')`;
 
 export const userStatusEnum = pgEnum('user_status', [
@@ -91,6 +91,18 @@ export const idempotencyStatusEnum = pgEnum('idempotency_status', [
   'COMPLETED',
 ]);
 export const devicePlatformEnum = pgEnum('device_platform', ['IOS', 'ANDROID']);
+export const notificationKindEnum = pgEnum('notification_kind', [
+  'EXPENSE',
+  'SETTLEMENT',
+  'SOCIAL',
+  'REMINDER',
+]);
+export const notificationPushStatusEnum = pgEnum('notification_push_status', [
+  'PENDING',
+  'TICKETED',
+  'DELIVERED',
+  'FAILED',
+]);
 
 export const users = pgTable(
   'users',
@@ -98,7 +110,9 @@ export const users = pgTable(
     id: uuid('id').primaryKey().defaultRandom(),
     email: citext('email'),
     displayName: text('display_name').notNull(),
-    defaultCurrency: char('default_currency', { length: 3 }).notNull(),
+    displayCurrency: char('display_currency', { length: 3 })
+      .notNull()
+      .default('PKR'),
     timezone: text('timezone').notNull().default('UTC'),
     status: userStatusEnum('status').notNull().default('ACTIVE'),
     createdAt: timestamp('created_at', { withTimezone: true })
@@ -111,10 +125,19 @@ export const users = pgTable(
   },
   (table) => [
     uniqueIndex('users_email_uq').on(table.email),
-    check('users_default_currency_check', currencyCheck(table.defaultCurrency)),
+    check(
+      'users_display_currency_check',
+      displayCurrencyCheck(table.displayCurrency),
+    ),
     check(
       'users_email_lifecycle_check',
-      sql`${table.status} = 'ANONYMIZED' OR ${table.email} IS NOT NULL`,
+      sql`(${table.status} = 'ANONYMIZED'
+          AND ${table.email} IS NULL
+          AND ${table.displayName} = 'Deleted user'
+          AND ${table.deletedAt} IS NOT NULL)
+        OR (${table.status} <> 'ANONYMIZED'
+          AND ${table.email} IS NOT NULL
+          AND ${table.deletedAt} IS NULL)`,
     ),
   ],
 );
@@ -250,6 +273,9 @@ export const notificationPreferences = pgTable('notification_preferences', {
     .notNull()
     .default(true),
   paymentActivityEnabled: boolean('payment_activity_enabled')
+    .notNull()
+    .default(true),
+  socialActivityEnabled: boolean('social_activity_enabled')
     .notNull()
     .default(true),
   remindersEnabled: boolean('reminders_enabled').notNull().default(true),
@@ -533,7 +559,6 @@ export const expenses = pgTable(
       .references(() => users.id, { onDelete: 'restrict' }),
     description: text('description').notNull(),
     totalMinor: bigint('total_minor', { mode: 'bigint' }).notNull(),
-    currency: char('currency', { length: 3 }).notNull(),
     categoryId: uuid('category_id')
       .notNull()
       .references(() => categories.id, { onDelete: 'restrict' }),
@@ -549,7 +574,6 @@ export const expenses = pgTable(
   },
   (table) => [
     check('expenses_positive_total_check', sql`${table.totalMinor} > 0`),
-    check('expenses_currency_check', currencyCheck(table.currency)),
     check('expenses_version_check', sql`${table.version} >= 1`),
     uniqueIndex('expenses_root_version_uq').on(
       table.rootExpenseId,
@@ -637,7 +661,6 @@ export const payments = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: 'restrict' }),
     amountMinor: bigint('amount_minor', { mode: 'bigint' }).notNull(),
-    currency: char('currency', { length: 3 }).notNull(),
     occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull(),
     status: paymentStatusEnum('status').notNull().default('ACTIVE'),
     version: integer('version').notNull().default(1),
@@ -654,7 +677,6 @@ export const payments = pgTable(
       sql`${table.fromUserId} <> ${table.toUserId}`,
     ),
     check('payments_positive_amount_check', sql`${table.amountMinor} > 0`),
-    check('payments_currency_check', currencyCheck(table.currency)),
     check('payments_version_check', sql`${table.version} >= 1`),
     uniqueIndex('payments_root_version_uq').on(
       table.rootPaymentId,
@@ -680,12 +702,21 @@ export const personalTransactions = pgTable(
   'personal_transactions',
   {
     id: uuid('id').primaryKey().defaultRandom(),
+    rootPersonalTransactionId: uuid('root_personal_transaction_id')
+      .notNull()
+      .references((): AnyPgColumn => personalTransactions.id, {
+        onDelete: 'restrict',
+      }),
+    replacesPersonalTransactionId: uuid(
+      'replaces_personal_transaction_id',
+    ).references((): AnyPgColumn => personalTransactions.id, {
+      onDelete: 'restrict',
+    }),
     personalLedgerId: uuid('personal_ledger_id')
       .notNull()
       .references(() => personalLedgers.id, { onDelete: 'restrict' }),
     type: personalTransactionTypeEnum('type').notNull(),
     amountMinor: bigint('amount_minor', { mode: 'bigint' }).notNull(),
-    currency: char('currency', { length: 3 }).notNull(),
     categoryId: uuid('category_id')
       .notNull()
       .references(() => categories.id, { onDelete: 'restrict' }),
@@ -694,6 +725,7 @@ export const personalTransactions = pgTable(
     occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull(),
     notes: text('notes'),
     status: personalTransactionStatusEnum('status').notNull().default('ACTIVE'),
+    version: integer('version').notNull().default(1),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -707,12 +739,33 @@ export const personalTransactions = pgTable(
       sql`${table.amountMinor} > 0`,
     ),
     check(
-      'personal_transactions_currency_check',
-      currencyCheck(table.currency),
+      'personal_transactions_description_length_check',
+      sql`char_length(btrim(${table.description})) BETWEEN 1 AND 200`,
     ),
+    check(
+      'personal_transactions_merchant_length_check',
+      sql`${table.merchantOrSource} IS NULL OR char_length(btrim(${table.merchantOrSource})) BETWEEN 1 AND 200`,
+    ),
+    check(
+      'personal_transactions_notes_length_check',
+      sql`${table.notes} IS NULL OR char_length(btrim(${table.notes})) BETWEEN 1 AND 2000`,
+    ),
+    check('personal_transactions_version_check', sql`${table.version} >= 1`),
+    uniqueIndex('personal_transactions_root_version_uq').on(
+      table.rootPersonalTransactionId,
+      table.version,
+    ),
+    uniqueIndex('personal_transactions_replaces_uq')
+      .on(table.replacesPersonalTransactionId)
+      .where(sql`${table.replacesPersonalTransactionId} IS NOT NULL`),
     index('personal_transactions_ledger_active_occurred_idx')
-      .on(table.personalLedgerId, table.occurredAt.desc(), table.id)
+      .on(table.personalLedgerId, table.occurredAt.desc(), table.id.desc())
       .where(sql`${table.status} = 'ACTIVE'`),
+    index('personal_transactions_ledger_root_version_idx').on(
+      table.personalLedgerId,
+      table.rootPersonalTransactionId,
+      table.version.desc(),
+    ),
   ],
 );
 
@@ -818,7 +871,6 @@ export const ledgerPostings = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: 'restrict' }),
     amountMinor: bigint('amount_minor', { mode: 'bigint' }).notNull(),
-    currency: char('currency', { length: 3 }).notNull(),
   },
   (table) => [
     uniqueIndex('ledger_postings_event_user_uq').on(
@@ -829,7 +881,6 @@ export const ledgerPostings = pgTable(
       'ledger_postings_nonzero_amount_check',
       sql`${table.amountMinor} <> 0`,
     ),
-    check('ledger_postings_currency_check', currencyCheck(table.currency)),
     index('ledger_postings_user_idx').on(table.userId),
   ],
 );
@@ -1002,6 +1053,145 @@ export const activityEvents = pgTable(
     ),
     index('activity_events_actor_created_idx').on(
       table.actorUserId,
+      table.createdAt.desc(),
+    ),
+    index('activity_events_created_idx').on(
+      table.createdAt.desc(),
+      table.id.desc(),
+    ),
+  ],
+);
+
+export const notifications = pgTable(
+  'notifications',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    sourceOutboxEventId: uuid('source_outbox_event_id')
+      .notNull()
+      .references(() => outboxEvents.id, { onDelete: 'restrict' }),
+    recipientUserId: uuid('recipient_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    actorUserId: uuid('actor_user_id').references(() => users.id, {
+      onDelete: 'restrict',
+    }),
+    ledgerId: uuid('ledger_id').references(() => ledgers.id, {
+      onDelete: 'restrict',
+    }),
+    kind: notificationKindEnum('kind').notNull(),
+    eventType: text('event_type').notNull(),
+    aggregateType: text('aggregate_type').notNull(),
+    aggregateId: uuid('aggregate_id').notNull(),
+    title: text('title').notNull(),
+    body: text('body').notNull(),
+    payload: jsonb('payload')
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .default({}),
+    readAt: timestamp('read_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('notifications_source_recipient_uq').on(
+      table.sourceOutboxEventId,
+      table.recipientUserId,
+    ),
+    index('notifications_recipient_created_idx').on(
+      table.recipientUserId,
+      table.createdAt.desc(),
+      table.id.desc(),
+    ),
+    index('notifications_recipient_unread_idx')
+      .on(table.recipientUserId, table.createdAt.desc(), table.id.desc())
+      .where(sql`${table.readAt} IS NULL`),
+    check(
+      'notifications_distinct_actor_recipient_check',
+      sql`${table.actorUserId} IS NULL OR ${table.actorUserId} <> ${table.recipientUserId}`,
+    ),
+  ],
+);
+
+export const notificationPushDeliveries = pgTable(
+  'notification_push_deliveries',
+  {
+    notificationId: uuid('notification_id')
+      .notNull()
+      .references(() => notifications.id, { onDelete: 'restrict' }),
+    deviceTokenId: uuid('device_token_id')
+      .notNull()
+      .references(() => deviceTokens.id, { onDelete: 'restrict' }),
+    status: notificationPushStatusEnum('status').notNull().default('PENDING'),
+    providerTicketId: text('provider_ticket_id'),
+    attemptCount: integer('attempt_count').notNull().default(0),
+    nextAttemptAt: timestamp('next_attempt_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    lastAttemptAt: timestamp('last_attempt_at', { withTimezone: true }),
+    receiptCheckedAt: timestamp('receipt_checked_at', { withTimezone: true }),
+    lastError: text('last_error'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    primaryKey({
+      name: 'notification_push_deliveries_pk',
+      columns: [table.notificationId, table.deviceTokenId],
+    }),
+    uniqueIndex('notification_push_deliveries_ticket_uq')
+      .on(table.providerTicketId)
+      .where(sql`${table.providerTicketId} IS NOT NULL`),
+    index('notification_push_deliveries_retry_idx')
+      .on(table.nextAttemptAt, table.notificationId, table.deviceTokenId)
+      .where(sql`${table.status} IN ('PENDING', 'FAILED')`),
+    index('notification_push_deliveries_receipt_idx')
+      .on(table.status, table.receiptCheckedAt, table.notificationId)
+      .where(sql`${table.status} = 'TICKETED'`),
+    check(
+      'notification_push_deliveries_attempts_check',
+      sql`${table.attemptCount} >= 0`,
+    ),
+    check(
+      'notification_push_deliveries_ticket_shape_check',
+      sql`(${table.status} IN ('TICKETED', 'DELIVERED') AND ${table.providerTicketId} IS NOT NULL)
+        OR ${table.status} IN ('PENDING', 'FAILED')`,
+    ),
+  ],
+);
+
+export const reminderRequests = pgTable(
+  'reminder_requests',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    ledgerId: uuid('ledger_id')
+      .notNull()
+      .references(() => ledgers.id, { onDelete: 'restrict' }),
+    requesterUserId: uuid('requester_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    recipientUserId: uuid('recipient_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    owedMinor: bigint('owed_minor', { mode: 'bigint' }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    check(
+      'reminder_requests_distinct_users_check',
+      sql`${table.requesterUserId} <> ${table.recipientUserId}`,
+    ),
+    check('reminder_requests_positive_owed_check', sql`${table.owedMinor} > 0`),
+    index('reminder_requests_cooldown_idx').on(
+      table.ledgerId,
+      table.requesterUserId,
+      table.recipientUserId,
       table.createdAt.desc(),
     ),
   ],

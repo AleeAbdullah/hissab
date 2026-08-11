@@ -25,4 +25,4 @@ http:
     type: bearer
     token: "{{accessToken}}"
 
-docs: Reverses and replaces a settlement. Ledger and currency remain immutable.
+docs: Reverses and replaces a settlement. Ledger remains immutable.

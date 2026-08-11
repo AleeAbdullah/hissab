@@ -1,0 +1,7 @@
+info:
+  name: Reminders
+  type: folder
+  seq: 10
+
+auth:
+  type: inherit

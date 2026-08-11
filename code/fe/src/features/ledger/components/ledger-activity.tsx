@@ -3,12 +3,13 @@ import type { ReactNode } from 'react';
 import { View } from 'react-native';
 
 import { Button, Card, ErrorMessage, Notice, Row, SectionLabel } from '@/components/ui';
+import type { DisplayCurrency } from '@/api/contracts';
 import { formatMinorAmount } from '@/features/balances/format';
 import { listExpenses } from '@/features/expenses/api';
 import type { LedgerDraftMember } from '@/features/ledger/draft';
 import { listSettlements } from '@/features/settlements/api';
 
-export function LedgerActivity({ ledgerId, members }: { ledgerId: string; members: LedgerDraftMember[] }) {
+export function LedgerActivity({ displayCurrency, ledgerId, members }: { displayCurrency: DisplayCurrency; ledgerId: string; members: LedgerDraftMember[] }) {
   const expenses = useInfiniteQuery({
     queryKey: ['ledgers', ledgerId, 'expenses'],
     queryFn: ({ pageParam }) => listExpenses(ledgerId, pageParam),
@@ -31,9 +32,9 @@ export function LedgerActivity({ ledgerId, members }: { ledgerId: string; member
 
   return (
     <View style={{ gap: 16 }}>
-      <ActivitySection title="EXPENSES" items={expenseItems} render={(expense) => <Row key={expense.id} title={expense.description} subtitle={`${expense.category.name} · ${expense.occurredAt.slice(0, 10)}${expense.status === 'DELETED' ? ' · Deleted' : ''}`} detail={formatMinorAmount(expense.totalMinor, expense.currency)} href={{ pathname: '/expense/[expenseId]', params: { expenseId: expense.id } }} />} />
+      <ActivitySection title="EXPENSES" items={expenseItems} render={(expense) => <Row key={expense.id} title={expense.description} subtitle={`${expense.category.name} · ${expense.occurredAt.slice(0, 10)}${expense.status === 'DELETED' ? ' · Deleted' : ''}`} detail={formatMinorAmount(expense.totalMinor, displayCurrency)} href={{ pathname: '/expense/[expenseId]', params: { expenseId: expense.id } }} />} />
       {expenses.hasNextPage ? <Button title="Load more expenses" secondary loading={expenses.isFetchingNextPage} onPress={() => expenses.fetchNextPage()} /> : null}
-      <ActivitySection title="PAYMENTS" items={settlementItems} render={(settlement) => <Row key={settlement.id} title={`${names.get(settlement.fromUserId) ?? 'Member'} paid ${names.get(settlement.toUserId) ?? 'member'}`} subtitle={`${settlement.occurredAt.slice(0, 10)}${settlement.status === 'DELETED' ? ' · Deleted' : ''}`} detail={formatMinorAmount(settlement.amountMinor, settlement.currency)} href={{ pathname: '/payment/[paymentId]', params: { paymentId: settlement.id } }} />} />
+      <ActivitySection title="PAYMENTS" items={settlementItems} render={(settlement) => <Row key={settlement.id} title={`${names.get(settlement.fromUserId) ?? 'Member'} paid ${names.get(settlement.toUserId) ?? 'member'}`} subtitle={`${settlement.occurredAt.slice(0, 10)}${settlement.status === 'DELETED' ? ' · Deleted' : ''}`} detail={formatMinorAmount(settlement.amountMinor, displayCurrency)} href={{ pathname: '/payment/[paymentId]', params: { paymentId: settlement.id } }} />} />
       {settlements.hasNextPage ? <Button title="Load more payments" secondary loading={settlements.isFetchingNextPage} onPress={() => settlements.fetchNextPage()} /> : null}
     </View>
   );

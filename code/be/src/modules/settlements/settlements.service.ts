@@ -7,7 +7,6 @@ import {
 
 import type { DatabaseTransaction } from '../../database/database.service';
 import { activityEvents } from '../../database/schema';
-import { SUPPORTED_CURRENCIES } from '../../common/money';
 import { IdempotencyService } from '../idempotency';
 import { OutboxService } from '../outbox';
 import type {
@@ -59,16 +58,12 @@ export class SettlementsService {
       },
       async (transaction) => {
         await this.requireWritableLedger(transaction, ledgerId, userId);
-        if (!SUPPORTED_CURRENCIES.includes(dto.currency)) {
-          throw new BadRequestException('Unsupported currency.');
-        }
         const prepared = this.prepare(dto);
         await this.requireActiveParties(transaction, ledgerId, prepared);
         const revision = await this.repository.insertRevision(transaction, {
           ledgerId,
           createdByUserId: userId,
           ...prepared,
-          currency: dto.currency,
           status: 'ACTIVE',
           version: 1,
         });
@@ -77,7 +72,7 @@ export class SettlementsService {
           paymentId: revision.id,
           eventType: 'CREATED',
           createdByUserId: userId,
-          postings: this.postings(prepared, dto.currency),
+          postings: this.postings(prepared),
         });
         await this.recordChange(
           transaction,
@@ -86,7 +81,6 @@ export class SettlementsService {
           revision.rootPaymentId,
           'CREATED',
           revision.version,
-          dto.currency,
           prepared.amountMinor,
         );
         return this.toView(revision);
@@ -166,7 +160,6 @@ export class SettlementsService {
           ledgerId: latest.ledgerId,
           createdByUserId: latest.createdByUserId,
           ...prepared,
-          currency: latest.currency,
           status: 'ACTIVE',
           version: latest.version + 1,
         });
@@ -175,7 +168,7 @@ export class SettlementsService {
           paymentId: revision.id,
           eventType: 'REPLACEMENT',
           createdByUserId: userId,
-          postings: this.postings(prepared, latest.currency),
+          postings: this.postings(prepared),
         });
         await this.recordChange(
           transaction,
@@ -184,7 +177,6 @@ export class SettlementsService {
           rootPaymentId,
           'REPLACED',
           revision.version,
-          latest.currency,
           prepared.amountMinor,
         );
         return this.toView(revision);
@@ -228,7 +220,6 @@ export class SettlementsService {
           ledgerId: latest.ledgerId,
           createdByUserId: latest.createdByUserId,
           ...prepared,
-          currency: latest.currency,
           status: 'DELETED',
           version: latest.version + 1,
         });
@@ -239,7 +230,6 @@ export class SettlementsService {
           rootPaymentId,
           'DELETED',
           revision.version,
-          latest.currency,
           latest.amountMinor,
         );
         return this.toView(revision);
@@ -273,18 +263,15 @@ export class SettlementsService {
 
   private postings(
     settlement: PreparedSettlement,
-    currency: string,
   ): [SettlementPosting, SettlementPosting] {
     return [
       {
         userId: settlement.fromUserId,
         amountMinor: settlement.amountMinor,
-        currency,
       },
       {
         userId: settlement.toUserId,
         amountMinor: -settlement.amountMinor,
-        currency,
       },
     ];
   }
@@ -381,7 +368,6 @@ export class SettlementsService {
       postings: effect.postings.map((posting) => ({
         userId: posting.userId,
         amountMinor: -posting.amountMinor,
-        currency: posting.currency,
       })),
     });
   }
@@ -394,7 +380,6 @@ export class SettlementsService {
       fromUserId: revision.fromUserId,
       toUserId: revision.toUserId,
       amountMinor: revision.amountMinor.toString(),
-      currency: revision.currency,
       occurredAt: revision.occurredAt,
       status: revision.status,
       version: revision.version,
@@ -439,10 +424,9 @@ export class SettlementsService {
     settlementId: string,
     eventType: 'CREATED' | 'REPLACED' | 'DELETED',
     version: number,
-    currency: string,
     amountMinor: bigint,
   ): Promise<void> {
-    const payload = { version, currency, amountMinor: amountMinor.toString() };
+    const payload = { version, amountMinor: amountMinor.toString() };
     await transaction.insert(activityEvents).values({
       actorUserId,
       ledgerId,

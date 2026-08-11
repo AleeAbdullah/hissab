@@ -6,6 +6,7 @@ import { Alert } from 'react-native';
 import { queryClient } from '@/api/query-client';
 import { Button, ErrorMessage, Loading, Notice, Screen } from '@/components/ui';
 import { archiveGroup, groupQuery, groupsQuery, leaveGroup } from '@/features/groups/api';
+import { homeQuery } from '@/features/home/api';
 
 export default function GroupSettingsScreen() {
   const { groupId } = useLocalSearchParams<{ groupId: string }>();
@@ -13,14 +14,20 @@ export default function GroupSettingsScreen() {
   const leave = useMutation({
     mutationFn: () => leaveGroup(groupId),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: groupsQuery.queryKey });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: groupsQuery.queryKey }),
+        queryClient.invalidateQueries({ queryKey: homeQuery.queryKey }),
+      ]);
       router.replace('/groups');
     },
   });
   const archive = useMutation({
     mutationFn: () => archiveGroup(groupId),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: groupsQuery.queryKey });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: groupsQuery.queryKey }),
+        queryClient.invalidateQueries({ queryKey: homeQuery.queryKey }),
+      ]);
       router.replace('/groups');
     },
   });

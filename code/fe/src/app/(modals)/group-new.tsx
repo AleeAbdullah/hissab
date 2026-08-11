@@ -5,13 +5,17 @@ import { useState } from 'react';
 import { queryClient } from '@/api/query-client';
 import { Button, ErrorMessage, Field, Screen } from '@/components/ui';
 import { createGroup, groupsQuery } from '@/features/groups/api';
+import { homeQuery } from '@/features/home/api';
 
 export default function NewGroupScreen() {
   const [name, setName] = useState('');
   const create = useMutation({
     mutationFn: createGroup,
     onSuccess: async (group) => {
-      await queryClient.invalidateQueries({ queryKey: groupsQuery.queryKey });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: groupsQuery.queryKey }),
+        queryClient.invalidateQueries({ queryKey: homeQuery.queryKey }),
+      ]);
       router.replace({ pathname: '/groups/[groupId]', params: { groupId: group.id } });
     },
   });

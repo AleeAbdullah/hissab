@@ -6,6 +6,7 @@ import { Pressable, Text, TextInput, View } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
 import { Button, Card, ErrorMessage, Loading, Row, Screen, SectionLabel } from '@/components/ui';
+import { profileQuery } from '@/features/account/api';
 import { userBalancesQuery } from '@/features/balances/api';
 import { ledgerBalanceDescriptions } from '@/features/balances/format';
 import {
@@ -15,6 +16,7 @@ import {
   incomingGroupInvitationsQuery,
 } from '@/features/groups/api';
 import { GroupInvitationCard } from '@/features/groups/components/group-invitation-card';
+import { homeQuery } from '@/features/home/api';
 import { useAppTheme } from '@/theme/theme';
 
 export default function GroupsScreen() {
@@ -23,6 +25,7 @@ export default function GroupsScreen() {
   const groups = useQuery(groupsQuery);
   const invitations = useQuery(incomingGroupInvitationsQuery);
   const balances = useQuery(userBalancesQuery);
+  const profile = useQuery(profileQuery);
   const resolveInvitation = useMutation({
     mutationFn: ({ groupId, response }: { groupId: string; response: 'accept' | 'decline' }) =>
       response === 'accept' ? acceptGroupInvitation(groupId) : declineGroupInvitation(groupId),
@@ -30,6 +33,7 @@ export default function GroupsScreen() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: groupsQuery.queryKey }),
         queryClient.invalidateQueries({ queryKey: incomingGroupInvitationsQuery.queryKey }),
+        queryClient.invalidateQueries({ queryKey: homeQuery.queryKey }),
       ]);
     },
   });
@@ -53,7 +57,7 @@ export default function GroupsScreen() {
       />
       {groups.isLoading && invitations.isLoading ? <Loading /> : (
         <Screen>
-          {groups.error || invitations.error || balances.error || resolveInvitation.error ? <ErrorMessage error={groups.error ?? invitations.error ?? balances.error ?? resolveInvitation.error} /> : null}
+          {groups.error || invitations.error || balances.error || profile.error || resolveInvitation.error ? <ErrorMessage error={groups.error ?? invitations.error ?? balances.error ?? profile.error ?? resolveInvitation.error} /> : null}
           {groups.data?.length ? (
             <TextInput
               accessibilityLabel="Search groups"
@@ -85,7 +89,7 @@ export default function GroupsScreen() {
                 <Row
                   key={group.id}
                   title={group.name}
-                  subtitle={`${group.memberCount} ${group.memberCount === 1 ? 'member' : 'members'} · ${balances.isLoading ? 'Loading balance…' : balances.error ? 'Balance unavailable' : ledgerBalanceDescriptions(balances.data, group.id).join(' · ') || 'No recorded balance'}`}
+                  subtitle={`${group.memberCount} ${group.memberCount === 1 ? 'member' : 'members'} · ${balances.isLoading || profile.isLoading ? 'Loading balance…' : balances.error || profile.error || !profile.data ? 'Balance unavailable' : ledgerBalanceDescriptions(balances.data, group.id, profile.data.displayCurrency).join(' · ') || 'No recorded balance'}`}
                   detail={group.status === 'ARCHIVED' ? 'Archived' : group.membershipStatus === 'LEFT' ? 'Left' : undefined}
                   href={{ pathname: '/groups/[groupId]', params: { groupId: group.id } }}
                 />

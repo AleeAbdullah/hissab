@@ -15,7 +15,7 @@ variables:
   - name: displayName
     value: Ali
     description: ""
-  - name: defaultCurrency
+  - name: displayCurrency
     value: PKR
     description: ""
   - name: timezone
@@ -25,7 +25,7 @@ variables:
     value: mine
     description: ""
   - name: accessToken
-    value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwNjQ4OTMyOS1jMjg4LTRhZDctOTUzNS0zZTdjYzEyMmU2OGMiLCJzaWQiOiIwODhiNjBiMS01NGE0LTQ1ZjktYjU4MS00YjUyOWU5YzYxYjYiLCJqdGkiOiI4YjVjOWYyOC1mMTYyLTQ2NzAtOTU0NS1mOGY4NWUwN2FhM2EiLCJ0eXAiOiJhY2Nlc3MiLCJpYXQiOjE3ODU5Njc0NTAsImV4cCI6MTc4NTk2ODM1MCwiYXVkIjoiaGlzc2FiLW1vYmlsZSIsImlzcyI6Imhpc3NhYi1hcGkifQ.COLThzYF7X4nO5qFSn8SRMspl4-VWrGNfoLJKHHEj-8
+    value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwNjQ4OTMyOS1jMjg4LTRhZDctOTUzNS0zZTdjYzEyMmU2OGMiLCJzaWQiOiJlMjQ2ZTIyOC0wMGRiLTRjOWQtOGYyYS0wNTZjNGQzNzNlNDciLCJqdGkiOiI4YWJjMzFhYy0wZmJjLTRkNTQtOGEwZi00ZTA5YmYwMjEyZTEiLCJ0eXAiOiJhY2Nlc3MiLCJpYXQiOjE3ODYwMDA0NjEsImV4cCI6MTc4NjAwMTM2MSwiYXVkIjoiaGlzc2FiLW1vYmlsZSIsImlzcyI6Imhpc3NhYi1hcGkifQ.KR9286oaThTEhjMWyE9ozrG9MNMJE0ivd3opGNL8pSM
     description: ""
   - name: refreshToken
     value: 09wLHRzPLAZ-xc799FJCvHx_N7zL5JRJZj6jpqlDBh0

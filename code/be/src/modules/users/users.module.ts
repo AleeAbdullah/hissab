@@ -10,5 +10,6 @@ import { UsersService } from './users.service';
   imports: [IdempotencyModule, OutboxModule],
   controllers: [UsersController],
   providers: [UsersRepository, UsersService],
+  exports: [UsersService],
 })
 export class UsersModule {}

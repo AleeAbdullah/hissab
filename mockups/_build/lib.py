@@ -46,9 +46,14 @@ IC = {
 }
 
 
-def money(iso, val, cls="", size=""):
-    """MoneyText (§4.4). Currency code and value are one unbreakable unit."""
-    return (f'<span class="mt mono {size} {cls}"><span class="iso">{iso}</span>'
+def display_symbol(display):
+    """Resolve the viewer's Account preference without changing the value."""
+    return {"PKR": "Rs", "USD": "$", "GBP": "£", "EUR": "€", "AED": "د.إ", "SAR": "﷼"}.get(display, display)
+
+
+def money(display, val, cls="", size=""):
+    """MoneyText (§4.4). The viewer's Account preference chooses the symbol."""
+    return (f'<span class="mt mono {size} {cls}"><span class="iso">{display_symbol(display)}</span>'
             f'<span class="v">{val}</span></span>')
 
 

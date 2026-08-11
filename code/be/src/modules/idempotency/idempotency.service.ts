@@ -1,10 +1,16 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { and, eq, sql } from 'drizzle-orm';
 
 import {
   DatabaseService,
   type DatabaseTransaction,
 } from '../../database/database.service';
+import { users } from '../../database/schema';
 import { IdempotencyCrypto } from './idempotency.crypto';
 import { IdempotencyRepository } from './idempotency.repository';
 import type { IdempotencyExecution } from './idempotency.types';
@@ -41,6 +47,27 @@ export class IdempotencyService {
     );
 
     return this.database.transaction(async (transaction) => {
+      // ponytail: one global shared/exclusive lock makes deletion atomic against
+      // every mutation; partition it only if deletion throughput becomes real.
+      await transaction.execute(
+        execution.routeScope === 'account:delete'
+          ? sql`select pg_advisory_xact_lock(hashtextextended('hissab:account-deletion', 0))`
+          : sql`select pg_advisory_xact_lock_shared(hashtextextended('hissab:account-deletion', 0))`,
+      );
+      if (execution.actor.kind === 'user') {
+        const userId = execution.actor.userId;
+        if (!userId) {
+          throw new UnauthorizedException('Authentication required.');
+        }
+        const [activeUser] = await transaction
+          .select({ id: users.id })
+          .from(users)
+          .where(and(eq(users.id, userId), eq(users.status, 'ACTIVE')))
+          .limit(1);
+        if (!activeUser) {
+          throw new UnauthorizedException('Authentication required.');
+        }
+      }
       const claim = await this.repository.claim(transaction, {
         actorFingerprint,
         expiresAt: new Date(Date.now() + this.retentionMilliseconds),
@@ -66,12 +93,16 @@ export class IdempotencyService {
       }
 
       const response = await operation(transaction);
-      await this.repository.complete(
-        transaction,
-        claim.recordId,
-        execution.responseStatus,
-        this.crypto.encrypt(response),
-      );
+      if (execution.routeScope === 'account:delete') {
+        await this.repository.discard(transaction, claim.recordId);
+      } else {
+        await this.repository.complete(
+          transaction,
+          claim.recordId,
+          execution.responseStatus,
+          this.crypto.encrypt(response),
+        );
+      }
       return response;
     });
   }

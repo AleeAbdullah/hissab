@@ -7,6 +7,7 @@ import { queryClient } from '@/api/query-client';
 import { Avatar, Button, Card, ErrorMessage, Notice, Screen } from '@/components/ui';
 import { ledgerBalancesQuery, userBalancesQuery } from '@/features/balances/api';
 import { block, blocksQuery, connectionsQuery } from '@/features/connections/api';
+import { homeQuery } from '@/features/home/api';
 import { useAppTheme } from '@/theme/theme';
 
 export default function FriendSettingsScreen() {
@@ -17,14 +18,17 @@ export default function FriendSettingsScreen() {
   const blockFriend = useMutation({
     mutationFn: () => block(friendId),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: connectionsQuery.queryKey });
-      await queryClient.invalidateQueries({ queryKey: blocksQuery.queryKey });
-      await queryClient.invalidateQueries({ queryKey: userBalancesQuery.queryKey });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: connectionsQuery.queryKey }),
+        queryClient.invalidateQueries({ queryKey: blocksQuery.queryKey }),
+        queryClient.invalidateQueries({ queryKey: userBalancesQuery.queryKey }),
+        queryClient.invalidateQueries({ queryKey: homeQuery.queryKey }),
+      ]);
       router.replace('/friends');
     },
   });
   const { colors } = useAppTheme();
-  const settled = (balances.data?.currencies ?? []).every((currency) => currency.members.every((member) => BigInt(member.netMinor) === 0n));
+  const settled = (balances.data?.members ?? []).every((member) => BigInt(member.netMinor) === 0n);
   const canBlock = Boolean(friend && balances.data && settled);
 
   return (
@@ -45,7 +49,7 @@ export default function FriendSettingsScreen() {
       </Card>
       {blockFriend.error || balances.error ? <ErrorMessage error={blockFriend.error ?? balances.error} /> : null}
       {balances.isLoading ? <Notice title="Checking balances">Blocking remains unavailable until Hissab confirms this direct ledger is settled.</Notice> : null}
-      {balances.data && !settled ? <Notice title="Settle balances first">You cannot block this person until every direct-ledger currency is settled.</Notice> : null}
+      {balances.data && !settled ? <Notice title="Settle balances first">You cannot block this person until the direct-ledger balance is settled.</Notice> : null}
       {canBlock ? <Notice title="Balances settled">Blocking archives this direct ledger and removes the active connection.</Notice> : null}
       <Button title="Block person" secondary destructive loading={blockFriend.isPending} disabled={!canBlock || blockFriend.isPending} onPress={() => Alert.alert(`Block ${friend?.displayName ?? 'person'}?`, 'This archives the settled direct ledger. It does not delete its audit history.', [{ text: 'Cancel', style: 'cancel' }, { text: 'Block person', style: 'destructive', onPress: () => blockFriend.mutate() }])} />
       <Button title="View blocked people" href="/friends/blocked" secondary />

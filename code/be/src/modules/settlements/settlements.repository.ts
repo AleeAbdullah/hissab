@@ -25,7 +25,6 @@ export interface SettlementView {
   fromUserId: string;
   toUserId: string;
   amountMinor: string;
-  currency: string;
   occurredAt: Date;
   status: 'ACTIVE' | 'DELETED';
   version: number;
@@ -40,7 +39,6 @@ export interface SettlementCursor {
 export interface SettlementPosting {
   userId: string;
   amountMinor: bigint;
-  currency: string;
 }
 
 export interface SettlementEffectSnapshot {
@@ -55,7 +53,6 @@ interface SettlementReadRow {
   fromUserId: string;
   toUserId: string;
   amountMinor: string;
-  currency: string;
   occurredAt: Date;
   status: 'ACTIVE' | 'DELETED';
   version: number;
@@ -70,7 +67,6 @@ interface InsertRevisionInput {
   fromUserId: string;
   toUserId: string;
   amountMinor: bigint;
-  currency: string;
   occurredAt: Date;
   status: 'ACTIVE' | 'DELETED';
   version: number;
@@ -199,7 +195,6 @@ export class SettlementsRepository {
         fromUserId: input.fromUserId,
         toUserId: input.toUserId,
         amountMinor: input.amountMinor,
-        currency: input.currency,
         occurredAt: input.occurredAt,
         status: input.status,
         version: input.version,
@@ -233,7 +228,6 @@ export class SettlementsRepository {
         financialEventId: event.id,
         userId: posting.userId,
         amountMinor: posting.amountMinor,
-        currency: posting.currency,
       })),
     );
     return event.id;
@@ -285,7 +279,6 @@ export class SettlementsRepository {
                payment.from_user_id AS "fromUserId",
                payment.to_user_id AS "toUserId",
                payment.amount_minor::text AS "amountMinor",
-               payment.currency,
                payment.occurred_at AS "occurredAt",
                payment.status,
                payment.version,
@@ -309,7 +302,6 @@ export class SettlementsRepository {
       fromUserId: row.fromUserId,
       toUserId: row.toUserId,
       amountMinor: row.amountMinor,
-      currency: row.currency,
       occurredAt: row.occurredAt,
       status: row.status,
       version: row.version,
@@ -329,7 +321,6 @@ export class SettlementsRepository {
                payment.from_user_id AS "fromUserId",
                payment.to_user_id AS "toUserId",
                payment.amount_minor::text AS "amountMinor",
-               payment.currency,
                payment.occurred_at AS "occurredAt",
                payment.status,
                payment.version,
@@ -354,7 +345,6 @@ export class SettlementsRepository {
           fromUserId: row.fromUserId,
           toUserId: row.toUserId,
           amountMinor: row.amountMinor,
-          currency: row.currency,
           occurredAt: row.occurredAt,
           status: row.status,
           version: row.version,

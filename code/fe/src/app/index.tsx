@@ -6,5 +6,5 @@ import { useSession } from '@/features/auth/session';
 export default function Index() {
   const session = useSession();
   if (session === undefined) return <Loading />;
-  return <Redirect href={session ? '/friends' : '/welcome'} />;
+  return <Redirect href={session ? '/home' : '/welcome'} />;
 }

@@ -8,12 +8,10 @@ export interface UserBalanceRow {
   ledgerId: string;
   ledgerType: 'DIRECT' | 'GROUP';
   ledgerStatus: 'ACTIVE' | 'ARCHIVED';
-  currency: string;
   netMinor: string;
 }
 
 export interface LedgerMemberBalanceRow {
-  currency: string;
   userId: string;
   displayName: string;
   netMinor: string;
@@ -29,7 +27,6 @@ export class BalancesRepository {
         SELECT ledger.id AS "ledgerId",
                ledger.type AS "ledgerType",
                ledger.status AS "ledgerStatus",
-               posting.currency,
                sum(
                  CASE WHEN posting.user_id = $1::uuid
                    THEN posting.amount_minor
@@ -42,8 +39,8 @@ export class BalancesRepository {
         JOIN ledger_postings posting ON posting.financial_event_id = event.id
         WHERE membership.user_id = $1::uuid
           AND membership.joined_at IS NOT NULL
-        GROUP BY ledger.id, ledger.type, ledger.status, posting.currency
-        ORDER BY posting.currency, ledger.id
+        GROUP BY ledger.id, ledger.type, ledger.status
+        ORDER BY ledger.id
       `,
       [userId],
     );
@@ -73,33 +70,25 @@ export class BalancesRepository {
   ): Promise<LedgerMemberBalanceRow[]> {
     const result = await this.database.pool.query<LedgerMemberBalanceRow>(
       `
-        WITH currencies AS (
-          SELECT DISTINCT posting.currency
-          FROM financial_events event
-          JOIN ledger_postings posting ON posting.financial_event_id = event.id
-          WHERE event.ledger_id = $1::uuid
-        ), member_balances AS (
-          SELECT posting.currency,
+        WITH member_balances AS (
+          SELECT
                  posting.user_id,
                  sum(posting.amount_minor) AS net_minor
           FROM financial_events event
           JOIN ledger_postings posting ON posting.financial_event_id = event.id
           WHERE event.ledger_id = $1::uuid
-          GROUP BY posting.currency, posting.user_id
+          GROUP BY posting.user_id
         )
-        SELECT currency.currency,
-               member.user_id AS "userId",
+        SELECT member.user_id AS "userId",
                person.display_name AS "displayName",
                coalesce(balance.net_minor, 0)::text AS "netMinor"
-        FROM currencies currency
-        CROSS JOIN ledger_members member
+        FROM ledger_members member
         JOIN users person ON person.id = member.user_id
         LEFT JOIN member_balances balance
-          ON balance.currency = currency.currency
-         AND balance.user_id = member.user_id
+          ON balance.user_id = member.user_id
         WHERE member.ledger_id = $1::uuid
           AND member.joined_at IS NOT NULL
-        ORDER BY currency.currency, person.display_name, member.user_id
+        ORDER BY person.display_name, member.user_id
       `,
       [ledgerId],
     );

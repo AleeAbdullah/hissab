@@ -265,7 +265,7 @@ export class GroupsRepository {
     userId: string,
   ): Promise<boolean> {
     const [balance] = await transaction
-      .select({ currency: ledgerPostings.currency })
+      .select({ userId: ledgerPostings.userId })
       .from(ledgerPostings)
       .innerJoin(
         financialEvents,
@@ -277,7 +277,7 @@ export class GroupsRepository {
           eq(ledgerPostings.userId, userId),
         ),
       )
-      .groupBy(ledgerPostings.currency)
+      .groupBy(ledgerPostings.userId)
       .having(sql`sum(${ledgerPostings.amountMinor}) <> 0`)
       .limit(1);
     return Boolean(balance);
@@ -288,14 +288,14 @@ export class GroupsRepository {
     groupId: string,
   ): Promise<boolean> {
     const [balance] = await transaction
-      .select({ currency: ledgerPostings.currency })
+      .select({ userId: ledgerPostings.userId })
       .from(ledgerPostings)
       .innerJoin(
         financialEvents,
         eq(financialEvents.id, ledgerPostings.financialEventId),
       )
       .where(eq(financialEvents.ledgerId, groupId))
-      .groupBy(ledgerPostings.userId, ledgerPostings.currency)
+      .groupBy(ledgerPostings.userId)
       .having(sql`sum(${ledgerPostings.amountMinor}) <> 0`)
       .limit(1);
     return Boolean(balance);

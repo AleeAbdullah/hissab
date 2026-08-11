@@ -11,6 +11,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 SECTIONS = [
+    "s0_home",
     "s1_auth",
     "s2_friends",
     "s3_groups",

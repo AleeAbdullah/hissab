@@ -5,6 +5,7 @@ import os
 from lib import OUT
 
 GROUPS = [
+    ("Home", "00", "00"),
     ("Authentication", "01", "04"),
     ("Friends and connections", "05", "09"),
     ("Groups", "10", "16"),
@@ -54,7 +55,7 @@ application code and the repository contract in <code>../AGENTS.md</code>.</p>
 <div class="meta">
   <span>Direction A — Grouped Ledger</span>
   <span>Variant A1 — reconciliation scrolls in-form</span>
-  <span>L1 — card per currency section</span>
+  <span>Viewer-chosen symbols · no conversion</span>
   <span>393 × 852</span>
   <span>Light / dark toggle in every file</span>
 </div>

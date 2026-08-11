@@ -15,22 +15,19 @@ GEAR = ('<span class="act"><svg viewBox="0 0 22 22" width="21" height="21" style
         'M4.5 17.5l1.7-1.7M15.8 6.2l1.7-1.7" stroke="currentColor" stroke-width="1.8" '
         'stroke-linecap="round" fill="none"/></svg></span>')
 
-USD_ROWS = [
+FRIEND_ROWS = [
     ledger_row("JD", "John Doe",
-               [("Winter Trip", "you owe 240.00"),
-                ("Brunch club", "owes you 40.00"),
-                ("Direct", "owes you 12.50")],
+               [("Winter Trip", "you owe $240.00"),
+                ("Brunch club", "owes you $40.00"),
+                ("Direct", "owes you $12.50")],
                "You owe", "187.50", "USD", tone=2),
-    ledger_row("PN", "Priya Nair", [("Flat 3B", "owes you 64.00")],
+    ledger_row("PN", "Priya Nair", [("Flat 3B", "owes you $64.00")],
                "Owes you", "64.00", "USD", tone=3),
     ledger_row("SK", "Sam Kessler", [], "", "", "USD", tone=1, settled=True),
-]
-
-PKR_ROWS = [
-    ledger_row("OF", "Omar Farooq", [("Lahore trip", "you owe 12,500")],
-               "You owe", "12,500", "PKR", tone=4),
-    ledger_row("LT", "Lena Toure", [("Direct", "owes you 3,200")],
-               "Owes you", "3,200", "PKR", tone=6),
+    ledger_row("OF", "Omar Farooq", [("Lahore trip", "you owe $12,500")],
+               "You owe", "12,500", "USD", tone=4),
+    ledger_row("LT", "Lena Toure", [("Direct", "owes you $3,200")],
+               "Owes you", "3,200", "USD", tone=6),
 ]
 
 PENDING = listcard([nav_row(
@@ -51,8 +48,7 @@ def build():
 
     populated = friends(
         PENDING
-        + seclabel("US Dollar · USD", first=True) + listcard(USD_ROWS)
-        + seclabel("Pakistani Rupee · PKR") + listcard(PKR_ROWS)
+        + seclabel("Your connections · 5", first=True) + listcard(FRIEND_ROWS)
     )
 
     first_use = friends(empty(
@@ -62,28 +58,25 @@ def build():
         "Add a connection"))
 
     loading = friends(
-        seclabel("US Dollar · USD", first=True) + listcard(skeleton_rows(3))
-        + seclabel("Pakistani Rupee · PKR") + listcard(skeleton_rows(2)))
+        seclabel("Your connections · 5", first=True) + listcard(skeleton_rows(5)))
 
     offline = friends(
         PENDING
-        + seclabel("US Dollar · USD", first=True) + listcard(USD_ROWS)
-        + seclabel("Pakistani Rupee · PKR") + listcard(PKR_ROWS),
+        + seclabel("Your connections · 5", first=True) + listcard(FRIEND_ROWS),
         tail=stale_strip("Offline · showing saved copy from 9:02 AM"))
 
     scaled = (statusbar() + largetitle("Friends", trail=PLUS) + search()
               + '<div class="scroll">'
-              + seclabel("US Dollar · USD", first=True)
-              + listcard(USD_ROWS[:2])
+              + seclabel("Your connections · 5", first=True)
+              + listcard(FRIEND_ROWS[:2])
               + '</div>' + tabbar("friends") + homebar())
 
     write("05-friends.html", "05", "Friends", "F01",
-          "The list archetype, and the surface that decided L1. Every balance is scoped to a currency "
-          "card — USD and PKR structurally cannot share one, which is what enforces the never-combine rule. "
-          "Breakdown lines carry no ISO code because the card already states it; that is what stopped "
-          "&ldquo;Winter Trip&rdquo; truncating to &ldquo;Wi…&rdquo;.",
+          "The list archetype. Every amount uses the viewer's display symbol from Account; changing "
+          "that preference changes the symbol only and never converts the numeric value. Breakdown "
+          "lines keep the symbol beside each amount without crowding the ledger name.",
           [
-              frame("Populated", " Two currencies, a three-ledger person, a settled person and a "
+              frame("Populated", " A three-ledger person, a settled person and a "
                                  "pending-request entry. John Doe nets to <em>you owe 187.50</em> across "
                                  "three ledgers that point in both directions.",
                     friends_phone(populated)),
@@ -227,17 +220,16 @@ def build():
                       ledgers, recent, settled=False):
         if settled:
             bal = ('<div class="t-headline c-sec" style="font-weight:500">Settled</div>'
-                   '<div class="t-supp c-sec" style="margin-top:2px">Nothing outstanding in any currency.</div>')
+                   '<div class="t-supp c-sec" style="margin-top:2px">Nothing outstanding.</div>')
         else:
             col = "c-neg" if direction == "You owe" else "c-pos"
             bal = (f'<div class="t-supp c-sec">{statement}</div>'
-                   f'<span class="mt big mono {col}" style="margin-top:2px">'
-                   f'<span class="iso">{iso}</span><span class="v">{amount}</span></span>')
+                   + money(iso, amount, cls=col, size="big"))
         rows = "".join(
             f'<div class="row"><span class="grow t-body">{n}</span>'
             f'<span class="val t-body mono {"c-neg" if d.startswith("you owe") else "c-pos"}">'
             f'{d}</span></div>' for n, d in ledgers)
-        breakdown = (seclabel(f"{'US Dollar · USD' if iso == 'USD' else 'Pakistani Rupee · PKR'}",
+        breakdown = (seclabel("Balance by ledger",
                               right="Across 3 ledgers" if len(ledgers) > 1 else "")
                      + listcard([rows]) if ledgers else "")
         return (statusbar() + nav(back="Friends", trail=GEAR)
@@ -259,28 +251,28 @@ def build():
 
     recent_jd = [
         expense_row("Brunch", "Aug 3 · Winter Trip", "45.00", "USD",
-                    sub="your share 15.00"),
+                    sub="your share $15.00"),
         expense_row("Payment to John Doe", "Aug 1 · recorded by you", "60.00", "USD"),
         expense_row("Ski passes", "Jul 28 · Winter Trip", "720.00", "USD",
-                    sub="your share 240.00"),
+                    sub="your share $240.00"),
     ]
 
     owe_view = ledger_screen(
         "John Doe", "JD", 2, "You owe John Doe", "USD", "187.50", "You owe",
-        [("Winter Trip", "you owe 240.00"), ("Brunch club", "owes you 40.00"),
-         ("Direct", "owes you 12.50")], recent_jd)
+        [("Winter Trip", "you owe $240.00"), ("Brunch club", "owes you $40.00"),
+         ("Direct", "owes you $12.50")], recent_jd)
 
     owed_view = ledger_screen(
         "Priya Nair", "PN", 3, "Priya Nair owes you", "USD", "64.00", "Owes you",
-        [("Flat 3B", "owes you 64.00")],
+        [("Flat 3B", "owes you $64.00")],
         [expense_row("Groceries", "Aug 2 · Flat 3B", "128.00", "USD",
-                     sub="your share 64.00")])
+                     sub="your share $64.00")])
 
     settled_view = ledger_screen(
         "Sam Kessler", "SK", 1, "", "USD", "", "", [],
         [expense_row("Payment from Sam Kessler", "Aug 2 · recorded by Sam", "15.00", "USD"),
          expense_row("Brunch", "Aug 3 · Winter Trip", "45.00", "USD",
-                     sub="your share 15.00")],
+                     sub="your share $15.00")],
         settled=True)
 
     write("08-friend-ledger.html", "08", "Friend ledger", "F05",
@@ -306,7 +298,7 @@ def build():
         '<span class="t-cap c-sec">Connected since June 2026</span></span></div>'
         + seclabel("Relationship", first=True)
         + card(kv_row("Shared ledgers", "3")
-               + kv_row("Direct balance", "You owe USD 12.50", vcls="t-body mono c-neg")
+               + kv_row("Direct balance", "You owe $12.50", vcls="t-body mono c-neg")
                + kv_row("Connected", "June 14, 2026"))
         + '<p class="t-cap c-sec" style="margin:-4px 20px 0">Nicknames and removing a connection are '
         'not supported. Blocking is the only way to end a relationship.</p>'
@@ -328,7 +320,7 @@ def build():
                     '<div class="f"><span class="k t-cap">Direct ledger</span>'
                     '<span class="t-cap semi">Archived, read-only</span></div>'
                     '<div class="f"><span class="k t-cap">Outstanding balance</span>'
-                    '<span class="t-cap semi mono c-neg">You owe USD 12.50</span></div>'
+                    '<span class="t-cap semi mono c-neg">You owe $12.50</span></div>'
                     '<div class="f"><span class="k t-cap">Shared groups</span>'
                     '<span class="t-cap semi">Unchanged · 3 ledgers</span></div>'
                     '</div></div>'
@@ -341,7 +333,7 @@ def build():
                     + listcard([
                         person_row("RS", "Rania Saeed", "Blocked Jul 12, 2026",
                                    trail='<span class="btn sm out">Unblock</span>', tone=5),
-                        person_row("HB", "Hasan Bhatti", "Blocked Mar 2, 2026 · USD 40.00 archived",
+                        person_row("HB", "Hasan Bhatti", "Blocked Mar 2, 2026 · $40.00 archived",
                                    trail='<span class="btn sm out">Unblock</span>', tone=7),
                     ])
                     + '<p class="t-cap c-sec" style="margin:4px 20px">Unblocking restores the archived '

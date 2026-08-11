@@ -3,17 +3,17 @@
 Add shared changes here before adding screen-specific variants.
 """
 
-from lib import IC, avatar, money, tick
+from lib import IC, avatar, display_symbol, money, tick
 
 # Canonical sample data, kept identical across every screen so a reviewer can
 # follow one person's balance from the Friends list to a settlement receipt.
 #
-#   John Doe   USD  you owe 187.50   (Winter Trip 240.00 owed, Brunch club 40.00
-#                                     and Direct 12.50 owed to you)
-#   Priya Nair USD  owes you 64.00   (Flat 3B)
+#   John Doe   you owe 187.50   (Winter Trip 240.00 owed, Brunch club 40.00
+#                                and Direct 12.50 owed to you)
+#   Priya Nair owes you 64.00    (Flat 3B)
 #   Sam Kessler     settled
-#   Omar Farooq PKR you owe 12,500
-#   Lena Toure  PKR owes you 3,200
+#   Omar Farooq     you owe 12,500
+#   Lena Toure      owes you 3,200
 
 
 def seclabel(text, right="", first=False):
@@ -30,18 +30,13 @@ def listcard(rows, cls=""):
     return f'<div class="card list {cls}">{"".join(rows)}</div>'
 
 
-def ledger_row(initials, name, ledgers, direction, amount, iso, tone=1,
+def ledger_row(initials, name, ledgers, direction, amount, display, tone=1,
                settled=False, chev=True):
     """LedgerRow (§4.2c). `ledgers` is a list of (name, phrase) pairs, one line
     each, never wrapping. The ledger name truncates; the amount phrase does not.
 
-    No ISO code appears anywhere in this row. The enclosing card is per-currency
-    and its SectionLabel says so, and under L1 two currencies cannot share a
-    card — so repeating `USD` four times in one row cost 40px of the identity
-    column and disambiguated nothing. Measured: identity 159px -> 201px, which
-    is the difference between "Winter Tr..." and "Winter Trip". Rows outside a
-    per-currency card (friend ledger header, expense detail, reports) still
-    carry the code."""
+    Money uses the viewer's display symbol. The symbol is presentation only;
+    switching it in Account never converts the stored numeric value."""
     lines = "".join(
         f'<span class="ln t-cap"><span class="lg">{n} ·</span>'
         f'<span class="mo mono">{p}</span></span>'
@@ -52,7 +47,7 @@ def ledger_row(initials, name, ledgers, direction, amount, iso, tone=1,
     else:
         col = "c-neg" if direction == "You owe" else "c-pos"
         bal = (f'<span class="bal"><span class="dir t-cap">{direction}</span>'
-               f'<span class="amt t-body semi mono {col}">{amount}</span></span>')
+               f'<span class="amt t-body semi mono {col}">{display_symbol(display)}{amount}</span></span>')
     return (f'<div class="row lrow">{avatar(initials, tone)}'
             f'<span class="grow"><span class="nm t-body med">{name}</span>{brk}</span>'
             f'{bal}{IC["chev"] if chev else ""}</div>')
@@ -71,7 +66,7 @@ def expense_row(title, meta, amount, iso=None, chev=True, cls="", mono=True,
 
     `mono=False` for a trailing value that is not money. Tabular figures exist to
     let amounts line up decimal-to-decimal; a count like "5 members" has nothing
-    to line up with and setting it in mono only implies it is currency.
+    to line up with and setting it in mono only implies it is money.
 
     `sub` is a SHORT second line under the trailing value — "your share 240.00",
     "9:03 AM". It goes here rather than in the meta because the meta is the line
@@ -82,7 +77,8 @@ def expense_row(title, meta, amount, iso=None, chev=True, cls="", mono=True,
     truncates and never wraps, so anything longer than a short money phrase or a
     time will push the title column back into the same starvation this fixed."""
     mc = " mono" if mono else ""
-    m = f'<span class="mn t-body{mc}">{iso + " " if iso else ""}{amount}</span>'
+    m = (f'<span class="mn t-body{mc}">{display_symbol(iso)}{amount}</span>' if iso
+         else f'<span class="mn t-body{mc}">{amount}</span>')
     if sub:
         m += f'<span class="sb t-cap">{sub}</span>'
     return (f'<div class="row erow {cls}">'
@@ -116,8 +112,8 @@ def person_row(initials, name, secondary="", trail="", tone=1, chev=False, cls="
 
 
 def select_row(initials, name, secondary, on, tone=1, box=True):
-    """`initials=None` means the row has no avatar — categories and currencies
-    are not people, and a coloured circle around a letter would imply they are."""
+    """`initials=None` means the row has no avatar — categories and display
+    symbols are not people, and a coloured circle would imply they are."""
     sec = f'<span class="t-cap c-sec" style="display:block">{secondary}</span>' if secondary else ""
     return (f'<div class="row">{avatar(initials, tone) if initials else ""}'
             f'<span class="grow"><span class="t-body med">{name}</span>{sec}</span>'
@@ -130,11 +126,11 @@ def search(query="", placeholder="Search"):
     return f'<div class="search">{IC["search"]}{q}</div>'
 
 
-def amount_editor(iso, value, label="Amount", caret=True, empty=False):
+def amount_editor(display, value, label="Amount", caret=True, empty=False):
     v = value if not empty else "0.00"
     cls = " c-sec" if empty else ""
     return (f'<div class="amt-ed"><span class="lb t-cap">{label}</span>'
-            f'<span class="mt big mono{cls}"><span class="iso">{iso}</span>'
+            f'<span class="mt big mono{cls}"><span class="iso">{display_symbol(display)}</span>'
             f'<span class="v">{v}</span></span>'
             f'{"<span class=" + chr(34) + "caret big" + chr(34) + "></span>" if caret else ""}</div>')
 

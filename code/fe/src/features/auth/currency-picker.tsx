@@ -1,28 +1,28 @@
 import { useMemo, useState } from 'react';
 import { FlatList, Modal, Pressable, Text, TextInput, View } from 'react-native';
 
-import type { SupportedCurrency } from '@/api/contracts';
+import type { DisplayCurrency } from '@/api/contracts';
 import { useAppTheme } from '@/theme/theme';
 
 import { AuthField } from './components/auth-field';
 
-const supportedCurrencies: SupportedCurrency[] = ['PKR', 'USD', 'GBP', 'EUR', 'AED', 'SAR'];
+const displayCurrencies: DisplayCurrency[] = ['PKR', 'USD', 'GBP', 'EUR', 'AED', 'SAR'];
 
-export function CurrencyPicker({ value, onChange, first }: { value?: SupportedCurrency; onChange: (value: SupportedCurrency) => void; first?: boolean }) {
+export function CurrencyPicker({ value, onChange, first }: { value?: DisplayCurrency; onChange: (value: DisplayCurrency) => void; first?: boolean }) {
   const { colors } = useAppTheme();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const codes = useMemo(
-    () => supportedCurrencies.filter((code) => code.includes(search.trim().toUpperCase())),
+    () => displayCurrencies.filter((code) => code.includes(search.trim().toUpperCase())),
     [search],
   );
 
   return (
     <>
-      <AuthField first={first} label="Default currency">
+      <AuthField first={first} label="Display currency">
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Choose default currency"
+          accessibilityLabel="Choose display currency"
           onPress={() => setOpen(true)}
           style={{ minHeight: 44, justifyContent: 'center' }}
         >
@@ -32,7 +32,7 @@ export function CurrencyPicker({ value, onChange, first }: { value?: SupportedCu
       <Modal visible={open} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setOpen(false)}>
         <View style={{ flex: 1, backgroundColor: colors.canvas, paddingTop: 16 }}>
           <View style={{ minHeight: 44, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, gap: 12 }}>
-            <Text selectable style={{ flex: 1, color: colors.text, fontSize: 20, fontWeight: '600' }}>Choose currency</Text>
+            <Text selectable style={{ flex: 1, color: colors.text, fontSize: 20, fontWeight: '600' }}>Choose display currency</Text>
             <Pressable accessibilityRole="button" onPress={() => setOpen(false)} style={{ minWidth: 44, minHeight: 44, justifyContent: 'center', alignItems: 'flex-end' }}>
               <Text style={{ color: colors.brand, fontSize: 17, fontWeight: '600' }}>Done</Text>
             </Pressable>

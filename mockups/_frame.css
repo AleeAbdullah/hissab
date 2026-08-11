@@ -132,6 +132,35 @@ body {
 .brand-actions.split > .btn { flex:1; }
 .brand-profile-head { padding:var(--s2) var(--authGutter) var(--s4); display:flex; gap:14px; align-items:center; }
 .brand-balance { padding:var(--s4); }
+.home-wordmark { color:var(--brand); font:500 20px/1 Georgia,"Times New Roman",serif; letter-spacing:-.6px; }
+.home-scroll { padding-top:4px; }
+.home-cards { display:flex; flex-direction:column; gap:0; padding:0 var(--authGutter); }
+.home-card { padding:var(--s4); border-radius:var(--rSheet); display:flex; flex-direction:column; }
+.home-card.personal { min-height:106px; background:var(--surface); border:1px solid var(--borderDivider); }
+.home-card.shared { min-height:202px; margin-top:-10px; background:var(--brand); color:var(--onBrand); position:relative; }
+.dk .home-card.shared { background:#8F3F25; color:#F7F3EC; }
+.home-card-top { display:flex; align-items:center; justify-content:space-between; gap:6px; }
+.home-card-top .chev { transform:scale(.8); }
+.home-card.personal .home-money { margin-top:auto; gap:6px; }
+.home-card .home-money .iso { font-size:13px; line-height:18px; font-weight:600; }
+.home-card .home-money .v { font-size:28px; line-height:34px; font-weight:700; letter-spacing:-.45px; }
+.home-card.shared .t-supp,.home-card.shared .chev { color:rgba(255,253,248,.78); }
+.home-card.shared .home-money,.home-card.shared .home-money .iso { color:var(--onBrand); }
+.dk .home-card.shared .home-money,.dk .home-card.shared .home-money .iso { color:#F7F3EC; }
+.home-shared-balance { margin-top:auto; }
+.home-direction { display:block; margin-bottom:2px; font-size:15px; line-height:20px; font-weight:600; }
+.home-card-pills { display:flex; gap:8px; margin-top:16px; }
+.home-card-pills span { border:1px solid rgba(255,253,248,.44); border-radius:999px; padding:5px 8px; color:var(--onBrand); font-size:11px; line-height:14px; font-weight:600; }
+.home-activity { min-height:68px; display:flex; align-items:center; gap:10px; padding:10px var(--s4); border-top:1px solid var(--borderDivider); }
+.home-activity.first { border-top:0; }
+.home-tag { flex:0 0 auto; min-width:56px; padding:3px 6px; border-radius:6px; text-align:center; font-size:10px; line-height:13px; font-weight:700; letter-spacing:.2px; }
+.home-tag.personal { background:var(--brandSubtle); color:var(--brand); }
+.home-tag.shared { background:var(--posSubtle); color:var(--positive); }
+.home-activity-value { flex:0 0 auto; text-align:right; white-space:nowrap; font-size:13px; line-height:18px; font-weight:600; font-variant-numeric:tabular-nums; }
+.home-activity-value.expense { color:var(--textPrimary); }
+.home-activity-value.income { color:var(--positive); }
+.home-activity-value.neutral { color:var(--textSecondary); }
+.home-footnote { margin:12px var(--authGutter) 0; }
 .auth-legal { margin:var(--s3) var(--authGutter) 0; text-align:center; }
 .auth-text-action { padding:var(--s5) var(--authGutter); text-align:center; }
 .auth-lockup { display:flex; align-items:center; justify-content:center; gap:8px; color:var(--textPrimary); }

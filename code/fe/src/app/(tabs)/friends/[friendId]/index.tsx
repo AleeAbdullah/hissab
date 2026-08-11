@@ -33,10 +33,10 @@ export default function FriendDetailScreen() {
           <Text selectable style={{ color: colors.secondary, fontSize: 15, lineHeight: 22 }}>Direct ledger</Text>
         </View>
       </View>
-      <SectionLabel>BALANCES BY CURRENCY</SectionLabel>
-      <LedgerBalanceCards balances={balances.data} />
-      <LedgerActions draft={{ ledgerId: friend.ledgerId, ledgerName: friend.displayName, currentUserId: profile.data.id, defaultCurrency: profile.data.defaultCurrency, members: [{ userId: profile.data.id, displayName: profile.data.displayName }, { userId: friend.userId, displayName: friend.displayName }] }} />
-      <LedgerActivity ledgerId={friend.ledgerId} members={[{ userId: profile.data.id, displayName: profile.data.displayName }, { userId: friend.userId, displayName: friend.displayName }]} />
+      <SectionLabel>BALANCES</SectionLabel>
+      <LedgerBalanceCards balances={balances.data} displayCurrency={profile.data.displayCurrency} />
+      <LedgerActions draft={{ ledgerId: friend.ledgerId, ledgerName: friend.displayName, currentUserId: profile.data.id, displayCurrency: profile.data.displayCurrency, members: [{ userId: profile.data.id, displayName: profile.data.displayName }, { userId: friend.userId, displayName: friend.displayName }] }} />
+      <LedgerActivity displayCurrency={profile.data.displayCurrency} ledgerId={friend.ledgerId} members={[{ userId: profile.data.id, displayName: profile.data.displayName }, { userId: friend.userId, displayName: friend.displayName }]} />
       <Button title="Friend settings" href={{ pathname: '/friends/[friendId]/settings', params: { friendId } }} secondary />
     </Screen>
   );

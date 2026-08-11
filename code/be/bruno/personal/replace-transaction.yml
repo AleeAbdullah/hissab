@@ -1,0 +1,29 @@
+info:
+  name: Replace personal transaction
+  type: http
+  seq: 5
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/v1/personal/transactions/{{personalTransactionId}}"
+  headers:
+    - name: Content-Type
+      value: application/json
+    - name: Idempotency-Key
+      value: "{{$randomUUID}}"
+  body:
+    type: json
+    data: |-
+      {
+        "type": "INCOME",
+        "amountMinor": "{{amountMinor}}",
+        "categoryCode": "SALARY",
+        "description": "Corrected salary",
+        "occurredAt": "{{occurredAt}}",
+        "expectedVersion": 1
+      }
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+docs: Creates an immutable replacement; expectedVersion prevents lost updates.

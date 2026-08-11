@@ -24,11 +24,6 @@ import {
   getSchemaPath,
 } from '@nestjs/swagger';
 
-import {
-  SUPPORTED_CURRENCIES,
-  type SupportedCurrency,
-} from '../../../common/money';
-
 export const SHARED_EXPENSE_CATEGORY_CODES = [
   'FOOD_AND_DRINK',
   'GROCERIES',
@@ -144,11 +139,7 @@ class MutableExpenseFieldsDto {
 }
 
 @ApiExtraModels(EqualExpenseSplitDto, ExactExpenseSplitDto)
-export class CreateExpenseDto extends MutableExpenseFieldsDto {
-  @ApiProperty({ enum: SUPPORTED_CURRENCIES, example: 'PKR' })
-  @IsIn(SUPPORTED_CURRENCIES)
-  currency!: SupportedCurrency;
-}
+export class CreateExpenseDto extends MutableExpenseFieldsDto {}
 
 @ApiExtraModels(EqualExpenseSplitDto, ExactExpenseSplitDto)
 export class ReplaceExpenseDto extends MutableExpenseFieldsDto {

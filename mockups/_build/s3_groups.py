@@ -8,12 +8,10 @@ from s2_friends import PLUS, GEAR
 
 
 def group_row(initials, name, members, balances, tone=1):
-    """Groups list row. A group can hold several currencies, so this list is NOT
-    sectioned by currency and every balance line therefore keeps its ISO code."""
+    """Group balances use the viewer's Account display symbol."""
     lines = "".join(
-        f'<span class="ln t-cap"><span class="lg">{iso} ·</span>'
-        f'<span class="mo mono {"c-neg" if d.startswith("you owe") else ("c-pos" if d.startswith("owes") else "c-sec")}">'
-        f'{d}</span></span>' for iso, d in balances)
+        f'<span class="ln t-cap"><span class="mo mono {"c-neg" if d.startswith("you owe") else ("c-pos" if d.startswith("owes") else "c-sec")}">'
+        f'{d}</span></span>' for d in balances)
     return (f'<div class="row lrow">{avatar(initials, tone, cls="sq")}'
             f'<span class="grow"><span class="nm t-body med">{name}</span>'
             f'<span class="brk">{lines}</span></span>'
@@ -22,15 +20,15 @@ def group_row(initials, name, members, balances, tone=1):
 
 GROUPS_CARD = listcard([
     group_row("WT", "Winter Trip", "5 members",
-              [("USD", "you owe 240.00")], tone=1),
+              ["you owe $240.00"], tone=1),
     group_row("F3", "Flat 3B", "3 members",
-              [("USD", "owes you 64.00")], tone=3),
+              ["owes you $64.00"], tone=3),
     group_row("LT", "Lahore trip", "4 members",
-              [("PKR", "you owe 12,500"), ("USD", "owes you 18.00")], tone=4),
+              ["you owe $12,500"], tone=4),
     group_row("BC", "Brunch club", "6 members",
-              [("USD", "owes you 40.00")], tone=2),
+              ["owes you $40.00"], tone=2),
     group_row("OF", "Office lunches", "9 members",
-              [("USD", "settled")], tone=7),
+              ["settled"], tone=7),
 ])
 
 MEMBERS = [
@@ -67,11 +65,10 @@ def build():
         '<span class="t-body">Search</span>', '<span class="q t-body">ski</span>')
 
     write("10-groups.html", "10", "Groups", "G01",
-          "Unlike Friends, this list is <em>not</em> sectioned by currency — a single group can hold "
-          "several. So each row carries its own per-currency lines and every line keeps its ISO code. "
-          "Lahore trip shows the two-currency case: two lines, never one total.",
+          "Every group row shows one relationship balance using the viewer's display symbol. The "
+          "symbol is a personal presentation preference and changing it never converts the amount.",
           [
-              frame("Populated", " Five groups including a two-currency group and a settled group. "
+              frame("Populated", " Five groups including an unsettled group and a settled group. "
                                  "Member count is the trailing column, so it never competes with money.",
                     phone(populated)),
               frame("Empty", " Explains what a group <i>is</i>, because the concept is the thing a new "
@@ -195,12 +192,12 @@ def build():
     # ---------------------------------------------------------------- G04 -----
     RECENT = [
         expense_row("Brunch", "Aug 3 · Sam paid", "45.00", "USD",
-                    sub="your share 15.00"),
+                    sub="your share $15.00"),
         expense_row("Ski passes", "Jul 28 · John paid", "720.00", "USD",
-                    sub="your share 240.00"),
+                    sub="your share $240.00"),
         expense_row("Payment to John Doe", "Aug 1 · recorded by you", "60.00", "USD"),
         expense_row("Cabin deposit", "Jul 20 · you paid", "900.00", "USD",
-                    sub="your share 180.00"),
+                    sub="your share $180.00"),
     ]
 
     def ledger(body, banner_html="", tail=""):
@@ -213,11 +210,11 @@ def build():
                 '<span class="t-cap c-sec">5 members · Trip</span></span></div>'
                 + tail + banner_html + body + '</div>' + homebar())
 
-    balances_card = (seclabel("Your balance · US Dollar · USD", first=True)
+    balances_card = (seclabel("Your balance", first=True)
                      + card('<div style="padding:16px">'
                             '<div class="t-supp c-sec">You owe this group</div>'
                             '<span class="mt big mono c-neg" style="margin-top:2px">'
-                            '<span class="iso">USD</span><span class="v">240.00</span></span>'
+                            '<span class="iso">$</span><span class="v">240.00</span></span>'
                             '</div>'
                             + nav_row("See who owes whom", "", chev=True)))
 
@@ -241,9 +238,8 @@ def build():
                            action="Refresh"))
 
     write("13-group-ledger.html", "13", "Group ledger", "G04",
-          "Your own balance first, per currency, then the route to who-owes-whom, then history. The "
-          "group total is never shown as a single figure because a group holding two currencies has no "
-          "such number.",
+          "Your own balance first, then the route to who-owes-whom, then history. Every amount uses "
+          "the viewer's display symbol without changing the underlying value.",
           [
               frame("Populated", " Your balance is a sentence with the amount under it. Recent activity "
                                  "names the payer and your share on every row.", phone(g04)),
@@ -259,22 +255,21 @@ def build():
         col = "c-neg" if direction == "owe" else "c-pos"
         trail = ('<span class="btn sm out">Settle</span>' if settle else "")
         return (f'<div class="row"><span class="grow"><span class="t-body">{text}</span></span>'
-                f'<span class="val t-body semi mono {col}" style="margin-right:8px">{amount}</span>'
+                f'<span class="val t-body semi mono {col}" style="margin-right:8px">${amount}</span>'
                 f'{trail}</div>')
 
-    bal_usd = listcard([
+    balances = listcard([
         rel_row("You owe <b>John Doe</b>", "240.00", "owe"),
         rel_row("<b>Maya Khan</b> owes you", "30.00", "owed"),
         rel_row("<b>Sam Kessler</b> owes you", "15.00", "owed"),
+        rel_row("You owe <b>Omar Farooq</b>", "12,500", "owe"),
     ])
-    bal_pkr = listcard([rel_row("You owe <b>Omar Farooq</b>", "12,500", "owe")])
 
     g05 = (statusbar() + nav(title="Balances", sub="Winter Trip", back="")
            + '<div class="scroll">'
-           + seclabel("US Dollar · USD", first=True) + bal_usd
-           + seclabel("Pakistani Rupee · PKR") + bal_pkr
-           + '<p class="t-cap c-sec" style="margin:4px 20px">Balances are shown per currency and are '
-           'never added together. Only rows involving you offer Settle.</p>'
+           + seclabel("Who owes whom", first=True) + balances
+           + '<p class="t-cap c-sec" style="margin:4px 20px">Amounts use your display symbol. Only '
+           'rows involving you offer Settle.</p>'
            + card(nav_row("Simplify debts", "5 payments → 3", chev=True))
            + '</div>' + homebar())
 
@@ -283,19 +278,18 @@ def build():
            + banner("Suggestions only",
                     "Nothing here has been applied. Your expenses, history and balances are unchanged.",
                     kind="")
-           + seclabel("US Dollar · USD", first=True)
+           + seclabel("Suggested payments", first=True)
            + listcard([
                '<div class="row"><span class="grow"><span class="t-body">'
                '<b>You</b> pay <b>John Doe</b></span></span>'
-               '<span class="val t-body semi mono">210.00</span></div>',
+               '<span class="val t-body semi mono">$210.00</span></div>',
                '<div class="row"><span class="grow"><span class="t-body">'
                '<b>Maya Khan</b> pays <b>John Doe</b></span></span>'
-               '<span class="val t-body semi mono">15.00</span></div>',
-           ])
-           + seclabel("Pakistani Rupee · PKR")
-           + listcard(['<div class="row"><span class="grow"><span class="t-body">'
+               '<span class="val t-body semi mono">$15.00</span></div>',
+               '<div class="row"><span class="grow"><span class="t-body">'
                        '<b>You</b> pay <b>Omar Farooq</b></span></span>'
-                       '<span class="val t-body semi mono">12,500</span></div>'])
+                       '<span class="val t-body semi mono">$12,500</span></div>',
+           ])
            + '<p class="t-cap c-sec" style="margin:4px 20px">Read-only. To act on a suggestion, record '
            'a settlement for it — hissab will not create payments for you.</p>'
            + '</div>' + homebar())
@@ -303,17 +297,17 @@ def build():
     g05_settled = (statusbar() + nav(title="Balances", sub="Office lunches", back="")
                    + '<div class="scroll">'
                    + empty(GLYPH["group"], "Everyone is settled",
-                           "No outstanding balances in any currency in this group.",
+                           "No outstanding balances in this group.",
                            "Back to group")
                    + '</div>' + homebar())
 
     write("14-group-balances.html", "14", "Group balances and simplified debts", "G05 · G06",
-          "Who-owes-whom, per currency, with Settle only on rows that involve you. Simplification is "
+          "Who-owes-whom, with Settle only on rows that involve you. Simplification is "
           "deliberately a separate read-only screen so it can never be mistaken for an action that "
           "rewrote the ledger.",
           [
-              frame("Balances", " Relationship sentences, not a matrix. Two currencies sit in two cards "
-                                "with no combined figure anywhere.", phone(g05)),
+              frame("Balances", " Relationship sentences, not a matrix. Display symbols stay next to "
+                                "each amount without implying conversion.", phone(g05)),
               frame("Simplified debts", " The non-mutation promise is the first thing on the screen, not "
                                         "a footnote, and there is no Apply button to misread.",
                     phone(g06)),
@@ -378,7 +372,7 @@ def build():
                      'as it is.</p>'
                      '<div class="facts">'
                      '<div class="f"><span class="k t-cap">Their balance here</span>'
-                     '<span class="t-cap semi mono c-pos">Owes you USD 30.00</span></div>'
+                     '<span class="t-cap semi mono c-pos">Owes you $30.00</span></div>'
                      '<div class="f"><span class="k t-cap">Past expenses</span>'
                      '<span class="t-cap semi">Unchanged</span></div>'
                      '<div class="f"><span class="k t-cap">Can be re-invited</span>'
@@ -397,7 +391,7 @@ def build():
                       'group.</p>'
                       '<div class="facts">'
                       '<div class="f"><span class="k t-cap">Outstanding</span>'
-                      '<span class="t-cap semi mono c-neg">You owe USD 240.00</span></div>'
+                      '<span class="t-cap semi mono c-neg">You owe $240.00</span></div>'
                       '<div class="f"><span class="k t-cap">Role</span>'
                       '<span class="t-cap semi">Admin · promote someone first</span></div>'
                       '</div></div>'
@@ -452,7 +446,7 @@ def build():
                 '<p>You keep read access to your own history. You will not see new expenses.</p>'
                 '<div class="facts">'
                 '<div class="f"><span class="k t-cap">Your balances</span>'
-                '<span class="t-cap semi">Settled in all currencies</span></div>'
+                '<span class="t-cap semi">Settled</span></div>'
                 '<div class="f"><span class="k t-cap">Past expenses</span>'
                 '<span class="t-cap semi">Preserved for everyone</span></div>'
                 '<div class="f"><span class="k t-cap">Rejoining</span>'
@@ -469,11 +463,11 @@ def build():
                      'them.</p>'
                      '<div class="facts">'
                      '<div class="f"><span class="k t-cap">You owe John Doe</span>'
-                     '<span class="t-cap semi mono c-neg">USD 240.00</span></div>'
+                     '<span class="t-cap semi mono c-neg">$240.00</span></div>'
                      '<div class="f"><span class="k t-cap">Maya Khan owes you</span>'
-                     '<span class="t-cap semi mono c-pos">USD 30.00</span></div>'
+                     '<span class="t-cap semi mono c-pos">$30.00</span></div>'
                      '<div class="f"><span class="k t-cap">You owe Omar Farooq</span>'
-                     '<span class="t-cap semi mono c-neg">PKR 12,500</span></div>'
+                     '<span class="t-cap semi mono c-neg">$12,500</span></div>'
                      '</div></div>'
                      '<div class="dacts"><span>Go to balances</span>'
                      '<span class="off">Leave group</span></div></div>' + homebar())
@@ -481,13 +475,13 @@ def build():
     write("16-group-settings.html", "16", "Group settings and leaving", "G08",
           "The Simplify debts switch carries its own disclaimer on the row, because a switch that "
           "sounds like it rewrites balances needs to say that it does not. Leaving is gated on "
-          "outstanding money, itemised per currency.",
+          "outstanding money, itemised by relationship.",
           [
               frame("Settings", " Destructive action is last, red, and separated by its own section "
                                 "label.", phone(g08)),
               frame("Leave, eligible", " Allowed because everything is settled — and it still states "
                                        "what is kept and what re-joining needs.", phone(leave_ok)),
               frame("Leave, blocked", " <em>Blocked action with explanation.</em> Every outstanding "
-                                      "balance listed with its own currency; no combined figure. The "
+                                      "balance is listed with the viewer's display symbol. The "
                                       "route out is the primary action.", phone(leave_blocked)),
           ])

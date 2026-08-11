@@ -5,7 +5,7 @@ import { useAppTheme } from '@/theme/theme';
 
 const points = [
   ['Split what you actually paid', 'One payer or several. Equal or exact amounts, down to the cent.'],
-  ['Balances stay per currency', 'USD and PKR are never added together into one number.'],
+  ['Balances stay clear', 'Every shared expense and payment updates one exact ledger balance.'],
   ['Record settlements made elsewhere', 'Cash, bank transfer, anything. Hissab keeps the record.'],
 ];
 

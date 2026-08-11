@@ -1,5 +1,6 @@
-import type { PropsWithChildren } from 'react';
-import { Text, TextInput, type TextInputProps, View } from 'react-native';
+import { useState, type PropsWithChildren } from 'react';
+import { Pressable, Text, TextInput, type TextInputProps, View } from 'react-native';
+import { SymbolView } from 'expo-symbols';
 
 import { useAppTheme } from '@/theme/theme';
 
@@ -35,25 +36,41 @@ export function AuthField({ children, error, first, hint, label }: AuthFieldProp
   );
 }
 
-export function AuthTextField({ error, first, hint, label, style, ...props }: TextInputProps & Omit<AuthFieldProps, 'children'>) {
+export function AuthTextField({ error, first, hint, label, secureTextEntry, style, ...props }: TextInputProps & Omit<AuthFieldProps, 'children'>) {
   const { colors } = useAppTheme();
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const isPassword = secureTextEntry === true;
   return (
     <AuthField error={error} first={first} hint={hint} label={label}>
-      <TextInput
-        accessibilityLabel={label}
-        placeholderTextColor={colors.secondary}
-        {...props}
-        style={[
-          {
-            minHeight: 44,
-            paddingVertical: 0,
-            color: colors.text,
-            fontSize: 16,
-            lineHeight: 24,
-          },
-          style,
-        ]}
-      />
+      <View style={{ minHeight: 44, flexDirection: 'row', alignItems: 'center' }}>
+        <TextInput
+          accessibilityLabel={label}
+          placeholderTextColor={colors.secondary}
+          secureTextEntry={isPassword && !passwordVisible}
+          {...props}
+          style={[
+            {
+              flex: 1,
+              minHeight: 44,
+              paddingVertical: 0,
+              color: colors.text,
+              fontSize: 16,
+              lineHeight: 24,
+            },
+            style,
+          ]}
+        />
+        {isPassword ? <PasswordVisibilityButton visible={passwordVisible} onPress={() => setPasswordVisible((value) => !value)} /> : null}
+      </View>
     </AuthField>
+  );
+}
+
+function PasswordVisibilityButton({ onPress, visible }: { onPress: () => void; visible: boolean }) {
+  const { colors } = useAppTheme();
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel={visible ? 'Hide password' : 'Show password'} onPress={onPress} style={{ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}>
+      <SymbolView name={{ ios: visible ? 'eye.slash' : 'eye', android: visible ? 'visibility_off' : 'visibility', web: visible ? 'visibility_off' : 'visibility' }} size={20} tintColor={colors.secondary} />
+    </Pressable>
   );
 }

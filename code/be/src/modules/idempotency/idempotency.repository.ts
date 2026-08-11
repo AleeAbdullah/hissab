@@ -31,14 +31,7 @@ export class IdempotencyRepository {
     const recordId = randomUUID();
     await transaction
       .delete(idempotencyKeys)
-      .where(
-        and(
-          eq(idempotencyKeys.actorFingerprint, input.actorFingerprint),
-          eq(idempotencyKeys.routeScope, input.routeScope),
-          eq(idempotencyKeys.idempotencyKey, input.idempotencyKey),
-          lte(idempotencyKeys.expiresAt, now),
-        ),
-      );
+      .where(lte(idempotencyKeys.expiresAt, now));
     const [inserted] = await transaction
       .insert(idempotencyKeys)
       .values({
@@ -106,6 +99,15 @@ export class IdempotencyRepository {
         lockedUntil: null,
         updatedAt: new Date(),
       })
+      .where(eq(idempotencyKeys.id, recordId));
+  }
+
+  async discard(
+    transaction: DatabaseTransaction,
+    recordId: string,
+  ): Promise<void> {
+    await transaction
+      .delete(idempotencyKeys)
       .where(eq(idempotencyKeys.id, recordId));
   }
 }

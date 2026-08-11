@@ -15,14 +15,14 @@ const localApiUrl =
   process.env.EXPO_OS === 'android'
     ? 'http://10.0.2.2:3000'
     : 'http://127.0.0.1:3000';
-const baseUrl = process.env.EXPO_PUBLIC_API_URL ?? (__DEV__ ? localApiUrl : '');
+export const apiBaseUrl = process.env.EXPO_PUBLIC_API_URL ?? (__DEV__ ? localApiUrl : '');
 
-if (!baseUrl) {
+if (!apiBaseUrl) {
   throw new Error('EXPO_PUBLIC_API_URL is required outside development.');
 }
 
 client.setConfig({
-  baseUrl,
+  baseUrl: apiBaseUrl,
   auth: () => getTokens()?.accessToken,
 });
 
@@ -30,6 +30,7 @@ export class ApiError extends Error {
   constructor(
     message: string,
     readonly status?: number,
+    readonly details?: Record<string, unknown>,
   ) {
     super(message);
     this.name = 'ApiError';
@@ -77,7 +78,13 @@ async function doRefresh() {
 
 function unwrap<T>(result: Result): T {
   if (result.error !== undefined) {
-    throw new ApiError(errorMessage(result.error), result.response?.status);
+    throw new ApiError(errorMessage(result.error), result.response?.status, errorDetails(result.error));
   }
   return result.data as T;
+}
+
+function errorDetails(error: unknown) {
+  if (!error || typeof error !== 'object') return undefined;
+  const details = (error as Record<string, unknown>).details;
+  return details && typeof details === 'object' ? details as Record<string, unknown> : undefined;
 }

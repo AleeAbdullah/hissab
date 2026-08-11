@@ -1,0 +1,30 @@
+info:
+  name: Create personal transaction
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{baseUrl}}/v1/personal/transactions"
+  headers:
+    - name: Content-Type
+      value: application/json
+    - name: Idempotency-Key
+      value: "{{$randomUUID}}"
+  body:
+    type: json
+    data: |-
+      {
+        "type": "INCOME",
+        "amountMinor": "{{amountMinor}}",
+        "categoryCode": "SALARY",
+        "description": "Monthly salary",
+        "merchantOrSource": "Employer",
+        "occurredAt": "{{occurredAt}}",
+        "notes": "Manual personal entry"
+      }
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+docs: Creates a private manual income or expense using currency-neutral integer minor units.

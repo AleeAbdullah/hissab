@@ -1,5 +1,5 @@
 import type { CreateExpenseDto } from '@/api/generated/types.gen';
-import type { SharedExpense, SharedExpenseCategoryCode, SupportedCurrency } from '@/api/contracts';
+import type { SharedExpense, SharedExpenseCategoryCode } from '@/api/contracts';
 
 export type AmountInputs = Record<string, string>;
 
@@ -19,7 +19,6 @@ export function minorToInput(minor: string) {
 export function buildExpenseBody(input: {
   amount: string;
   categoryCode: SharedExpenseCategoryCode | null;
-  currency: SupportedCurrency;
   description: string;
   exactAmounts: AmountInputs;
   occurredDate: string;
@@ -39,12 +38,12 @@ export function buildExpenseBody(input: {
   if (sum(payers.map((payer) => payer.amountMinor)) !== BigInt(totalMinor)) return { error: 'Payer amounts must add up to the total.' };
   if (!input.participantUserIds.length) return { error: 'Choose at least one participant.' };
   if (input.splitMethod === 'EQUAL') {
-    return { body: { categoryCode: input.categoryCode, currency: input.currency, description: input.description.trim(), occurredAt, payers, split: { method: 'EQUAL', participantUserIds: input.participantUserIds }, totalMinor } };
+    return { body: { categoryCode: input.categoryCode, description: input.description.trim(), occurredAt, payers, split: { method: 'EQUAL', participantUserIds: input.participantUserIds }, totalMinor } };
   }
   const allocations = allocationsFor(input.participantUserIds, input.exactAmounts);
   if ('error' in allocations) return allocations;
   if (sum(allocations.map((allocation) => allocation.amountMinor)) !== BigInt(totalMinor)) return { error: 'Exact split amounts must add up to the total.' };
-  return { body: { categoryCode: input.categoryCode, currency: input.currency, description: input.description.trim(), occurredAt, payers, split: { method: 'EXACT', allocations }, totalMinor } };
+  return { body: { categoryCode: input.categoryCode, description: input.description.trim(), occurredAt, payers, split: { method: 'EXACT', allocations }, totalMinor } };
 }
 
 export function expenseInitialValues(expense: SharedExpense) {

@@ -5,7 +5,7 @@ when. A row that says "Expense updated" without saying who and where is not an
 audit trail, it is a notification.
 """
 
-from lib import statusbar, homebar, nav, largetitle, tabbar, frame, phone, write, avatar, IC
+from lib import statusbar, homebar, nav, largetitle, tabbar, frame, phone as frame_phone, write, avatar, IC
 from comp import (seclabel, card, listcard, nav_row, search, banner, empty,
                   skeleton_rows, stale_strip, footer, GLYPH)
 
@@ -36,13 +36,13 @@ def act_row(initials, actor, action, context, when, amount=None, tone=1,
 
 
 TODAY = [
-    act_row("SK", "Sam Kessler", "edited an expense", "Winter Trip · Ski passes",
-            "9:03 AM", "USD 900.00", tone=1, unread=True),
+    act_row("AR", "You", "edited an expense", "Winter Trip · Ski passes",
+            "9:03 AM", "$900.00", tone=6, unread=True),
     act_row("AR", "You", "recorded a payment", "To John Doe", "9:14 AM",
-            "USD 100.00", tone=6, kind="neg", unread=True),
+            "$100.00", tone=6, kind="neg", unread=True),
     act_row("MK", "Maya Khan", "joined the group", "Winter Trip", "8:40 AM", tone=4),
     act_row("JD", "John Doe", "added an expense", "Brunch club · Brunch",
-            "8:02 AM", "USD 45.00", tone=2),
+            "8:02 AM", "$45.00", tone=2),
 ]
 
 # The day is the section heading, so the row carries only the time. Repeating
@@ -51,21 +51,25 @@ TODAY = [
 # in row height.
 YESTERDAY = [
     act_row("PN", "Priya Nair", "added an expense", "Flat 3B · Groceries",
-            "6:20 PM", "USD 128.00", tone=3),
+            "6:20 PM", "$128.00", tone=3),
     act_row("SK", "Sam Kessler", "recorded a payment", "To you", "1:05 PM",
-            "USD 15.00", tone=1, kind="pos"),
+            "$15.00", tone=1, kind="pos"),
     act_row("TA", "Tariq Ahmed", "left the group", "Winter Trip", "11:00 AM", tone=8),
 ]
 
 EARLIER = [
     act_row("JD", "John Doe", "deleted an expense", "Winter Trip · Cabin deposit",
-            "Aug 1", "USD 900.00", tone=2),
+            "Aug 1", "$900.00", tone=2),
     act_row("AR", "You", "accepted a connection", "Maya Khan", "Aug 1", tone=6),
 ]
 
 FILTER = ('<span class="act"><svg viewBox="0 0 22 22" width="21" height="21" style="display:block">'
           '<path d="M3 6h16M6 11h10M9 16h4" stroke="currentColor" stroke-width="2" '
           'stroke-linecap="round" fill="none"/></svg></span>')
+
+
+def phone(body, cls=""):
+    return frame_phone(body, f"brand activity {cls}".strip())
 
 
 def build():
@@ -119,26 +123,21 @@ def build():
 
     # ------------------------------------------------------------------ Y02 --
     chips = ('<div style="display:flex;gap:8px;padding:4px 16px 8px;flex-wrap:wrap">'
-             '<span class="badge b-brand">Expenses ✕</span>'
+             '<span class="badge b-brand">Shared activity ✕</span>'
              '<span class="badge b-brand">Winter Trip ✕</span>'
-             '<span class="badge">Payments</span>'
-             '<span class="badge">Members</span>'
-             '<span class="badge">Last 30 days</span>'
+             '<span class="badge">Social activity</span>'
              '</div>')
 
-    filters = (statusbar() + nav(title="Search activity", back="Activity")
-               + search("", "Search descriptions and people")
+    filters = (statusbar() + nav(title="Filter activity", back="Activity")
                + chips
                + '<div class="scroll">'
-               + seclabel("Filter by type", first=True)
+               + seclabel("Filter by area", first=True)
                + listcard([
-                   nav_row("Expenses", "Included", chev=False,
+                   nav_row("Shared activity", "Included", chev=False,
                            lead='<span class="badge b-brand">On</span>'),
-                   nav_row("Payments", "", chev=False),
-                   nav_row("Members and groups", "", chev=False),
-                   nav_row("Connections", "", chev=False),
+                   nav_row("Social activity", "", chev=False),
                ])
-               + seclabel("Filter by context")
+               + seclabel("Filter by ledger")
                + listcard([
                    nav_row("Winter Trip", "Included", chev=False,
                            lead='<span class="badge b-brand">On</span>'),
@@ -151,16 +150,15 @@ def build():
                         '<span class="btn" style="flex:1">Show 12 results</span></div>')
                + homebar())
 
-    results = (statusbar() + nav(title="Search activity", back="Activity")
-               + search("ski")
+    results = (statusbar() + nav(title="Filter activity", back="Activity")
                + chips
                + '<div class="scroll">'
                + seclabel("12 results · newest first", first=True)
                + listcard([
-                   act_row("SK", "Sam Kessler", "edited an expense",
-                           "Winter Trip · Ski passes", "Today 9:03 AM", "USD 900.00", tone=1),
+                   act_row("AR", "You", "edited an expense",
+                           "Winter Trip · Ski passes", "Today 9:03 AM", "$900.00", tone=6),
                    act_row("JD", "John Doe", "added an expense",
-                           "Winter Trip · Ski passes", "Jul 28", "USD 720.00", tone=2),
+                           "Winter Trip · Ski passes", "Jul 28", "$720.00", tone=2),
                    act_row("AR", "You", "changed the split",
                            "Winter Trip · Ski passes", "Jul 28", tone=6),
                ])
@@ -169,26 +167,23 @@ def build():
                'an audit trail must preserve.</p>'
                + '</div>' + homebar())
 
-    noresults = (statusbar() + nav(title="Search activity", back="Activity")
-                 + search("cabin")
+    noresults = (statusbar() + nav(title="Filter activity", back="Activity")
                  + chips
                  + '<div class="scroll">'
-                 + empty(GLYPH["search"], "No matches with these filters",
-                         "“cabin” appears in 1 event, but it is outside Winter Trip. "
-                         "Clearing the context filter would find it.",
-                         "Clear context filter")
+                 + empty(GLYPH["search"], "No activity with these filters",
+                         "Winter Trip has no shared activity in the selected area. "
+                         "Clearing the ledger filter will show activity elsewhere.",
+                         "Clear ledger filter")
                  + '</div>' + homebar())
 
-    write("28-activity-search.html", "28", "Activity search and filters", "Y02",
-          "Filters are visible as chips above the results rather than hidden behind an icon, so the "
-          "reason a result set is small is always on screen. Results stay chronological — relevance "
-          "ordering would destroy the property that makes the feed an audit trail.",
+    write("28-activity-search.html", "28", "Activity filters", "Y02",
+          "Area and ledger filters are visible as chips above the results rather than hidden behind an "
+          "icon, so the reason a result set is small is always on screen. Results stay chronological.",
           [
-              frame("Filters", " Type and context as two independent lists, with the resulting count "
+              frame("Filters", " Area and ledger as two independent lists, with the resulting count "
                                "on the action before it is applied.", phone(filters)),
               frame("Results", " Chips stay pinned above the results, and the ordering rule is "
                                "stated.", phone(results)),
               frame("No results", " Says which filter is responsible and offers to remove exactly "
                                   "that one, rather than a generic 'try again'.", phone(noresults)),
-          ],
-          prov="activity search and filter contract is not settled")
+          ])

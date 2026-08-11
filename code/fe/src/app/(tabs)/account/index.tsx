@@ -2,7 +2,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import Constants from 'expo-constants';
 import { Alert, Text, View } from 'react-native';
 
-import { profileQuery, sessionsQuery } from '@/features/account/api';
+import { notificationPreferencesQuery, profileQuery, sessionsQuery } from '@/features/account/api';
 import { signOut } from '@/features/auth/api';
 import { Avatar, Button, Card, ErrorMessage, Loading, Row, Screen, SectionLabel } from '@/components/ui';
 import { useAppTheme } from '@/theme/theme';
@@ -11,6 +11,7 @@ export default function AccountScreen() {
   const { colors } = useAppTheme();
   const profile = useQuery(profileQuery);
   const sessions = useQuery(sessionsQuery);
+  const notifications = useQuery(notificationPreferencesQuery);
   const mutation = useMutation({ mutationFn: signOut });
   if (profile.isLoading) return <Loading />;
 
@@ -22,9 +23,13 @@ export default function AccountScreen() {
           <Row title={profile.data.displayName} subtitle={profile.data.email} href="/account/profile" leading={<Avatar name={profile.data.displayName} large />} />
         </Card>
       ) : null}
+      <SectionLabel>TEMPORARY</SectionLabel>
+      <Card>
+        <Row title="Home" subtitle="Temporary access while navigation is being decided" href="/home" />
+      </Card>
       <SectionLabel>PREFERENCES</SectionLabel>
       <Card>
-        <Row title="Default currency" detail={profile.data?.defaultCurrency} href="/account/profile" />
+        <Row title="Display currency" detail={profile.data?.displayCurrency} href="/account/profile" />
         <Row title="Timezone" detail={profile.data?.timezone} href="/account/profile" />
         <Row title="Report mode" detail={profile.data?.personalReportMode === 'CASH_OUT_OF_POCKET' ? 'Cash out of pocket' : 'Your share'} href="/account/profile" />
       </Card>
@@ -32,7 +37,7 @@ export default function AccountScreen() {
       <Card>
         <Row title="Change password" href="/account/change-password" />
         <Row title="Devices and sessions" detail={sessions.data ? `${sessions.data.length} active` : undefined} href="/account/sessions" />
-        <Row title="Notifications" detail="Coming later" href="/account/notifications" />
+        <Row title="Notifications" detail={notifications.data?.pushEnabled ? 'On' : notifications.data ? 'Off' : undefined} href="/account/notifications" />
       </Card>
       <SectionLabel>YOUR DATA</SectionLabel>
       <Card>

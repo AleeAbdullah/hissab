@@ -1,6 +1,6 @@
 import type { Href } from 'expo-router';
 import { Link } from 'expo-router';
-import type { PropsWithChildren, ReactNode } from 'react';
+import { useState, type PropsWithChildren, type ReactElement, type ReactNode } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -8,17 +8,20 @@ import {
   Text,
   TextInput,
   type TextInputProps,
+  type RefreshControlProps,
   View,
 } from 'react-native';
+import { SymbolView } from 'expo-symbols';
 
 import { useAppTheme } from '@/theme/theme';
 
-export function Screen({ children }: PropsWithChildren) {
+export function Screen({ children, refreshControl }: PropsWithChildren<{ refreshControl?: ReactElement<RefreshControlProps> }>) {
   return (
     <ScrollView
       className="flex-1 bg-canvas"
       contentInsetAdjustmentBehavior="automatic"
       keyboardShouldPersistTaps="handled"
+      refreshControl={refreshControl}
       style={{ flex: 1 }}
       contentContainerStyle={{ padding: 20, gap: 16, flexGrow: 1 }}
     >
@@ -130,31 +133,32 @@ export function Avatar({ name, large }: { name: string; large?: boolean }) {
   );
 }
 
-export function Field({ label, error, hint, ...props }: TextInputProps & { label: string; error?: string; hint?: string }) {
+export function Field({ label, error, hint, secureTextEntry, ...props }: TextInputProps & { label: string; error?: string; hint?: string }) {
   const { colors } = useAppTheme();
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const isPassword = secureTextEntry === true;
   return (
     <View style={{ gap: 6 }}>
       <Text selectable style={{ color: colors.secondary, fontSize: 13 }}>{label}</Text>
-      <TextInput
-        accessibilityLabel={label}
-        placeholderTextColor={colors.secondary}
-        {...props}
-        style={[
-          {
-            minHeight: 48,
-            paddingHorizontal: 12,
-            paddingVertical: 10,
-            backgroundColor: colors.surface,
-            color: colors.text,
-            borderWidth: 1,
-            borderColor: error ? colors.negative : colors.control,
-            borderRadius: 12,
-            borderCurve: 'continuous',
-            fontSize: 17,
-          },
-          props.style,
-        ]}
-      />
+      <View style={{ minHeight: 48, flexDirection: 'row', alignItems: 'center', paddingLeft: 12, backgroundColor: colors.surface, borderWidth: 1, borderColor: error ? colors.negative : colors.control, borderRadius: 12, borderCurve: 'continuous' }}>
+        <TextInput
+          accessibilityLabel={label}
+          placeholderTextColor={colors.secondary}
+          secureTextEntry={isPassword && !passwordVisible}
+          {...props}
+          style={[
+            {
+              flex: 1,
+              minHeight: 48,
+              paddingVertical: 10,
+              color: colors.text,
+              fontSize: 17,
+            },
+            props.style,
+          ]}
+        />
+        {isPassword ? <Pressable accessibilityRole="button" accessibilityLabel={passwordVisible ? 'Hide password' : 'Show password'} onPress={() => setPasswordVisible((value) => !value)} style={{ minWidth: 44, minHeight: 48, alignItems: 'center', justifyContent: 'center' }}><SymbolView name={{ ios: passwordVisible ? 'eye.slash' : 'eye', android: passwordVisible ? 'visibility_off' : 'visibility', web: passwordVisible ? 'visibility_off' : 'visibility' }} size={20} tintColor={colors.secondary} /></Pressable> : null}
+      </View>
       {error || hint ? <Text selectable style={{ color: error ? colors.negative : colors.secondary, fontSize: 13, lineHeight: 18 }}>{error ?? hint}</Text> : null}
     </View>
   );

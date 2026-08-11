@@ -357,14 +357,14 @@ export class ConnectionsRepository {
       return false;
     }
     const [balance] = await transaction
-      .select({ currency: ledgerPostings.currency })
+      .select({ userId: ledgerPostings.userId })
       .from(ledgerPostings)
       .innerJoin(
         financialEvents,
         eq(financialEvents.id, ledgerPostings.financialEventId),
       )
       .where(eq(financialEvents.ledgerId, ledger.id))
-      .groupBy(ledgerPostings.userId, ledgerPostings.currency)
+      .groupBy(ledgerPostings.userId)
       .having(sql`sum(${ledgerPostings.amountMinor}) <> 0`)
       .limit(1);
     return Boolean(balance);

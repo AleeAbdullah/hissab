@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 
 import { Avatar, Button, Card, ErrorMessage, Loading, Row, Screen, SectionLabel } from '@/components/ui';
+import { profileQuery } from '@/features/account/api';
 import { userBalancesQuery } from '@/features/balances/api';
 import { ledgerBalanceDescriptions } from '@/features/balances/format';
 import { connectionsQuery, pendingRequestsQuery } from '@/features/connections/api';
@@ -16,12 +17,13 @@ export default function FriendsScreen() {
   const connections = useQuery(connectionsQuery);
   const requests = useQuery(pendingRequestsQuery);
   const balances = useQuery(userBalancesQuery);
+  const profile = useQuery(profileQuery);
   const filtered = useMemo(
     () => (connections.data ?? []).filter((friend) => `${friend.displayName} ${friend.email ?? ''}`.toLowerCase().includes(search.trim().toLowerCase())),
     [connections.data, search],
   );
 
-  if (connections.isLoading) return <Loading />;
+  if (connections.isLoading || profile.isLoading) return <Loading />;
 
   return (
     <Screen>
@@ -36,7 +38,7 @@ export default function FriendsScreen() {
           ),
         }}
       />
-      {connections.error || requests.error || balances.error ? <ErrorMessage error={connections.error ?? requests.error ?? balances.error} /> : null}
+      {connections.error || requests.error || balances.error || profile.error ? <ErrorMessage error={connections.error ?? requests.error ?? balances.error ?? profile.error} /> : null}
       <TextInput
         accessibilityLabel="Search friends"
         placeholder="Search"
@@ -56,7 +58,7 @@ export default function FriendsScreen() {
             <Row
               key={friend.userId}
               title={friend.displayName}
-              subtitle={balances.isLoading ? 'Loading balance…' : balances.error ? 'Balance unavailable' : ledgerBalanceDescriptions(balances.data, friend.ledgerId).join(' · ') || 'No recorded balance'}
+              subtitle={balances.isLoading || profile.isLoading ? 'Loading balance…' : balances.error || profile.error || !profile.data ? 'Balance unavailable' : ledgerBalanceDescriptions(balances.data, friend.ledgerId, profile.data.displayCurrency).join(' · ') || 'No recorded balance'}
               href={{ pathname: '/friends/[friendId]', params: { friendId: friend.userId } }}
               leading={<Avatar name={friend.displayName} />}
             />

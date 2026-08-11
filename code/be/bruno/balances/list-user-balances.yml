@@ -10,4 +10,4 @@ http:
     type: bearer
     token: "{{accessToken}}"
 
-docs: Computes the authenticated user's net balance per ledger and currency from immutable postings.
+docs: Computes the authenticated user's net balance per ledger from immutable postings.

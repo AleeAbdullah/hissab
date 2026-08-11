@@ -1,7 +1,7 @@
 import { createContext, use, useMemo, useState } from 'react';
 import type { PropsWithChildren } from 'react';
 
-import type { SupportedCurrency } from '@/api/contracts';
+import type { DisplayCurrency } from '@/api/contracts';
 
 export type LedgerDraftMember = { userId: string; displayName: string };
 
@@ -10,7 +10,7 @@ export type LedgerDraft = {
   ledgerName: string;
   members: LedgerDraftMember[];
   currentUserId: string;
-  defaultCurrency: SupportedCurrency;
+  displayCurrency: DisplayCurrency;
 };
 
 type LedgerDraftContextValue = {

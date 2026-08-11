@@ -16,7 +16,7 @@ http:
     data: |-
       {
         "displayName": "{{displayName}}",
-        "defaultCurrency": "{{defaultCurrency}}",
+        "displayCurrency": "{{displayCurrency}}",
         "timezone": "{{timezone}}",
         "personalReportMode": "OWED_SHARE"
       }
@@ -25,4 +25,3 @@ http:
     token: "{{accessToken}}"
 
 docs: Updates one or more fields on the authenticated user's profile.
-

@@ -5,6 +5,7 @@ import {
   type EnvironmentVariables,
   validateEnvironment,
 } from '../config/environment';
+import { DeliveryModule } from '../modules/delivery';
 import { OutboxModule } from '../modules/outbox';
 import { OutboxPollingService } from './outbox-polling.service';
 import {
@@ -21,6 +22,7 @@ import {
       validate: validateEnvironment,
     }),
     OutboxModule,
+    DeliveryModule,
   ],
   providers: [
     {

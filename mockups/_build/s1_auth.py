@@ -1,8 +1,7 @@
 """§1 Authentication — A01, A02, A04, A05, A06.
 
 Email verification and the post-registration profile wizard are not designed:
-the register form collects default currency and timezone directly and lands on
-the Friends tab.
+the register form collects timezone directly and lands on the Friends tab.
 """
 
 from lib import statusbar, homebar, nav, frame, phone, write, money, tick
@@ -44,7 +43,7 @@ def build():
     Shared expenses, and exactly who owes whom.
   </div>
   {bullet("Split what you actually paid", "One payer or several. Equal or exact amounts, down to the cent.")}
-  {bullet("Balances stay per currency", "USD and PKR are never added together into one number.")}
+  {bullet("Your symbol stays personal", "Choose its display later in Account. It never changes an amount.")}
   {bullet("Record settlements you made elsewhere", "Cash, bank transfer, anything. hissab keeps the record.")}
   <div style="margin-top:auto"></div>
   <div class="auth-actions"><div class="btn" style="margin-bottom:10px">Create account</div>
@@ -80,7 +79,7 @@ def build():
 <div class="scroll" {dim}>
   <div class="auth-page-head">
     <div class="t-large">Create account</div>
-    <div class="t-supp c-sec" style="margin-top:4px">Your default currency and timezone can be changed later in Account.</div>
+    <div class="t-supp c-sec" style="margin-top:4px">Your timezone can be changed later in Account.</div>
   </div>
   <div class="card">
     {f("Display name", name, "How friends will see you")}
@@ -89,10 +88,7 @@ def build():
        err_msg=(err if err and "character" in err else None),
        hint=(None if err else "At least 12 characters. No other restrictions."))}
   </div>
-  <div class="card">
-    {f("Default currency", "US Dollar · USD" if name else "", "Choose a currency", trail='<span style="margin-left:auto"></span>')}
-    {f("Timezone", "Asia/Karachi · GMT+5" if name else "", "Choose a timezone")}
-  </div>
+  <div class="card">{f("Timezone", "Asia/Karachi · GMT+5" if name else "", "Choose a timezone")}</div>
   <div class="auth-actions">{btn}</div>
   <p class="auth-legal t-cap c-sec">
     By creating an account you agree to the Terms and Privacy Policy.
@@ -100,9 +96,8 @@ def build():
 </div>''' + homebar()
 
     write("02-register.html", "02", "Register", "A02",
-          "One form, no wizard. Default currency and timezone are collected here because every balance in "
-          "the product is currency-scoped and every timestamp is shown in local time — neither can be "
-          "deferred. Password rule is stated up front, not revealed by rejection.",
+          "One form, no wizard. Timezone is collected here because timestamps are shown in local time. "
+          "The display symbol lives in Account. Password rule is stated up front, not revealed by rejection.",
           [
               frame("Empty", " Requirements visible before the user types, so the rule is never a surprise.",
                     auth_phone(register())),

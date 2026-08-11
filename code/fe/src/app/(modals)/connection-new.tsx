@@ -6,6 +6,7 @@ import { queryClient } from '@/api/query-client';
 import { Button, ErrorMessage, Screen } from '@/components/ui';
 import { connectionsQuery, findCandidate, pendingRequestsQuery, sendRequest } from '@/features/connections/api';
 import { ConnectionCandidateCard } from '@/features/connections/components/connection-candidate-card';
+import { homeQuery } from '@/features/home/api';
 import { useAppTheme } from '@/theme/theme';
 
 export default function NewConnectionScreen() {
@@ -18,6 +19,7 @@ export default function NewConnectionScreen() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: pendingRequestsQuery.queryKey }),
         queryClient.invalidateQueries({ queryKey: connectionsQuery.queryKey }),
+        queryClient.invalidateQueries({ queryKey: homeQuery.queryKey }),
       ]);
     },
   });

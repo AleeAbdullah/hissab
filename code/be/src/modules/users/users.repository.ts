@@ -13,7 +13,7 @@ export interface UserProfile {
   id: string;
   email: string;
   displayName: string;
-  defaultCurrency: string;
+  displayCurrency: string;
   timezone: string;
   personalReportMode: 'OWED_SHARE' | 'CASH_OUT_OF_POCKET';
   createdAt: Date;
@@ -35,7 +35,7 @@ export class UsersRepository {
         id: users.id,
         email: users.email,
         displayName: users.displayName,
-        defaultCurrency: users.defaultCurrency,
+        displayCurrency: users.displayCurrency,
         timezone: users.timezone,
         personalReportMode: userPreferences.personalReportMode,
         createdAt: users.createdAt,
@@ -58,9 +58,9 @@ export class UsersRepository {
       ...(dto.displayName === undefined
         ? {}
         : { displayName: dto.displayName }),
-      ...(dto.defaultCurrency === undefined
+      ...(dto.displayCurrency === undefined
         ? {}
-        : { defaultCurrency: dto.defaultCurrency }),
+        : { displayCurrency: dto.displayCurrency }),
       ...(dto.timezone === undefined ? {} : { timezone: dto.timezone }),
     };
 

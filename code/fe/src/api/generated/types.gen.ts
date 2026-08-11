@@ -4,8 +4,213 @@ export type ClientOptions = {
     baseUrl: string;
 };
 
+export type HomePersonalSummaryDto = {
+    monthNetMinor: string;
+};
+
+export type HomeSharedSummaryDto = {
+    totalNetMinor: string;
+    unsettledLedgerCount: number;
+    peopleCount: number;
+};
+
+export type HomeLedgerDto = {
+    id: string;
+    type: 'DIRECT' | 'GROUP';
+    name: string;
+};
+
+export type HomeUserDto = {
+    userId: string;
+    displayName: string;
+};
+
+export type HomeCategoryDto = {
+    code: string;
+    name: string;
+};
+
+export type HomeRecentItemDto = {
+    kind: 'PERSONAL_INCOME' | 'PERSONAL_EXPENSE' | 'SHARED_EXPENSE' | 'SHARED_SETTLEMENT';
+    id: string;
+    amountMinor: string;
+    ledger: HomeLedgerDto | null;
+    actor: HomeUserDto | null;
+    category: HomeCategoryDto | null;
+    description?: string | null;
+    from: HomeUserDto | null;
+    to: HomeUserDto | null;
+    occurredAt: string;
+    createdAt: string;
+};
+
+export type HomeDto = {
+    currency: 'PKR' | 'USD' | 'GBP' | 'EUR' | 'AED' | 'SAR';
+    personal: HomePersonalSummaryDto;
+    shared: HomeSharedSummaryDto;
+    recent: Array<HomeRecentItemDto>;
+};
+
+export type ActivityCategoryDto = {
+    code: string;
+    name: string;
+};
+
+export type ExpenseActivityDetailsDto = {
+    version: number;
+    totalMinor: string;
+    description: string;
+    category: ActivityCategoryDto;
+    occurredAt: string;
+};
+
+export type ActivityUserDto = {
+    userId: string;
+    displayName: string;
+};
+
+export type SettlementActivityDetailsDto = {
+    version: number;
+    amountMinor: string;
+    from: ActivityUserDto;
+    to: ActivityUserDto;
+    occurredAt: string;
+};
+
+export type GroupActivityDetailsDto = {
+    name?: string;
+    subjectUser?: ActivityUserDto;
+    reason?: 'LAST_MEMBER_LEFT';
+};
+
+export type ConnectionActivityDetailsDto = {
+    status: 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'CANCELLED' | 'BLOCKED' | 'UNBLOCKED';
+    ledgerId?: string;
+};
+
+export type ActivityLedgerDto = {
+    id: string;
+    type: 'DIRECT' | 'GROUP';
+    status: 'ACTIVE' | 'ARCHIVED';
+    name: string;
+};
+
+export type ActivityItemDto = {
+    id: string;
+    area: 'EXPENSE' | 'SETTLEMENT' | 'GROUP' | 'CONNECTION';
+    eventType: 'EXPENSE_CREATED' | 'EXPENSE_REPLACED' | 'EXPENSE_DELETED' | 'SETTLEMENT_CREATED' | 'SETTLEMENT_REPLACED' | 'SETTLEMENT_DELETED' | 'GROUP_CREATED' | 'GROUP_UPDATED' | 'GROUP_INVITATION_SENT' | 'GROUP_INVITATION_CANCELLED' | 'GROUP_INVITATION_ACCEPTED' | 'GROUP_INVITATION_DECLINED' | 'GROUP_MEMBER_LEFT' | 'GROUP_ARCHIVED' | 'CONNECTION_CREATED' | 'CONNECTION_ACCEPTED' | 'CONNECTION_DECLINED' | 'CONNECTION_CANCELLED' | 'CONNECTION_USER_BLOCKED' | 'CONNECTION_USER_UNBLOCKED';
+    aggregateId: string;
+    actor: ActivityUserDto | null;
+    ledger: ActivityLedgerDto | null;
+    counterparty: ActivityUserDto | null;
+    details: ExpenseActivityDetailsDto | SettlementActivityDetailsDto | GroupActivityDetailsDto | ConnectionActivityDetailsDto;
+    createdAt: string;
+};
+
+export type ActivityPageDto = {
+    items: Array<ActivityItemDto>;
+    nextCursor: string | null;
+};
+
+export type UserBalanceLedgerDto = {
+    ledgerId: string;
+    ledgerType: 'DIRECT' | 'GROUP';
+    ledgerStatus: 'ACTIVE' | 'ARCHIVED';
+    netMinor: string;
+};
+
+export type UserBalancesDto = {
+    totalNetMinor: string;
+    ledgers: Array<UserBalanceLedgerDto>;
+};
+
+export type LedgerBalanceMemberDto = {
+    userId: string;
+    displayName: string;
+    netMinor: string;
+};
+
+export type LedgerBalancesDto = {
+    ledgerId: string;
+    members: Array<LedgerBalanceMemberDto>;
+};
+
+export type PersonalCategoryDto = {
+    code: 'FOOD_AND_DRINK' | 'GROCERIES' | 'TRANSPORT' | 'ACCOMMODATION' | 'UTILITIES' | 'ENTERTAINMENT' | 'SHOPPING' | 'HEALTHCARE' | 'OTHER' | 'SALARY' | 'FREELANCE' | 'BUSINESS' | 'GIFTS' | 'REFUNDS' | 'OTHER_INCOME';
+    name: string;
+    kind: 'INCOME' | 'EXPENSE';
+};
+
+export type CreatePersonalTransactionDto = {
+    type: 'INCOME' | 'EXPENSE';
+    amountMinor: string;
+    categoryCode: 'FOOD_AND_DRINK' | 'GROCERIES' | 'TRANSPORT' | 'ACCOMMODATION' | 'UTILITIES' | 'ENTERTAINMENT' | 'SHOPPING' | 'HEALTHCARE' | 'OTHER' | 'SALARY' | 'FREELANCE' | 'BUSINESS' | 'GIFTS' | 'REFUNDS' | 'OTHER_INCOME';
+    description: string;
+    occurredAt: string;
+    merchantOrSource?: string | null;
+    notes?: string | null;
+};
+
+export type PersonalTransactionCategoryDto = {
+    code: 'FOOD_AND_DRINK' | 'GROCERIES' | 'TRANSPORT' | 'ACCOMMODATION' | 'UTILITIES' | 'ENTERTAINMENT' | 'SHOPPING' | 'HEALTHCARE' | 'OTHER' | 'SALARY' | 'FREELANCE' | 'BUSINESS' | 'GIFTS' | 'REFUNDS' | 'OTHER_INCOME';
+    name: string;
+};
+
+export type PersonalTransactionDto = {
+    id: string;
+    type: 'INCOME' | 'EXPENSE';
+    amountMinor: string;
+    category: PersonalTransactionCategoryDto;
+    description: string;
+    merchantOrSource: string | null;
+    occurredAt: string;
+    notes: string | null;
+    status: 'ACTIVE' | 'DELETED';
+    version: number;
+    createdAt: string;
+};
+
+export type PersonalTransactionPageDto = {
+    items: Array<PersonalTransactionDto>;
+    nextCursor: string | null;
+};
+
+export type ReplacePersonalTransactionDto = {
+    type: 'INCOME' | 'EXPENSE';
+    amountMinor: string;
+    categoryCode: 'FOOD_AND_DRINK' | 'GROCERIES' | 'TRANSPORT' | 'ACCOMMODATION' | 'UTILITIES' | 'ENTERTAINMENT' | 'SHOPPING' | 'HEALTHCARE' | 'OTHER' | 'SALARY' | 'FREELANCE' | 'BUSINESS' | 'GIFTS' | 'REFUNDS' | 'OTHER_INCOME';
+    description: string;
+    occurredAt: string;
+    merchantOrSource?: string | null;
+    notes?: string | null;
+    expectedVersion: number;
+};
+
+export type PersonalReportBucketDto = {
+    period: string;
+    incomeMinor: string;
+    expenseMinor: string;
+    netMinor: string;
+};
+
+export type PersonalReportResponseDto = {
+    incomeMinor: string;
+    expenseMinor: string;
+    netMinor: string;
+    buckets: Array<PersonalReportBucketDto>;
+    mode: 'OWED_SHARE' | 'CASH_OUT_OF_POCKET';
+    bucket: 'DAY' | 'MONTH';
+    timezone: string;
+};
+
+export type UpdateProfileDto = {
+    displayCurrency?: 'PKR' | 'USD' | 'GBP' | 'EUR' | 'AED' | 'SAR';
+    displayName?: string;
+    timezone?: string;
+    personalReportMode?: 'OWED_SHARE' | 'CASH_OUT_OF_POCKET';
+};
+
 export type RegisterDto = {
-    defaultCurrency: 'PKR' | 'USD' | 'GBP' | 'EUR' | 'AED' | 'SAR';
     email: string;
     password: string;
     displayName: string;
@@ -37,11 +242,268 @@ export type ChangePasswordDto = {
     newPassword: string;
 };
 
-export type UpdateProfileDto = {
-    defaultCurrency?: 'PKR' | 'USD' | 'GBP' | 'EUR' | 'AED' | 'SAR';
-    displayName?: string;
-    timezone?: string;
-    personalReportMode?: 'OWED_SHARE' | 'CASH_OUT_OF_POCKET';
+export type ExportProfileDto = {
+    id: string;
+    email: string;
+    displayName: string;
+    displayCurrency: 'PKR' | 'USD' | 'GBP' | 'EUR' | 'AED' | 'SAR';
+    timezone: string;
+    status: 'ACTIVE';
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type ExportPreferencesDto = {
+    personalReportMode: 'OWED_SHARE' | 'CASH_OUT_OF_POCKET';
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type ExportNotificationPreferencesDto = {
+    pushEnabled: boolean;
+    expenseActivityEnabled: boolean;
+    settlementActivityEnabled: boolean;
+    socialActivityEnabled: boolean;
+    remindersEnabled: boolean;
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type ExportMembershipDto = {
+    status: 'INVITED' | 'ACTIVE' | 'DECLINED' | 'CANCELLED' | 'LEFT';
+    invitedByUserId: string | null;
+    invitedAt: string | null;
+    joinedAt: string | null;
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type ExportGroupMemberDto = {
+    userId: string;
+    displayName: string;
+    status: 'INVITED' | 'ACTIVE' | 'DECLINED' | 'CANCELLED' | 'LEFT';
+    invitedByUserId: string | null;
+    invitedAt: string | null;
+    joinedAt: string | null;
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type ExportGroupDto = {
+    id: string;
+    name: string;
+    status: 'ACTIVE' | 'ARCHIVED';
+    membership: ExportMembershipDto;
+    members: Array<ExportGroupMemberDto>;
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type ExportUserDto = {
+    userId: string;
+    displayName: string;
+};
+
+export type ExportDirectLedgerDto = {
+    id: string;
+    status: 'ACTIVE' | 'ARCHIVED';
+    participants: Array<ExportUserDto>;
+    membershipStatus: 'ACTIVE' | 'LEFT';
+    joinedAt: string | null;
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type ExportConnectionRequestDto = {
+    id: string;
+    direction: 'INCOMING' | 'OUTGOING';
+    sender: ExportUserDto;
+    receiver: ExportUserDto;
+    status: 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'CANCELLED';
+    createdAt: string;
+    updatedAt: string;
+    resolvedAt: string | null;
+};
+
+export type ExportBlockDto = {
+    blockedUser: ExportUserDto;
+    createdAt: string;
+};
+
+export type ExportCategoryDto = {
+    code: string;
+    name: string;
+};
+
+export type ExportExpenseRevisionDto = {
+    id: string;
+    rootExpenseId: string;
+    replacesExpenseId: string | null;
+    ledgerId: string;
+    createdByUserId: string;
+    description: string;
+    totalMinor: string;
+    category: ExportCategoryDto;
+    occurredAt: string;
+    status: 'ACTIVE' | 'DELETED';
+    version: number;
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type ExportExpensePayerDto = {
+    expenseId: string;
+    userId: string;
+    amountMinor: string;
+};
+
+export type ExportExpenseSplitDto = {
+    expenseId: string;
+    userId: string;
+    owedMinor: string;
+    splitMethod: 'EQUAL' | 'EXACT';
+};
+
+export type ExportPaymentRevisionDto = {
+    id: string;
+    rootPaymentId: string;
+    replacesPaymentId: string | null;
+    ledgerId: string;
+    createdByUserId: string;
+    fromUserId: string;
+    toUserId: string;
+    amountMinor: string;
+    occurredAt: string;
+    status: 'ACTIVE' | 'DELETED';
+    version: number;
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type ExportFinancialEventDto = {
+    id: string;
+    ledgerId: string;
+    expenseId: string | null;
+    paymentId: string | null;
+    eventType: 'CREATED' | 'REPLACEMENT' | 'REVERSAL';
+    reversesEventId: string | null;
+    createdByUserId: string;
+    createdAt: string;
+};
+
+export type ExportEventAllocationDto = {
+    id: string;
+    financialEventId: string;
+    userId: string;
+    role: 'PAYER' | 'PARTICIPANT';
+    amountMinor: string;
+    splitMethod: 'EQUAL' | 'EXACT';
+};
+
+export type ExportLedgerPostingDto = {
+    id: string;
+    financialEventId: string;
+    userId: string;
+    amountMinor: string;
+};
+
+export type ExportSharedFinanceDto = {
+    expenses: Array<ExportExpenseRevisionDto>;
+    expensePayers: Array<ExportExpensePayerDto>;
+    expenseSplits: Array<ExportExpenseSplitDto>;
+    payments: Array<ExportPaymentRevisionDto>;
+    financialEvents: Array<ExportFinancialEventDto>;
+    eventAllocations: Array<ExportEventAllocationDto>;
+    ledgerPostings: Array<ExportLedgerPostingDto>;
+};
+
+export type ExportPersonalLedgerDto = {
+    id: string;
+    createdAt: string;
+};
+
+export type ExportPersonalTransactionDto = {
+    id: string;
+    rootPersonalTransactionId: string;
+    replacesPersonalTransactionId: string | null;
+    type: 'INCOME' | 'EXPENSE';
+    amountMinor: string;
+    category: ExportCategoryDto;
+    description: string;
+    merchantOrSource: string | null;
+    occurredAt: string;
+    notes: string | null;
+    status: 'ACTIVE' | 'DELETED';
+    version: number;
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type ExportPersonalFinanceDto = {
+    ledger: ExportPersonalLedgerDto;
+    transactions: Array<ExportPersonalTransactionDto>;
+};
+
+export type ExportActivityDto = {
+    id: string;
+    actor: ExportUserDto | null;
+    ledgerId: string | null;
+    eventType: string;
+    aggregateType: string;
+    aggregateId: string;
+    createdAt: string;
+};
+
+export type ExportReminderDto = {
+    id: string;
+    ledgerId: string;
+    requesterUserId: string;
+    recipientUserId: string;
+    owedMinor: string;
+    createdAt: string;
+};
+
+export type ExportNotificationDto = {
+    id: string;
+    actorUserId: string | null;
+    ledgerId: string | null;
+    kind: 'EXPENSE' | 'SETTLEMENT' | 'SOCIAL' | 'REMINDER';
+    eventType: string;
+    aggregateType: string;
+    aggregateId: string;
+    title: string;
+    body: string;
+    details: {
+        [key: string]: unknown;
+    };
+    readAt: string | null;
+    createdAt: string;
+};
+
+export type AccountExportDto = {
+    schemaVersion: 1;
+    generatedAt: string;
+    profile: ExportProfileDto;
+    preferences: ExportPreferencesDto;
+    notificationPreferences: ExportNotificationPreferencesDto;
+    groups: Array<ExportGroupDto>;
+    directLedgers: Array<ExportDirectLedgerDto>;
+    connectionRequests: Array<ExportConnectionRequestDto>;
+    blocks: Array<ExportBlockDto>;
+    sharedFinance: ExportSharedFinanceDto;
+    personalFinance: ExportPersonalFinanceDto;
+    activity: Array<ExportActivityDto>;
+    reminders: Array<ExportReminderDto>;
+    notifications: Array<ExportNotificationDto>;
+};
+
+export type DeleteAccountDto = {
+    confirmation: 'DELETE';
+};
+
+export type AccountDeletionResultDto = {
+    status: 'ANONYMIZED';
+    deletedAt: string;
 };
 
 export type CreateConnectionRequestDto = {
@@ -74,7 +536,6 @@ export type CreateExpenseDto = {
     } & EqualExpenseSplitDto) | ({
         method: 'EXACT';
     } & ExactExpenseSplitDto);
-    currency: 'PKR' | 'USD' | 'GBP' | 'EUR' | 'AED' | 'SAR';
 };
 
 export type ReplaceExpenseDto = {
@@ -108,7 +569,6 @@ export type CreateSettlementDto = {
     toUserId: string;
     amountMinor: string;
     occurredAt: string;
-    currency: 'PKR' | 'USD' | 'GBP' | 'EUR' | 'AED' | 'SAR';
 };
 
 export type ReplaceSettlementDto = {
@@ -117,6 +577,101 @@ export type ReplaceSettlementDto = {
     amountMinor: string;
     occurredAt: string;
     expectedVersion: number;
+};
+
+export type NotificationDto = {
+    id: string;
+    actorUserId: string | null;
+    ledgerId: string | null;
+    kind: 'EXPENSE' | 'SETTLEMENT' | 'SOCIAL' | 'REMINDER';
+    eventType: string;
+    aggregateType: string;
+    aggregateId: string;
+    title: string;
+    body: string;
+    details: {
+        [key: string]: unknown;
+    };
+    readAt: string | null;
+    createdAt: string;
+};
+
+export type NotificationPageDto = {
+    items: Array<NotificationDto>;
+    nextCursor: string | null;
+};
+
+export type MarkAllNotificationsReadDto = {
+    updatedCount: number;
+};
+
+export type NotificationPreferencesDto = {
+    pushEnabled: boolean;
+    expenseActivityEnabled: boolean;
+    settlementActivityEnabled: boolean;
+    socialActivityEnabled: boolean;
+    remindersEnabled: boolean;
+    updatedAt: string;
+};
+
+export type UpdateNotificationPreferencesDto = {
+    pushEnabled?: boolean;
+    expenseActivityEnabled?: boolean;
+    settlementActivityEnabled?: boolean;
+    socialActivityEnabled?: boolean;
+    remindersEnabled?: boolean;
+};
+
+export type RegisterNotificationDeviceDto = {
+    token: string;
+    platform: 'IOS' | 'ANDROID';
+    /**
+     * Stable app-install identifier, not a hardware identifier.
+     */
+    deviceId?: string;
+};
+
+export type NotificationDeviceDto = {
+    id: string;
+    platform: 'IOS' | 'ANDROID';
+    deviceId: string | null;
+    enabled: boolean;
+    lastSeenAt: string;
+    revokedAt: string | null;
+};
+
+export type CreateReminderDto = {
+    recipientUserId: string;
+};
+
+export type ReminderDto = {
+    id: string;
+    ledgerId: string;
+    requesterUserId: string;
+    recipientUserId: string;
+    owedMinor: string;
+    createdAt: string;
+};
+
+export type ReminderCooldownDetailsDto = {
+    retryAt: string;
+};
+
+export type ReminderCooldownErrorDto = {
+    code: 'REMINDER_COOLDOWN';
+    message: string;
+    details: ReminderCooldownDetailsDto;
+};
+
+export type ReminderCooldownResponseDto = {
+    error: ReminderCooldownErrorDto;
+    requestId: string;
+    timestamp: string;
+};
+
+export type DeleteAccountDtoWritable = {
+    currentPassword: string;
+    confirmation: 'DELETE';
 };
 
 export type HealthLiveData = {
@@ -140,6 +695,247 @@ export type HealthReadyData = {
 export type HealthReadyResponses = {
     200: unknown;
 };
+
+export type HomeGetHomeData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/v1/home';
+};
+
+export type HomeGetHomeResponses = {
+    200: HomeDto;
+};
+
+export type HomeGetHomeResponse = HomeGetHomeResponses[keyof HomeGetHomeResponses];
+
+export type ActivityListData = {
+    body?: never;
+    path?: never;
+    query?: {
+        area?: 'EXPENSE' | 'SETTLEMENT' | 'GROUP' | 'CONNECTION';
+        ledgerId?: string;
+        cursor?: string;
+        limit?: number;
+    };
+    url: '/v1/activity';
+};
+
+export type ActivityListResponses = {
+    200: ActivityPageDto;
+};
+
+export type ActivityListResponse = ActivityListResponses[keyof ActivityListResponses];
+
+export type BalancesListUserBalancesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/v1/balances';
+};
+
+export type BalancesListUserBalancesResponses = {
+    200: UserBalancesDto;
+};
+
+export type BalancesListUserBalancesResponse = BalancesListUserBalancesResponses[keyof BalancesListUserBalancesResponses];
+
+export type BalancesListLedgerBalancesData = {
+    body?: never;
+    path: {
+        ledgerId: string;
+    };
+    query?: never;
+    url: '/v1/ledgers/{ledgerId}/balances';
+};
+
+export type BalancesListLedgerBalancesResponses = {
+    200: LedgerBalancesDto;
+};
+
+export type BalancesListLedgerBalancesResponse = BalancesListLedgerBalancesResponses[keyof BalancesListLedgerBalancesResponses];
+
+export type PersonalListCategoriesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/v1/personal/categories';
+};
+
+export type PersonalListCategoriesResponses = {
+    200: Array<PersonalCategoryDto>;
+};
+
+export type PersonalListCategoriesResponse = PersonalListCategoriesResponses[keyof PersonalListCategoriesResponses];
+
+export type PersonalListTransactionsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Inclusive occurrence-time boundary.
+         */
+        from?: string;
+        /**
+         * Exclusive occurrence-time boundary.
+         */
+        to?: string;
+        type?: 'INCOME' | 'EXPENSE';
+        categoryCode?: 'FOOD_AND_DRINK' | 'GROCERIES' | 'TRANSPORT' | 'ACCOMMODATION' | 'UTILITIES' | 'ENTERTAINMENT' | 'SHOPPING' | 'HEALTHCARE' | 'OTHER' | 'SALARY' | 'FREELANCE' | 'BUSINESS' | 'GIFTS' | 'REFUNDS' | 'OTHER_INCOME';
+        cursor?: string;
+        limit?: number;
+    };
+    url: '/v1/personal/transactions';
+};
+
+export type PersonalListTransactionsResponses = {
+    200: PersonalTransactionPageDto;
+};
+
+export type PersonalListTransactionsResponse = PersonalListTransactionsResponses[keyof PersonalListTransactionsResponses];
+
+export type PersonalCreateTransactionData = {
+    body: CreatePersonalTransactionDto;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/personal/transactions';
+};
+
+export type PersonalCreateTransactionResponses = {
+    201: PersonalTransactionDto;
+};
+
+export type PersonalCreateTransactionResponse = PersonalCreateTransactionResponses[keyof PersonalCreateTransactionResponses];
+
+export type PersonalDeleteTransactionData = {
+    body?: never;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        transactionId: string;
+    };
+    query: {
+        expectedVersion: number;
+    };
+    url: '/v1/personal/transactions/{transactionId}';
+};
+
+export type PersonalDeleteTransactionResponses = {
+    200: PersonalTransactionDto;
+};
+
+export type PersonalDeleteTransactionResponse = PersonalDeleteTransactionResponses[keyof PersonalDeleteTransactionResponses];
+
+export type PersonalGetTransactionData = {
+    body?: never;
+    path: {
+        transactionId: string;
+    };
+    query?: never;
+    url: '/v1/personal/transactions/{transactionId}';
+};
+
+export type PersonalGetTransactionResponses = {
+    200: PersonalTransactionDto;
+};
+
+export type PersonalGetTransactionResponse = PersonalGetTransactionResponses[keyof PersonalGetTransactionResponses];
+
+export type PersonalReplaceTransactionData = {
+    body: ReplacePersonalTransactionDto;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        transactionId: string;
+    };
+    query?: never;
+    url: '/v1/personal/transactions/{transactionId}';
+};
+
+export type PersonalReplaceTransactionResponses = {
+    200: PersonalTransactionDto;
+};
+
+export type PersonalReplaceTransactionResponse = PersonalReplaceTransactionResponses[keyof PersonalReplaceTransactionResponses];
+
+export type PersonalGetReportData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Inclusive occurrence-time boundary.
+         */
+        from?: string;
+        /**
+         * Exclusive occurrence-time boundary.
+         */
+        to?: string;
+        type?: 'INCOME' | 'EXPENSE';
+        categoryCode?: 'FOOD_AND_DRINK' | 'GROCERIES' | 'TRANSPORT' | 'ACCOMMODATION' | 'UTILITIES' | 'ENTERTAINMENT' | 'SHOPPING' | 'HEALTHCARE' | 'OTHER' | 'SALARY' | 'FREELANCE' | 'BUSINESS' | 'GIFTS' | 'REFUNDS' | 'OTHER_INCOME';
+        /**
+         * Defaults to the user profile preference.
+         */
+        mode?: 'OWED_SHARE' | 'CASH_OUT_OF_POCKET';
+        bucket?: 'DAY' | 'MONTH';
+    };
+    url: '/v1/personal/reports';
+};
+
+export type PersonalGetReportResponses = {
+    200: PersonalReportResponseDto;
+};
+
+export type PersonalGetReportResponse = PersonalGetReportResponses[keyof PersonalGetReportResponses];
+
+export type UsersGetProfileData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/v1/users/me';
+};
+
+export type UsersGetProfileResponses = {
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type UsersGetProfileResponse = UsersGetProfileResponses[keyof UsersGetProfileResponses];
+
+export type UsersUpdateProfileData = {
+    body: UpdateProfileDto;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/users/me';
+};
+
+export type UsersUpdateProfileResponses = {
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type UsersUpdateProfileResponse = UsersUpdateProfileResponses[keyof UsersUpdateProfileResponses];
 
 export type AuthRegisterData = {
     body: RegisterDto;
@@ -323,23 +1119,21 @@ export type AuthChangePasswordResponses = {
     200: unknown;
 };
 
-export type UsersGetProfileData = {
+export type AccountExportAccountData = {
     body?: never;
     path?: never;
     query?: never;
-    url: '/v1/users/me';
+    url: '/v1/account/export';
 };
 
-export type UsersGetProfileResponses = {
-    200: {
-        [key: string]: unknown;
-    };
+export type AccountExportAccountResponses = {
+    200: AccountExportDto;
 };
 
-export type UsersGetProfileResponse = UsersGetProfileResponses[keyof UsersGetProfileResponses];
+export type AccountExportAccountResponse = AccountExportAccountResponses[keyof AccountExportAccountResponses];
 
-export type UsersUpdateProfileData = {
-    body: UpdateProfileDto;
+export type AccountDeleteAccountData = {
+    body: DeleteAccountDtoWritable;
     headers: {
         /**
          * A unique key for safely retrying this mutation.
@@ -348,16 +1142,14 @@ export type UsersUpdateProfileData = {
     };
     path?: never;
     query?: never;
-    url: '/v1/users/me';
+    url: '/v1/account/deletion';
 };
 
-export type UsersUpdateProfileResponses = {
-    200: {
-        [key: string]: unknown;
-    };
+export type AccountDeleteAccountResponses = {
+    200: AccountDeletionResultDto;
 };
 
-export type UsersUpdateProfileResponse = UsersUpdateProfileResponses[keyof UsersUpdateProfileResponses];
+export type AccountDeleteAccountResponse = AccountDeleteAccountResponses[keyof AccountDeleteAccountResponses];
 
 export type ConnectionsListRequestsData = {
     body?: never;
@@ -535,38 +1327,6 @@ export type ConnectionsBlockData = {
 export type ConnectionsBlockResponses = {
     200: unknown;
 };
-
-export type BalancesListUserBalancesData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/v1/balances';
-};
-
-export type BalancesListUserBalancesResponses = {
-    200: {
-        [key: string]: unknown;
-    };
-};
-
-export type BalancesListUserBalancesResponse = BalancesListUserBalancesResponses[keyof BalancesListUserBalancesResponses];
-
-export type BalancesListLedgerBalancesData = {
-    body?: never;
-    path: {
-        ledgerId: string;
-    };
-    query?: never;
-    url: '/v1/ledgers/{ledgerId}/balances';
-};
-
-export type BalancesListLedgerBalancesResponses = {
-    200: {
-        [key: string]: unknown;
-    };
-};
-
-export type BalancesListLedgerBalancesResponse = BalancesListLedgerBalancesResponses[keyof BalancesListLedgerBalancesResponses];
 
 export type ExpensesListCategoriesData = {
     body?: never;
@@ -1026,3 +1786,158 @@ export type SettlementsReplaceSettlementResponses = {
 };
 
 export type SettlementsReplaceSettlementResponse = SettlementsReplaceSettlementResponses[keyof SettlementsReplaceSettlementResponses];
+
+export type NotificationsListNotificationsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        cursor?: string;
+        limit?: number;
+    };
+    url: '/v1/notifications';
+};
+
+export type NotificationsListNotificationsResponses = {
+    200: NotificationPageDto;
+};
+
+export type NotificationsListNotificationsResponse = NotificationsListNotificationsResponses[keyof NotificationsListNotificationsResponses];
+
+export type NotificationsMarkNotificationReadData = {
+    body?: never;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        notificationId: string;
+    };
+    query?: never;
+    url: '/v1/notifications/{notificationId}/read';
+};
+
+export type NotificationsMarkNotificationReadResponses = {
+    200: NotificationDto;
+};
+
+export type NotificationsMarkNotificationReadResponse = NotificationsMarkNotificationReadResponses[keyof NotificationsMarkNotificationReadResponses];
+
+export type NotificationsMarkAllNotificationsReadData = {
+    body?: never;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/notifications/read-all';
+};
+
+export type NotificationsMarkAllNotificationsReadResponses = {
+    200: MarkAllNotificationsReadDto;
+};
+
+export type NotificationsMarkAllNotificationsReadResponse = NotificationsMarkAllNotificationsReadResponses[keyof NotificationsMarkAllNotificationsReadResponses];
+
+export type NotificationsGetNotificationPreferencesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/v1/notification-preferences';
+};
+
+export type NotificationsGetNotificationPreferencesResponses = {
+    200: NotificationPreferencesDto;
+};
+
+export type NotificationsGetNotificationPreferencesResponse = NotificationsGetNotificationPreferencesResponses[keyof NotificationsGetNotificationPreferencesResponses];
+
+export type NotificationsUpdateNotificationPreferencesData = {
+    body: UpdateNotificationPreferencesDto;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/notification-preferences';
+};
+
+export type NotificationsUpdateNotificationPreferencesResponses = {
+    200: NotificationPreferencesDto;
+};
+
+export type NotificationsUpdateNotificationPreferencesResponse = NotificationsUpdateNotificationPreferencesResponses[keyof NotificationsUpdateNotificationPreferencesResponses];
+
+export type NotificationsRegisterNotificationDeviceData = {
+    body: RegisterNotificationDeviceDto;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/notification-devices';
+};
+
+export type NotificationsRegisterNotificationDeviceResponses = {
+    201: NotificationDeviceDto;
+};
+
+export type NotificationsRegisterNotificationDeviceResponse = NotificationsRegisterNotificationDeviceResponses[keyof NotificationsRegisterNotificationDeviceResponses];
+
+export type NotificationsRevokeNotificationDeviceData = {
+    body?: never;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        deviceId: string;
+    };
+    query?: never;
+    url: '/v1/notification-devices/{deviceId}';
+};
+
+export type NotificationsRevokeNotificationDeviceResponses = {
+    200: NotificationDeviceDto;
+};
+
+export type NotificationsRevokeNotificationDeviceResponse = NotificationsRevokeNotificationDeviceResponses[keyof NotificationsRevokeNotificationDeviceResponses];
+
+export type RemindersCreateReminderData = {
+    body: CreateReminderDto;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        ledgerId: string;
+    };
+    query?: never;
+    url: '/v1/ledgers/{ledgerId}/reminders';
+};
+
+export type RemindersCreateReminderErrors = {
+    429: ReminderCooldownResponseDto;
+};
+
+export type RemindersCreateReminderError = RemindersCreateReminderErrors[keyof RemindersCreateReminderErrors];
+
+export type RemindersCreateReminderResponses = {
+    201: ReminderDto;
+};
+
+export type RemindersCreateReminderResponse = RemindersCreateReminderResponses[keyof RemindersCreateReminderResponses];

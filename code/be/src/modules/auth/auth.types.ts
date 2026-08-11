@@ -8,7 +8,7 @@ export interface AuthUser {
   id: string;
   email: string;
   displayName: string;
-  defaultCurrency: string;
+  displayCurrency: string;
   timezone: string;
 }
 

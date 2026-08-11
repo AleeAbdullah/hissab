@@ -1,0 +1,7 @@
+info:
+  name: Activity
+  type: folder
+  seq: 8
+
+auth:
+  type: inherit

@@ -5,11 +5,15 @@ off it; the second is the account lifecycle, where the product has to explain
 that deleting an account cannot delete money other people are owed.
 """
 
-from lib import (statusbar, homebar, nav, largetitle, tabbar, frame, phone,
+from lib import (statusbar, homebar, nav, largetitle, tabbar, frame, phone as frame_phone,
                  write, avatar, IC, tick)
 from comp import (seclabel, card, listcard, nav_row, kv_row, person_row,
-                  expense_row, banner, empty, footer, GLYPH)
+                  expense_row, banner, empty, footer, GLYPH, select_row)
 from s4_expense import CANCEL
+
+
+def phone(body, cls=""):
+    return frame_phone(body, f"brand account {cls}".strip())
 
 
 def toggle(label, on, sub=None):
@@ -32,7 +36,7 @@ def build():
                    + IC["chev"] + '</div>')
             + seclabel("Preferences", first=True)
             + listcard([
-                nav_row("Default currency", "USD"),
+                nav_row("Display currency", "$ · US Dollar"),
                 nav_row("Timezone", "Asia/Karachi"),
                 nav_row("Report mode", "Your share"),
             ])
@@ -67,16 +71,28 @@ def build():
                       'version.</span></div>')
                + seclabel("Defaults")
                + listcard([
-                   nav_row("Default currency", "US Dollar · USD"),
                    nav_row("Timezone", "Asia/Karachi"),
                    nav_row("Report mode", "Your share"),
                ])
-               + '<p class="t-cap c-sec" style="margin:12px 20px">The default currency only '
-               'pre-selects a value on new expenses. It never converts anything, and it does not '
-               'change existing records.</p>'
                + '<p class="t-cap c-sec" style="margin:12px 20px">Profile photos are not '
                'supported. Initials and colour are generated from your name.</p>'
                + '</div>' + homebar())
+
+    display_currency = (
+        statusbar() + nav(title="Display currency", back="Account")
+        + '<div class="scroll">'
+        + seclabel("Choose the symbol you see", first=True)
+        + listcard([
+            select_row(None, "$", "US Dollar", True, box=False),
+            select_row(None, "Rs", "Pakistani Rupee", False, box=False),
+            select_row(None, "£", "Pound Sterling", False, box=False),
+            select_row(None, "€", "Euro", False, box=False),
+            select_row(None, "د.إ", "UAE Dirham", False, box=False),
+            select_row(None, "﷼", "Saudi Riyal", False, box=False),
+        ])
+        + '<p class="t-cap c-sec" style="margin:12px 20px">This changes only the symbol you see. '
+        'Other people may use another symbol for the same amount. Nothing is converted or changed.</p>'
+        + '</div>' + homebar())
 
     password = (statusbar() + nav(title="Change password", lead=CANCEL,
                                   trail='<span class="act off semi">Save</span>')
@@ -134,11 +150,10 @@ def build():
                                  sub="Turned off in system settings")])
               + seclabel("What to notify about")
               + listcard([
-                  toggle("Expense added or edited", True),
-                  toggle("Payment recorded", True),
-                  toggle("Reminders sent to me", True),
-                  toggle("Group membership changes", False),
-                  toggle("Connection requests", True),
+                  toggle("Expense updates", True),
+                  toggle("Settlement updates", True),
+                  toggle("Social activity", False),
+                  toggle("Balance reminders", True),
               ])
               + '<p class="t-cap c-sec" style="margin:12px 20px">These preferences apply while push '
               'is off too — they will take effect the moment you allow notifications.</p>'
@@ -147,13 +162,16 @@ def build():
     write("34-account.html", "34", "Account, profile, security and notifications",
           "C01 · C02 · C03 · C04",
           "The settings hierarchy and the three forms under it. Each screen states the blast radius of "
-          "its own setting: a default currency converts nothing, a password change ends all sessions, "
+          "its own setting: a display symbol converts nothing, a password change ends all sessions, "
           "and notification preferences survive the system permission being off.",
           [
               frame("Account", " Preferences, security and data as three groups, with Sign out set "
                                "apart and scoped to this device only.", phone(root)),
               frame("Profile", " Says what is not supported — email changes, photos — so their "
                                "absence reads as a decision.", phone(profile)),
+              frame("Display currency", " The only symbol picker in the product. It says that other "
+                                        "people may see another symbol and that no value is converted.",
+                    phone(display_currency)),
               frame("Change password", " The session consequence is a banner at the top, not a "
                                        "footnote, and the mismatch error is stated twice: on the "
                                        "field and beside the action.", phone(password)),
@@ -174,7 +192,7 @@ def build():
         seclabel("What you get", first=True)
         + listcard([
             kv_row("Your expenses and payments", "All ledgers"),
-            kv_row("Your personal transactions", "All currencies"),
+            kv_row("Your personal transactions", "Complete history"),
             kv_row("Groups you belong to", "Names and members"),
             kv_row("Receipts and attachments", "Original files"),
         ])
@@ -220,14 +238,14 @@ def build():
         + seclabel("Resolve these first", first=True)
         + listcard([
             expense_row("You owe John Doe", "Settle up or ask them to write it off",
-                        "87.50", iso="USD", cls="wrap"),
+                        "87.50", iso="$", cls="wrap"),
             expense_row("Priya Nair owes you", "Settle up or write it off",
-                        "64.00", iso="USD", cls="wrap"),
-            expense_row("You are the only owner of Winter Trip",
-                        "Make someone else an owner, or delete the group",
+                        "64.00", iso="$", cls="wrap"),
+            expense_row("You are active in Winter Trip",
+                        "Settle balances, then leave the group",
                         "5 members", mono=False, cls="wrap"),
         ])
-        + '<p class="t-cap c-sec" style="margin:12px 20px">Balances in any currency count. A '
+        + '<p class="t-cap c-sec" style="margin:12px 20px">Any nonzero balance counts. A '
         'balance you are owed blocks deletion just as much as one you owe, because writing it off '
         'is the other person\'s decision to make, not ours.</p>'
         + '</div>'
@@ -242,7 +260,7 @@ def build():
         + card('<div class="facts" style="padding:12px 16px">'
                '<div class="f"><span class="k t-body">Outstanding balances</span>'
                '<span class="t-body semi c-pos">None</span></div>'
-               '<div class="f"><span class="k t-body">Groups you own alone</span>'
+               '<div class="f"><span class="k t-body">Required memberships</span>'
                '<span class="t-body semi c-pos">None</span></div>'
                '<div class="f"><span class="k t-body">Pending requests</span>'
                '<span class="t-body semi c-pos">None</span></div></div>')

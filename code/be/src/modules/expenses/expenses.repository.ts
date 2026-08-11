@@ -45,7 +45,6 @@ export interface ExpenseView {
   createdByUserId: string;
   description: string;
   totalMinor: string;
-  currency: string;
   category: ExpenseCategoryView;
   occurredAt: Date;
   status: 'ACTIVE' | 'DELETED';
@@ -74,9 +73,7 @@ export interface FinancialEventAllocation extends ExpenseAllocation {
   splitMethod: 'EQUAL' | 'EXACT' | null;
 }
 
-export interface FinancialEventPosting extends ExpenseAllocation {
-  currency: string;
-}
+export type FinancialEventPosting = ExpenseAllocation;
 
 export interface FinancialEffectSnapshot {
   id: string;
@@ -91,7 +88,6 @@ interface ExpenseReadRow {
   createdByUserId: string;
   description: string;
   totalMinor: string;
-  currency: string;
   categoryCode: string;
   categoryName: string;
   occurredAt: Date;
@@ -107,7 +103,6 @@ interface InsertRevisionInput {
   createdByUserId: string;
   description: string;
   totalMinor: bigint;
-  currency: string;
   categoryId: string;
   occurredAt: Date;
   status: 'ACTIVE' | 'DELETED';
@@ -296,7 +291,6 @@ export class ExpensesRepository {
         createdByUserId: input.createdByUserId,
         description: input.description,
         totalMinor: input.totalMinor,
-        currency: input.currency,
         categoryId: input.categoryId,
         occurredAt: input.occurredAt,
         status: input.status,
@@ -358,7 +352,6 @@ export class ExpensesRepository {
           financialEventId: event.id,
           userId: posting.userId,
           amountMinor: posting.amountMinor,
-          currency: posting.currency,
         })),
       );
     }
@@ -446,7 +439,6 @@ export class ExpensesRepository {
                expense.created_by_user_id AS "createdByUserId",
                expense.description,
                expense.total_minor::text AS "totalMinor",
-               expense.currency,
                category.code AS "categoryCode",
                category.name AS "categoryName",
                expense.occurred_at AS "occurredAt",
@@ -481,7 +473,6 @@ export class ExpensesRepository {
                expense.created_by_user_id AS "createdByUserId",
                expense.description,
                expense.total_minor::text AS "totalMinor",
-               expense.currency,
                category.code AS "categoryCode",
                category.name AS "categoryName",
                expense.occurred_at AS "occurredAt",
@@ -539,7 +530,6 @@ export class ExpensesRepository {
       createdByUserId: row.createdByUserId,
       description: row.description,
       totalMinor: row.totalMinor,
-      currency: row.currency,
       category: { code: row.categoryCode, name: row.categoryName },
       occurredAt: row.occurredAt,
       status: row.status,

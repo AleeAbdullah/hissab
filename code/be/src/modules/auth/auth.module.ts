@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { SessionAuthorizationService } from '../../common/auth';
 import { IdempotencyModule } from '../idempotency';
 import { OutboxModule } from '../outbox';
 import { AuthController } from './auth.controller';
@@ -16,7 +17,8 @@ import { AccessTokenService, OpaqueTokenService } from './token.service';
     PasswordHasher,
     OpaqueTokenService,
     AccessTokenService,
+    SessionAuthorizationService,
   ],
-  exports: [AuthRepository],
+  exports: [AuthRepository, PasswordHasher, SessionAuthorizationService],
 })
 export class AuthModule {}

@@ -1,0 +1,24 @@
+info:
+  name: Send balance reminder
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{baseUrl}}/v1/ledgers/{{ledgerId}}/reminders"
+  headers:
+    - name: Content-Type
+      value: application/json
+    - name: Idempotency-Key
+      value: "{{$randomUUID}}"
+  body:
+    type: json
+    data: |-
+      {
+        "recipientUserId": "{{targetUserId}}"
+      }
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+docs: Sends a manual reminder only when the sender is owed and the recipient owes in this ledger; the tuple has a rolling 24-hour cooldown.

@@ -1,0 +1,16 @@
+info:
+  name: Revoke notification device
+  type: http
+  seq: 7
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/v1/notification-devices/00000000-0000-4000-8000-000000000000"
+  headers:
+    - name: Idempotency-Key
+      value: "{{$randomUUID}}"
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+docs: Replace the placeholder UUID with an owned notification device ID.

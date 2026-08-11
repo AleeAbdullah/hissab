@@ -18,8 +18,7 @@ http:
         "fromUserId": "{{fromUserId}}",
         "toUserId": "{{toUserId}}",
         "amountMinor": "{{amountMinor}}",
-        "occurredAt": "{{occurredAt}}",
-        "currency": "{{defaultCurrency}}"
+        "occurredAt": "{{occurredAt}}"
       }
   auth:
     type: bearer

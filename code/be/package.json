@@ -19,6 +19,7 @@
     "lint:fix": "eslint \"src/**/*.ts\" --fix",
     "type-check": "tsc --noEmit",
     "verify": "pnpm lint && pnpm type-check && pnpm build",
+    "reconcile": "ts-node src/scripts/reconcile.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:check": "drizzle-kit check",
@@ -30,8 +31,10 @@
     "@nestjs/core": "^11.0.1",
     "@nestjs/jwt": "^11.0.2",
     "@nestjs/platform-express": "^11.0.1",
+    "@nestjs/platform-socket.io": "^11.1.28",
     "@nestjs/swagger": "^11.4.6",
     "@nestjs/throttler": "^6.5.0",
+    "@nestjs/websockets": "^11.1.28",
     "argon2": "^0.45.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
@@ -40,7 +43,8 @@
     "helmet": "^8.3.0",
     "pg": "^8.22.0",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "socket.io": "^4.8.3"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
