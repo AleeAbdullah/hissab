@@ -1,9 +1,12 @@
 import { useMutation } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
+import { ActivityIndicator } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
-import { Button, ErrorMessage, Field, Screen } from '@/components/ui';
+import { ErrorMessage, Field, Screen } from '@/components/ui';
+import { Button } from '@/components/ui/button';
+import { Text as ButtonText } from '@/components/ui/text';
 import { createGroup, groupsQuery } from '@/features/groups/api';
 import { homeQuery } from '@/features/home/api';
 
@@ -34,7 +37,9 @@ export default function NewGroupScreen() {
         autoFocus
         hint="Up to 100 characters"
       />
-      <Button title="Create group" loading={create.isPending} disabled={!trimmedName} onPress={() => create.mutate(trimmedName)} />
+      <Button disabled={!trimmedName || create.isPending} accessibilityState={{ disabled: !trimmedName || create.isPending, busy: create.isPending }} onPress={() => create.mutate(trimmedName)}>
+        {create.isPending ? <ActivityIndicator color="white" /> : <ButtonText>Create group</ButtonText>}
+      </Button>
     </Screen>
   );
 }

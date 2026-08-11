@@ -1,10 +1,12 @@
 import { useInfiniteQuery, useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { Alert, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Switch, View } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
 import type { NotificationPreferences } from '@/api/contracts';
-import { Button, Card, ErrorMessage, Loading, Notice, Screen } from '@/components/ui';
+import { Card, ErrorMessage, Loading, Notice, Screen } from '@/components/ui';
+import { Button } from '@/components/ui/button';
+import { Text } from '@/components/ui/text';
 import {
   notificationPreferencesQuery,
   notificationInboxInfiniteQuery,
@@ -15,7 +17,8 @@ import {
 import { NotificationInbox } from '@/features/account/components/notification-inbox';
 import { useSession } from '@/features/auth/session';
 import { canRegisterPushNotifications, hasRegisteredPushDevice, registerForPushNotifications, revokePushNotifications } from '@/features/account/push';
-import { useAppTheme } from '@/theme/theme';
+import { THEME_VARIABLES, useThemeVariable } from '@/lib/theme';
+import { cn } from '@/lib/utils';
 
 type PreferenceKey = Exclude<keyof NotificationPreferences, 'updatedAt'>;
 
@@ -28,7 +31,8 @@ const options: { key: PreferenceKey; title: string; description: string }[] = [
 ];
 
 export default function NotificationsScreen() {
-  const { colors } = useAppTheme();
+  const control = useThemeVariable(THEME_VARIABLES.input);
+  const primary = useThemeVariable(THEME_VARIABLES.primary);
   const session = useSession();
   const preferences = useQuery(notificationPreferencesQuery);
   const inbox = useInfiniteQuery(notificationInboxInfiniteQuery());
@@ -85,15 +89,16 @@ export default function NotificationsScreen() {
               value={preferences.data[option.key]}
               disabled={mutation.isPending || (option.key === 'pushEnabled' && !canRegisterPushNotifications())}
               onChange={(value) => update(option.key, value)}
-              colors={colors}
+              controlColor={control}
+              primaryColor={primary}
             />
           ))}
         </Card>
       ) : null}
-      <Text selectable style={{ color: colors.secondary, fontSize: 13, lineHeight: 18 }}>
+      <Text selectable className="text-[13px] leading-[18px] text-muted-foreground">
         Turning push notifications on asks your device for permission and securely registers this app installation with Hissab.
       </Text>
-      {deviceRegistered ? <Button title="Disable push on this device" secondary destructive loading={revokePush.isPending} onPress={() => Alert.alert('Disable push on this device?', 'This stops push alerts on this installation. Other devices remain unchanged.', [{ text: 'Cancel', style: 'cancel' }, { text: 'Disable', style: 'destructive', onPress: () => revokePush.mutate(undefined, { onSuccess: () => setDeviceRegistered(false), onError: (error) => setSetupError(error instanceof Error ? error.message : 'Could not disable push notifications.') }) }])} /> : null}
+      {deviceRegistered ? <Button variant="destructiveOutline" disabled={revokePush.isPending} accessibilityState={{ disabled: revokePush.isPending, busy: revokePush.isPending }} onPress={() => Alert.alert('Disable push on this device?', 'This stops push alerts on this installation. Other devices remain unchanged.', [{ text: 'Cancel', style: 'cancel' }, { text: 'Disable', style: 'destructive', onPress: () => revokePush.mutate(undefined, { onSuccess: () => setDeviceRegistered(false), onError: (error) => setSetupError(error instanceof Error ? error.message : 'Could not disable push notifications.') }) }])}>{revokePush.isPending ? <ActivityIndicator className="text-destructive" /> : <Text>Disable push on this device</Text>}</Button> : null}
       <NotificationInbox
         error={inbox.error ?? markRead.error ?? markAllRead.error}
         hasNextPage={inbox.hasNextPage}
@@ -116,20 +121,22 @@ function PreferenceRow({
   value,
   disabled,
   onChange,
-  colors,
+  controlColor,
+  primaryColor,
 }: {
   title: string;
   description: string;
   value: boolean;
   disabled: boolean;
   onChange: (value: boolean) => void;
-  colors: ReturnType<typeof useAppTheme>['colors'];
+  controlColor: string;
+  primaryColor: string;
 }) {
   return (
-    <View style={{ minHeight: 64, padding: 12, gap: 12, flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: colors.divider, opacity: disabled ? 0.55 : 1 }}>
-      <View style={{ flex: 1, gap: 2 }}>
-        <Text selectable style={{ color: colors.text, fontSize: 17, lineHeight: 23 }}>{title}</Text>
-        <Text selectable style={{ color: colors.secondary, fontSize: 13, lineHeight: 18 }}>{description}</Text>
+    <View className={cn('min-h-16 flex-row items-center gap-3 border-b border-border p-3', disabled && 'opacity-[0.55]')}>
+      <View className="flex-1 gap-0.5">
+        <Text selectable className="text-[17px] leading-[23px]">{title}</Text>
+        <Text selectable className="text-[13px] leading-[18px] text-muted-foreground">{description}</Text>
       </View>
       <Switch
         accessibilityLabel={title}
@@ -137,7 +144,7 @@ function PreferenceRow({
         value={value}
         disabled={disabled}
         onValueChange={onChange}
-        trackColor={{ false: colors.control, true: colors.brand }}
+        trackColor={{ false: controlColor, true: primaryColor }}
       />
     </View>
   );

@@ -1,11 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 
-import { Button, ErrorMessage, Field, Notice, SectionLabel } from '@/components/ui';
+import { ErrorMessage, Field, Notice, SectionLabel } from '@/components/ui';
+import { Button } from '@/components/ui/button';
+import { Text } from '@/components/ui/text';
 import type { CreateExpenseDto } from '@/api/generated/types.gen';
 import type { DisplayCurrency, SharedExpense, SharedExpenseCategoryCode } from '@/api/contracts';
-import { ChoiceChips } from '@/features/expenses/components/choice-chips';
+import { ChoiceChips } from '@/components/choice-chips';
 import { MemberAmounts } from '@/features/expenses/components/member-amounts';
 import { expenseCategoriesQuery } from '@/features/expenses/api';
 import { buildExpenseBody, expenseInitialValues, todayDate } from '@/features/expenses/form';
@@ -51,23 +53,25 @@ export function ExpenseEditor({
   };
 
   return (
-    <View style={{ gap: 16 }}>
+    <View className="gap-4">
       <Notice title="Shared expense">A network connection is required to save. Hissab records the debt; it does not move money.</Notice>
       {categories.error || validationError ? <ErrorMessage error={categories.error ?? new Error(validationError ?? '')} /> : null}
       <Field label={`Amount (${displayCurrency})`} placeholder="0.00" keyboardType="decimal-pad" value={amount} onChangeText={updateAmount} />
       <Field label="Description" placeholder="e.g. Dinner" value={description} onChangeText={setDescription} />
       <Field label="Date" hint="YYYY-MM-DD" placeholder="2026-08-05" value={occurredDate} onChangeText={setOccurredDate} autoCapitalize="none" />
-      <View style={{ gap: 8 }}>
+      <View className="gap-2">
         <SectionLabel>CATEGORY</SectionLabel>
         <ChoiceChips choices={(categories.data ?? []).map((category) => ({ label: category.name, value: category.code }))} value={categoryCode} onChange={(value) => setCategoryCode(value as SharedExpenseCategoryCode)} />
       </View>
       <MemberAmounts label="PAID BY" displayCurrency={displayCurrency} members={members} selectedUserIds={payerUserIds} amounts={payerAmounts} onSelectionChange={setPayerUserIds} onAmountsChange={setPayerAmounts} />
-      <View style={{ gap: 8 }}>
+      <View className="gap-2">
         <SectionLabel>SPLIT METHOD</SectionLabel>
         <ChoiceChips choices={[{ label: 'Equal', value: 'EQUAL' }, { label: 'Exact', value: 'EXACT' }]} value={splitMethod} onChange={(value) => setSplitMethod(value as 'EQUAL' | 'EXACT')} />
       </View>
       <MemberAmounts label={splitMethod === 'EQUAL' ? 'SPLIT EQUALLY BETWEEN' : 'EXACT AMOUNTS OWED'} displayCurrency={displayCurrency} members={members} selectedUserIds={participantUserIds} amounts={exactAmounts} showAmounts={splitMethod === 'EXACT'} onSelectionChange={setParticipantUserIds} onAmountsChange={setExactAmounts} />
-      <Button title={expense ? 'Save changes' : 'Save expense'} loading={saving} disabled={saving || categories.isLoading} onPress={save} />
+      <Button disabled={saving || categories.isLoading} accessibilityState={{ disabled: saving || categories.isLoading, busy: saving }} onPress={save}>
+        {saving ? <ActivityIndicator className="text-primary-foreground" /> : <Text>{expense ? 'Save changes' : 'Save expense'}</Text>}
+      </Button>
     </View>
   );
 }

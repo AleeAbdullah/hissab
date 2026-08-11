@@ -1,29 +1,29 @@
+import { Eye, EyeOff } from 'lucide-react-native';
 import type { Href } from 'expo-router';
 import { Link } from 'expo-router';
 import { useState, type PropsWithChildren, type ReactElement, type ReactNode } from 'react';
 import {
   ActivityIndicator,
-  Pressable,
   ScrollView,
-  Text,
   TextInput,
   type TextInputProps,
   type RefreshControlProps,
   View,
 } from 'react-native';
-import { SymbolView } from 'expo-symbols';
 
-import { useAppTheme } from '@/theme/theme';
+import { Button as RnrButton } from '@/components/ui/button';
+import { Icon } from '@/components/ui/icon';
+import { Text } from '@/components/ui/text';
+import { cn } from '@/lib/utils';
 
 export function Screen({ children, refreshControl }: PropsWithChildren<{ refreshControl?: ReactElement<RefreshControlProps> }>) {
   return (
     <ScrollView
-      className="flex-1 bg-canvas"
+      className="flex-1 bg-background"
+      contentContainerClassName="flex-grow gap-4 p-5"
       contentInsetAdjustmentBehavior="automatic"
       keyboardShouldPersistTaps="handled"
       refreshControl={refreshControl}
-      style={{ flex: 1 }}
-      contentContainerStyle={{ padding: 20, gap: 16, flexGrow: 1 }}
     >
       {children}
     </ScrollView>
@@ -31,30 +31,11 @@ export function Screen({ children, refreshControl }: PropsWithChildren<{ refresh
 }
 
 export function Card({ children }: PropsWithChildren) {
-  return (
-    <View
-      className="bg-surface border border-divider"
-      style={{
-        borderRadius: 16,
-        borderCurve: 'continuous',
-        overflow: 'hidden',
-      }}
-    >
-      {children}
-    </View>
-  );
+  return <View className="overflow-hidden rounded-2xl border border-border bg-card">{children}</View>;
 }
 
 export function SectionLabel({ children }: PropsWithChildren) {
-  const { colors } = useAppTheme();
-  return (
-    <Text
-      selectable
-      style={{ color: colors.secondary, fontSize: 13, lineHeight: 18, fontWeight: '600', letterSpacing: 0.6 }}
-    >
-      {children}
-    </Text>
-  );
+  return <Text selectable className="text-[13px] font-semibold leading-[18px] tracking-[0.6px] text-muted-foreground">{children}</Text>;
 }
 
 export function Row({
@@ -78,150 +59,85 @@ export function Row({
   trailing?: ReactNode;
   disabled?: boolean;
 }) {
-  const { colors } = useAppTheme();
-  const style = {
-    minHeight: 52,
-    padding: 12,
-    gap: 12,
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    opacity: disabled ? 0.55 : 1,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.divider,
-  };
+  const rowClassName = cn(
+    'min-h-[52px] w-full flex-row items-center justify-start gap-3 rounded-none border-b border-border p-3',
+    disabled && 'opacity-[0.55]'
+  );
   const content = <>
     {leading}
-    <View style={{ flex: 1, gap: 2 }}>
-      <Text selectable style={{ color: destructive ? colors.negative : colors.text, fontSize: 17, lineHeight: 23 }}>
-        {title}
-      </Text>
-      {subtitle ? <Text selectable style={{ color: colors.secondary, fontSize: 13, lineHeight: 18 }}>{subtitle}</Text> : null}
+    <View className="flex-1 gap-0.5">
+      <Text selectable className={cn('text-[17px] leading-[23px]', destructive && 'text-destructive')}>{title}</Text>
+      {subtitle ? <Text selectable className="text-[13px] leading-[18px] text-muted-foreground">{subtitle}</Text> : null}
     </View>
-    {detail ? <Text selectable style={{ color: colors.secondary, fontSize: 15, lineHeight: 20, textAlign: 'right', maxWidth: '42%' }}>{detail}</Text> : null}
-    {trailing ?? (href ? <Text style={{ color: colors.secondary, fontSize: 22 }}>›</Text> : null)}
+    {detail ? <Text selectable className="max-w-[42%] text-right text-[15px] leading-5 text-muted-foreground">{detail}</Text> : null}
+    {trailing ?? (href ? <Text className="text-[22px] text-muted-foreground">›</Text> : null)}
   </>;
-  if (!href && !onPress) {
-    return <View style={style}>{content}</View>;
-  }
-  const pressable = (
-    <Pressable
-      accessibilityRole={href ? 'link' : 'button'}
+  if (!href && !onPress) return <View className={rowClassName}>{content}</View>;
+  const control = (
+    <RnrButton
+      variant="ghost"
+      role={href ? 'link' : 'button'}
       accessibilityState={{ disabled }}
       disabled={disabled}
       onPress={onPress}
-      style={style}
+      className={rowClassName}
     >
       {content}
-    </Pressable>
+    </RnrButton>
   );
-  return href ? <Link href={href} asChild>{pressable}</Link> : pressable;
+  return href ? <Link href={href} asChild>{control}</Link> : control;
 }
 
 export function Avatar({ name, large }: { name: string; large?: boolean }) {
-  const { colors } = useAppTheme();
   const initials = name
     .trim()
     .split(/\s+/)
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase())
     .join('') || '?';
-  const size = large ? 56 : 36;
   return (
-    <View accessibilityLabel={`${name} avatar`} style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center' }}>
-      <Text selectable style={{ color: colors.onBrand, fontWeight: '700', fontSize: large ? 20 : 13 }}>{initials}</Text>
+    <View accessibilityLabel={`${name} avatar`} className={cn('items-center justify-center rounded-full bg-primary', large ? 'size-14' : 'size-9')}>
+      <Text selectable className={cn('font-bold text-primary-foreground', large ? 'text-xl' : 'text-[13px]')}>{initials}</Text>
     </View>
   );
 }
 
-export function Field({ label, error, hint, secureTextEntry, ...props }: TextInputProps & { label: string; error?: string; hint?: string }) {
-  const { colors } = useAppTheme();
+export function Field({ label, error, hint, secureTextEntry, className, style, ...props }: TextInputProps & { label: string; error?: string; hint?: string }) {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const isPassword = secureTextEntry === true;
   return (
-    <View style={{ gap: 6 }}>
-      <Text selectable style={{ color: colors.secondary, fontSize: 13 }}>{label}</Text>
-      <View style={{ minHeight: 48, flexDirection: 'row', alignItems: 'center', paddingLeft: 12, backgroundColor: colors.surface, borderWidth: 1, borderColor: error ? colors.negative : colors.control, borderRadius: 12, borderCurve: 'continuous' }}>
+    <View className="gap-1.5">
+      <Text selectable className="text-[13px] text-muted-foreground">{label}</Text>
+      <View className={cn('min-h-12 flex-row items-center rounded-xl border bg-card pl-3', error ? 'border-destructive' : 'border-input')}>
         <TextInput
           accessibilityLabel={label}
-          placeholderTextColor={colors.secondary}
           secureTextEntry={isPassword && !passwordVisible}
           {...props}
-          style={[
-            {
-              flex: 1,
-              minHeight: 48,
-              paddingVertical: 10,
-              color: colors.text,
-              fontSize: 17,
-            },
-            props.style,
-          ]}
+          className={cn('min-h-12 flex-1 py-2.5 text-[17px] text-foreground placeholder:text-muted-foreground', className)}
+          style={style}
         />
-        {isPassword ? <Pressable accessibilityRole="button" accessibilityLabel={passwordVisible ? 'Hide password' : 'Show password'} onPress={() => setPasswordVisible((value) => !value)} style={{ minWidth: 44, minHeight: 48, alignItems: 'center', justifyContent: 'center' }}><SymbolView name={{ ios: passwordVisible ? 'eye.slash' : 'eye', android: passwordVisible ? 'visibility_off' : 'visibility', web: passwordVisible ? 'visibility_off' : 'visibility' }} size={20} tintColor={colors.secondary} /></Pressable> : null}
+        {isPassword ? (
+          <RnrButton variant="ghost" size="icon" accessibilityLabel={passwordVisible ? 'Hide password' : 'Show password'} onPress={() => setPasswordVisible((value) => !value)}>
+            <Icon as={passwordVisible ? EyeOff : Eye} size={20} className="text-muted-foreground" />
+          </RnrButton>
+        ) : null}
       </View>
-      {error || hint ? <Text selectable style={{ color: error ? colors.negative : colors.secondary, fontSize: 13, lineHeight: 18 }}>{error ?? hint}</Text> : null}
+      {error || hint ? <Text selectable className={cn('text-[13px] leading-[18px]', error ? 'text-destructive' : 'text-muted-foreground')}>{error ?? hint}</Text> : null}
     </View>
   );
 }
 
-export function Button({
-  title,
-  onPress,
-  href,
-  disabled,
-  loading,
-  secondary,
-  destructive,
-}: {
-  title: string;
-  onPress?: () => void;
-  href?: Href;
-  disabled?: boolean;
-  loading?: boolean;
-  secondary?: boolean;
-  destructive?: boolean;
-}) {
-  const { colors } = useAppTheme();
-  const background = secondary ? 'transparent' : destructive ? colors.negative : colors.brand;
-  const foreground = secondary ? (destructive ? colors.negative : colors.brand) : colors.onBrand;
-  const content = (
-    <Pressable
-      accessibilityRole={href ? 'link' : 'button'}
-      accessibilityState={{ disabled: disabled || loading, busy: loading }}
-      disabled={disabled || loading}
-      onPress={onPress}
-      style={{
-        minHeight: 48,
-        borderRadius: 12,
-        borderCurve: 'continuous',
-        borderWidth: secondary ? 1 : 0,
-        borderColor: destructive ? colors.negative : colors.brand,
-        backgroundColor: background,
-        opacity: disabled ? 0.55 : 1,
-        paddingHorizontal: 16,
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      {loading ? <ActivityIndicator color={foreground} /> : <Text style={{ color: foreground, fontSize: 17, fontWeight: '600' }}>{title}</Text>}
-    </Pressable>
-  );
-  return href ? <Link href={href} asChild>{content}</Link> : content;
-}
-
 export function Notice({ title, children, error }: PropsWithChildren<{ title?: string; error?: boolean }>) {
-  const { colors } = useAppTheme();
   return (
-    <View style={{ backgroundColor: error ? colors.negativeSubtle : colors.warningSubtle, borderRadius: 12, borderCurve: 'continuous', padding: 12, gap: 4 }}>
-      {title ? <Text selectable style={{ color: error ? colors.negative : colors.warning, fontSize: 15, fontWeight: '600' }}>{title}</Text> : null}
-      <Text selectable style={{ color: colors.text, fontSize: 15, lineHeight: 20 }}>{children}</Text>
+    <View className={cn('gap-1 rounded-xl p-3', error ? 'bg-destructive-muted' : 'bg-warning-muted')}>
+      {title ? <Text selectable className={cn('text-[15px] font-semibold', error ? 'text-destructive' : 'text-warning')}>{title}</Text> : null}
+      <Text selectable className="text-[15px] leading-5 text-foreground">{children}</Text>
     </View>
   );
 }
 
 export function Loading() {
-  const { colors } = useAppTheme();
-  return <View style={{ flex: 1, backgroundColor: colors.canvas, alignItems: 'center', justifyContent: 'center' }}><ActivityIndicator color={colors.brand} /></View>;
+  return <View className="flex-1 items-center justify-center bg-background"><ActivityIndicator className="text-primary" /></View>;
 }
 
 export function ErrorMessage({ error }: { error: unknown }) {

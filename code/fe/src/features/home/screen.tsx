@@ -1,19 +1,24 @@
 import { useQuery } from '@tanstack/react-query';
 import type { Href } from 'expo-router';
 import { Link, router, Stack } from 'expo-router';
-import { Alert, Pressable, RefreshControl, Text, View } from 'react-native';
+import { Alert, RefreshControl, View } from 'react-native';
 
 import type { Home, HomeRecentItem } from '@/api/contracts';
 import { StackedCards } from '@/components/stacked-cards';
 import { Card, ErrorMessage, Loading, Screen, SectionLabel } from '@/components/ui';
-import { formatMinorAmount } from '@/features/balances/format';
+import { Button } from '@/components/ui/button';
+import { Text } from '@/components/ui/text';
 import { activityDayLabel } from '@/features/activity/presentation';
-import { useAppTheme } from '@/theme/theme';
+import { formatMinorAmount } from '@/features/balances/format';
+import { THEME_VARIABLES, useThemeVariable } from '@/lib/theme';
+import { cn } from '@/lib/utils';
 
 import { homeQuery } from './api';
 
+type AmountTone = 'positive' | 'negative' | 'neutral';
+
 export function HomeScreen() {
-  const { colors } = useAppTheme();
+  const primary = useThemeVariable(THEME_VARIABLES.primary);
   const home = useQuery(homeQuery);
 
   return (
@@ -24,22 +29,21 @@ export function HomeScreen() {
           title: 'Home',
           headerLargeTitle: true,
           headerShadowVisible: false,
-          contentStyle: { backgroundColor: colors.canvas },
-          headerRight: () => <Text style={{ color: colors.text, fontFamily: 'serif', fontSize: 20 }}>Hissab</Text>,
+          headerRight: () => <Text className="font-serif text-xl text-foreground">Hissab</Text>,
         }}
       />
       {home.isLoading ? <Loading /> : home.error || !home.data ? (
         <Screen><ErrorMessage error={home.error ?? new Error('Home is unavailable.')} /></Screen>
       ) : (
-        <Screen refreshControl={<RefreshControl refreshing={home.isRefetching} onRefresh={() => home.refetch()} tintColor={colors.brand} colors={[colors.brand]} />}>
+        <Screen refreshControl={<RefreshControl refreshing={home.isRefetching} onRefresh={() => home.refetch()} tintColor={primary} colors={[primary]} />}>
           <Summary home={home.data} />
-          <View style={{ gap: 8 }}>
+          <View className="gap-2">
             <SectionLabel>RECENT ACTIVITY</SectionLabel>
-            {home.data.recent.length ? <Card>{[...home.data.recent].sort(byNewest).map((item) => <RecentRow key={`${item.kind}-${item.id}-${item.createdAt}`} item={item} currency={home.data.currency} />)}</Card> : (
-              <Text selectable style={{ color: colors.secondary, fontSize: 16, lineHeight: 24 }}>No recent activity yet.</Text>
+            {home.data.recent.length ? <Card>{home.data.recent.map((item) => <RecentRow key={`${item.kind}-${item.id}-${item.createdAt}`} item={item} currency={home.data.currency} />)}</Card> : (
+              <Text selectable className="leading-6 text-muted-foreground">No recent activity yet.</Text>
             )}
           </View>
-          <Text selectable style={{ color: colors.secondary, fontSize: 13, lineHeight: 18 }}>
+          <Text selectable className="text-[13px] leading-[18px] text-muted-foreground">
             Personal entries are private. Shared activity is visible only to the people in that ledger.
           </Text>
         </Screen>
@@ -49,12 +53,11 @@ export function HomeScreen() {
 }
 
 function Summary({ home }: { home: Home }) {
-  const { colors } = useAppTheme();
   const sharedNet = BigInt(home.shared.totalNetMinor);
   const sharedAmount = sharedNet < 0n ? (-sharedNet).toString() : home.shared.totalNetMinor;
   const personalNet = BigInt(home.personal.monthNetMinor);
-  const personalColor = personalNet > 0n ? colors.positive : personalNet < 0n ? colors.negative : colors.text;
-  const sharedColor = sharedNet > 0n ? colors.positive : sharedNet < 0n ? colors.negative : colors.text;
+  const personalTone: AmountTone = personalNet > 0n ? 'positive' : personalNet < 0n ? 'negative' : 'neutral';
+  const sharedTone: AmountTone = sharedNet > 0n ? 'positive' : sharedNet < 0n ? 'negative' : 'neutral';
   const personalAmount = formatMinorAmount(home.personal.monthNetMinor, home.currency);
   const sharedAmountLabel = formatMinorAmount(sharedAmount, home.currency);
   const sharedDirection = sharedNet > 0n ? 'You’re owed' : sharedNet < 0n ? 'You owe' : 'Settled';
@@ -68,126 +71,101 @@ function Summary({ home }: { home: Home }) {
     ],
   );
   const personalFront = (
-    <View style={summaryFrontStyle}>
-      <View style={summaryCardHeaderStyle}>
-        <Text selectable style={summaryTitleStyle(colors.text)}>Personal</Text>
-        <CardAmount amount={personalAmount} color={personalColor} />
+    <View className="flex-1 p-4">
+      <View className="flex-row items-start justify-between gap-3">
+        <Text selectable className="flex-1 text-xl font-bold leading-[26px]">Personal</Text>
+        <CardAmount amount={personalAmount} tone={personalTone} />
       </View>
-      <View style={summaryActionsStyle}>
+      <View className="mt-auto flex-row flex-wrap gap-2 pr-[52px]">
         <CardAction href="/personal-transaction" title="Add entry" />
         <CardAction href="/personal" title="View personal" />
       </View>
     </View>
   );
   const sharedFront = (
-    <View style={summaryFrontStyle}>
-      <View style={summaryCardHeaderStyle}>
-        <Text selectable style={summaryTitleStyle(colors.text)}>{sharedDirection}</Text>
-        <CardAmount amount={sharedAmountLabel} color={sharedColor} />
+    <View className="flex-1 p-4">
+      <View className="flex-row items-start justify-between gap-3">
+        <Text selectable className="flex-1 text-xl font-bold leading-[26px]">{sharedDirection}</Text>
+        <CardAmount amount={sharedAmountLabel} tone={sharedTone} />
       </View>
-      <View style={summaryActionsStyle}>
+      <View className="mt-auto flex-row flex-wrap gap-2 pr-[52px]">
         {sharedNet < 0n ? <CardAction onPress={settleUp} title="Settle up" /> : <CardAction href="/activity" title="View" />}
       </View>
     </View>
   );
-  const personalBack = <SummaryBack title="Personal" amount={personalAmount} amountColor={personalColor} />;
-  const sharedBack = <SummaryBack title={sharedDirection} amount={sharedAmountLabel} amountColor={sharedColor} />;
-
   return (
     <StackedCards
       cards={[
-        { id: 'personal', frontContent: personalFront, backContent: personalBack, accessibilityLabel: 'Bring Personal card to front', style: summaryCardStyle(colors) },
-        { id: 'shared', frontContent: sharedFront, backContent: sharedBack, accessibilityLabel: 'Bring balance card to front', style: summaryCardStyle(colors) },
+        { id: 'personal', frontContent: personalFront, backContent: <SummaryBack title="Personal" amount={personalAmount} tone={personalTone} />, accessibilityLabel: 'Bring Personal card to front', className: 'border border-border bg-card' },
+        { id: 'shared', frontContent: sharedFront, backContent: <SummaryBack title={sharedDirection} amount={sharedAmountLabel} tone={sharedTone} />, accessibilityLabel: 'Bring balance card to front', className: 'border border-border bg-card' },
       ]}
     />
   );
 }
 
-function SummaryBack({ title, amount, amountColor }: { title: string; amount: string; amountColor: string }) {
-  const { colors } = useAppTheme();
+function SummaryBack({ title, amount, tone }: { title: string; amount: string; tone: AmountTone }) {
   return (
-    <View style={{ minHeight: 56, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-      <Text selectable numberOfLines={1} style={{ flex: 1, color: colors.text, fontSize: 18, lineHeight: 24, fontWeight: '700' }}>{title}</Text>
-      <CardAmount amount={amount} color={amountColor} compact />
+    <View className="min-h-14 flex-row items-center justify-between gap-3 px-4">
+      <Text selectable numberOfLines={1} className="flex-1 text-lg font-bold leading-6">{title}</Text>
+      <CardAmount amount={amount} tone={tone} compact />
     </View>
   );
 }
 
-function CardAmount({ amount, color, compact }: { amount: string; color: string; compact?: boolean }) {
+function CardAmount({ amount, tone, compact }: { amount: string; tone: AmountTone; compact?: boolean }) {
   return (
-    <Text selectable adjustsFontSizeToFit minimumFontScale={0.7} numberOfLines={1} style={{ color, fontSize: compact ? 20 : 28, lineHeight: compact ? 26 : 34, fontWeight: '700', fontVariant: ['tabular-nums'], textAlign: 'right', maxWidth: '58%' }}>
+    <Text
+      selectable
+      adjustsFontSizeToFit
+      minimumFontScale={0.7}
+      numberOfLines={1}
+      className={cn(
+        'max-w-[58%] text-right font-bold tabular-nums',
+        compact ? 'text-xl leading-[26px]' : 'text-[28px] leading-[34px]',
+        tone === 'positive' ? 'text-positive' : tone === 'negative' ? 'text-destructive' : 'text-foreground'
+      )}
+    >
       {amount}
     </Text>
   );
 }
 
 function CardAction({ href, onPress, title }: { href?: Href; onPress?: () => void; title: string }) {
-  const { colors } = useAppTheme();
-  const action = (
-    <Pressable accessibilityRole={href ? 'link' : 'button'} onPress={onPress} style={{ minHeight: 48, paddingHorizontal: 12, borderRadius: 12, borderCurve: 'continuous', backgroundColor: colors.brandSubtle, alignItems: 'center', justifyContent: 'center' }}>
-      <Text style={{ color: colors.brand, fontSize: 15, lineHeight: 20, fontWeight: '600' }}>{title}</Text>
-    </Pressable>
-  );
+  const action = <Button variant="secondary" role={href ? 'link' : 'button'} onPress={onPress}><Text className="text-[15px] text-primary">{title}</Text></Button>;
   return href ? <Link href={href} asChild>{action}</Link> : action;
 }
 
 function RecentRow({ item, currency }: { item: HomeRecentItem; currency: Home['currency'] }) {
-  const { colors } = useAppTheme();
-  const content = recentContent(item);
-  const amountColor = item.kind === 'PERSONAL_INCOME' ? colors.positive : item.kind === 'PERSONAL_EXPENSE' ? colors.negative : colors.text;
-
+  const { content, href } = recentPresentation(item);
+  const tone: AmountTone = item.kind === 'PERSONAL_INCOME' ? 'positive' : item.kind === 'PERSONAL_EXPENSE' ? 'negative' : 'neutral';
+  const personal = item.kind.startsWith('PERSONAL');
   return (
-    <Link href={recentHref(item)} asChild>
-      <Pressable
-        accessibilityRole="link"
+    <Link href={href} asChild>
+      <Button
+        variant="ghost"
+        role="link"
         accessibilityLabel={`${content.tag}. ${content.title}. ${content.subtitle}. ${formatMinorAmount(item.amountMinor, currency)}`}
-        style={{ minHeight: 68, padding: 12, gap: 12, flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: colors.divider }}
+        className="min-h-[68px] w-full flex-row items-center justify-start gap-3 rounded-none border-b border-border p-3"
       >
-        <View style={{ minWidth: 62, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, borderCurve: 'continuous', backgroundColor: item.kind.startsWith('PERSONAL') ? colors.brandSubtle : colors.surfaceSubtle }}>
-          <Text selectable style={{ color: item.kind.startsWith('PERSONAL') ? colors.brand : colors.secondary, fontSize: 11, lineHeight: 14, fontWeight: '700' }}>{content.tag}</Text>
+        <View className={cn('min-w-[62px] rounded-lg px-2 py-1', personal ? 'bg-accent' : 'bg-muted')}>
+          <Text selectable className={cn('text-[11px] font-bold leading-[14px]', personal ? 'text-primary' : 'text-muted-foreground')}>{content.tag}</Text>
         </View>
-        <View style={{ flex: 1, gap: 1 }}>
-          <Text selectable style={{ color: colors.text, fontSize: 16, lineHeight: 22, fontWeight: '600' }}>{content.title}</Text>
-          <Text selectable style={{ color: colors.secondary, fontSize: 13, lineHeight: 18 }}>{content.subtitle}</Text>
+        <View className="flex-1 gap-px">
+          <Text selectable className="text-base font-semibold leading-[22px]">{content.title}</Text>
+          <Text selectable className="text-[13px] leading-[18px] text-muted-foreground">{content.subtitle}</Text>
         </View>
-        <Text selectable style={{ color: amountColor, fontSize: 15, lineHeight: 20, fontWeight: '600', fontVariant: ['tabular-nums'], textAlign: 'right', maxWidth: '30%' }}>
+        <Text selectable className={cn('max-w-[30%] text-right text-[15px] font-semibold leading-5 tabular-nums', tone === 'positive' ? 'text-positive' : tone === 'negative' ? 'text-destructive' : 'text-foreground')}>
           {formatMinorAmount(item.amountMinor, currency)}
         </Text>
-      </Pressable>
+      </Button>
     </Link>
   );
 }
 
-function recentContent(item: HomeRecentItem) {
+function recentPresentation(item: HomeRecentItem): { content: { tag: string; title: string; subtitle: string }; href: Href } {
   const date = activityDayLabel(item.occurredAt);
-  if (item.kind === 'PERSONAL_INCOME') return { tag: 'Income', title: item.description ?? item.category?.name ?? 'Income', subtitle: `${date} · ${item.category?.name ?? 'Income'}` };
-  if (item.kind === 'PERSONAL_EXPENSE') return { tag: 'Expense', title: item.description ?? item.category?.name ?? 'Expense', subtitle: `${date} · ${item.category?.name ?? 'Expense'}` };
-  if (item.kind === 'SHARED_EXPENSE') return { tag: 'Shared', title: item.actor ? `${item.actor.displayName} added ${item.description ?? 'an expense'}` : item.description ?? 'Shared expense', subtitle: `${date} · ${item.ledger?.name ?? 'Shared ledger'}` };
-  return { tag: 'Shared', title: `${item.from?.displayName ?? 'Member'} paid ${item.to?.displayName ?? 'member'}`, subtitle: `${date} · ${item.ledger?.name ?? 'Shared ledger'}` };
-}
-
-function recentHref(item: HomeRecentItem): Href {
-  if (item.kind === 'PERSONAL_INCOME' || item.kind === 'PERSONAL_EXPENSE') return { pathname: '/personal/[transactionId]', params: { transactionId: item.id } };
-  if (item.kind === 'SHARED_EXPENSE') return { pathname: '/expense/[expenseId]', params: { expenseId: item.id } };
-  return { pathname: '/payment/[paymentId]', params: { paymentId: item.id } };
-}
-
-function byNewest(left: HomeRecentItem, right: HomeRecentItem) {
-  return Date.parse(right.createdAt) - Date.parse(left.createdAt);
-}
-
-function summaryCardStyle(colors: ReturnType<typeof useAppTheme>['colors']) {
-  return {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.divider,
-  };
-}
-
-const summaryCardHeaderStyle = { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 } as const;
-const summaryFrontStyle = { flex: 1, padding: 16 } as const;
-const summaryActionsStyle = { marginTop: 'auto', paddingRight: 52, flexDirection: 'row', flexWrap: 'wrap', gap: 8 } as const;
-
-function summaryTitleStyle(color: string) {
-  return { flex: 1, color, fontSize: 20, lineHeight: 26, fontWeight: '700' as const };
+  if (item.kind === 'PERSONAL_INCOME') return { content: { tag: 'Income', title: item.description ?? item.category?.name ?? 'Income', subtitle: `${date} · ${item.category?.name ?? 'Income'}` }, href: { pathname: '/personal/[transactionId]', params: { transactionId: item.id } } };
+  if (item.kind === 'PERSONAL_EXPENSE') return { content: { tag: 'Expense', title: item.description ?? item.category?.name ?? 'Expense', subtitle: `${date} · ${item.category?.name ?? 'Expense'}` }, href: { pathname: '/personal/[transactionId]', params: { transactionId: item.id } } };
+  if (item.kind === 'SHARED_EXPENSE') return { content: { tag: 'Shared', title: item.actor ? `${item.actor.displayName} added ${item.description ?? 'an expense'}` : item.description ?? 'Shared expense', subtitle: `${date} · ${item.ledger?.name ?? 'Shared ledger'}` }, href: { pathname: '/expense/[expenseId]', params: { expenseId: item.id } } };
+  return { content: { tag: 'Shared', title: `${item.from?.displayName ?? 'Member'} paid ${item.to?.displayName ?? 'member'}`, subtitle: `${date} · ${item.ledger?.name ?? 'Shared ledger'}` }, href: { pathname: '/payment/[paymentId]', params: { paymentId: item.id } } };
 }

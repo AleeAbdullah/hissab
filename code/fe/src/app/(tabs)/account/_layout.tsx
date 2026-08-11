@@ -1,11 +1,8 @@
 import { Stack } from 'expo-router/stack';
 
-import { useAppTheme } from '@/theme/theme';
-
 export default function AccountLayout() {
-  const { colors } = useAppTheme();
   return (
-    <Stack screenOptions={{ headerBackButtonDisplayMode: 'minimal', headerShadowVisible: false, contentStyle: { backgroundColor: colors.canvas } }}>
+    <Stack screenOptions={{ headerBackButtonDisplayMode: 'minimal', headerShadowVisible: false }}>
       <Stack.Screen name="index" options={{ title: 'Account', headerLargeTitle: true }} />
       <Stack.Screen name="profile" options={{ title: 'Profile' }} />
       <Stack.Screen name="change-password" options={{ title: 'Change password' }} />

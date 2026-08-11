@@ -1,10 +1,12 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
 import { Stack } from 'expo-router/stack';
-import { Text, View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
-import { Button, Card, ErrorMessage, Loading, Notice, Row, Screen } from '@/components/ui';
+import { Card, ErrorMessage, Loading, Notice, Row, Screen } from '@/components/ui';
+import { Button } from '@/components/ui/button';
+import { Text } from '@/components/ui/text';
 import { connectionsQuery } from '@/features/connections/api';
 import {
   groupInvitationsQuery,
@@ -12,7 +14,6 @@ import {
   groupQuery,
   inviteGroupUser,
 } from '@/features/groups/api';
-import { useAppTheme } from '@/theme/theme';
 
 export default function MembersSelectScreen() {
   const { groupId } = useLocalSearchParams<{ groupId: string }>();
@@ -27,7 +28,6 @@ export default function MembersSelectScreen() {
       await queryClient.invalidateQueries({ queryKey: groupInvitationsQuery(groupId).queryKey });
     },
   });
-  const { colors } = useAppTheme();
 
   if (group.isLoading || connections.isLoading || members.isLoading) return <Loading />;
   if (group.error || connections.error || members.error || !group.data) return <Screen><ErrorMessage error={group.error ?? connections.error ?? members.error ?? new Error('Group not found.')} /></Screen>;
@@ -41,7 +41,7 @@ export default function MembersSelectScreen() {
     <Screen>
       <Stack.Screen options={{ title: 'Invite members' }} />
       {invitations.error || invite.error ? <ErrorMessage error={invitations.error ?? invite.error} /> : null}
-      {canInvite ? <Text selectable style={{ color: colors.secondary, fontSize: 15, lineHeight: 22 }}>Invite people from your current Hissab connections.</Text> : <Notice title="Invitations unavailable">Only active members can invite people to an active group.</Notice>}
+      {canInvite ? <Text selectable className="text-[15px] leading-[22px] text-muted-foreground">Invite people from your current Hissab connections.</Text> : <Notice title="Invitations unavailable">Only active members can invite people to an active group.</Notice>}
       {candidates.length ? (
         <Card>
           {candidates.map((connection) => (
@@ -49,12 +49,12 @@ export default function MembersSelectScreen() {
               key={connection.userId}
               title={connection.displayName}
               subtitle={connection.email ?? 'Hissab connection'}
-              trailing={<View style={{ width: 80 }}><Button title="Invite" secondary loading={invite.isPending && invite.variables === connection.userId} disabled={!canInvite || invite.isPending} onPress={() => invite.mutate(connection.userId)} /></View>}
+              trailing={<View className="w-[92px]"><Button variant="outline" disabled={!canInvite || invite.isPending} accessibilityState={{ disabled: !canInvite || invite.isPending, busy: invite.isPending && invite.variables === connection.userId }} onPress={() => invite.mutate(connection.userId)}>{invite.isPending && invite.variables === connection.userId ? <ActivityIndicator className="text-primary" /> : <Text>Invite</Text>}</Button></View>}
             />
           ))}
         </Card>
       ) : (
-        <Text selectable style={{ color: colors.secondary, fontSize: 16, lineHeight: 24, textAlign: 'center', paddingVertical: 24 }}>All of your current connections are already members or have a pending invitation.</Text>
+        <Text selectable className="py-6 text-center leading-6 text-muted-foreground">All of your current connections are already members or have a pending invitation.</Text>
       )}
     </Screen>
   );

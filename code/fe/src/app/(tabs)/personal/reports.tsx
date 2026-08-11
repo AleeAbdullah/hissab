@@ -1,12 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 
 import type { DisplayCurrency, PersonalReport } from '@/api/contracts';
-import { Button, Card, ErrorMessage, Field, Loading, Row, Screen, SectionLabel } from '@/components/ui';
+import { Card, ErrorMessage, Field, Loading, Row, Screen, SectionLabel } from '@/components/ui';
+import { Button } from '@/components/ui/button';
+import { Text } from '@/components/ui/text';
 import { profileQuery } from '@/features/account/api';
 import { formatMinorAmount } from '@/features/balances/format';
-import { ChoiceChips } from '@/features/expenses/components/choice-chips';
+import { ChoiceChips } from '@/components/choice-chips';
 import { dateToIso } from '@/features/expenses/form';
 import { PersonalSummary } from '@/features/personal/components/personal-summary';
 import { personalReportQuery } from '@/features/personal/api';
@@ -35,18 +37,18 @@ export default function ReportsScreen() {
       <Card>
         <Row title="Report mode" detail={report.data.mode === 'OWED_SHARE' ? 'Your share' : 'Cash paid'} href="/report-mode" />
       </Card>
-      <View style={{ gap: 8 }}>
+      <View className="gap-2">
         <SectionLabel>PERIOD</SectionLabel>
         <Field label="From" hint="YYYY-MM-DD, optional" value={fromDate} onChangeText={setFromDate} autoCapitalize="none" />
         <Field label="To" hint="YYYY-MM-DD, inclusive and optional" value={toDate} onChangeText={setToDate} autoCapitalize="none" />
-        <Button title="Apply period" secondary onPress={apply} />
+        <Button variant="outline" onPress={apply}><Text>Apply period</Text></Button>
       </View>
-      <View style={{ gap: 8 }}>
+      <View className="gap-2">
         <SectionLabel>GROUP BY</SectionLabel>
         <ChoiceChips choices={[{ label: 'Month', value: 'MONTH' }, { label: 'Day', value: 'DAY' }]} value={filters.bucket} onChange={(value) => setFilters({ ...filters, bucket: value as PersonalReport['bucket'] })} />
       </View>
       <PersonalSummary displayCurrency={profile.data.displayCurrency} report={report.data} title={filters.from || filters.to ? 'Selected period' : 'All time'} />
-      <View style={{ gap: 8 }}>
+      <View className="gap-2">
         <SectionLabel>{report.data.bucket === 'MONTH' ? 'MONTHLY TOTALS' : 'DAILY TOTALS'}</SectionLabel>
         {report.data.buckets.length ? <Card>{report.data.buckets.slice().reverse().map((bucket) => <Row key={bucket.period} title={periodLabel(bucket.period, report.data.bucket)} subtitle={`Income ${formatBucket(bucket.incomeMinor, profile.data.displayCurrency)} · Spending ${formatBucket(bucket.expenseMinor, profile.data.displayCurrency)}`} detail={BigInt(bucket.netMinor) >= 0n ? `Left ${formatBucket(bucket.netMinor, profile.data.displayCurrency)}` : `Over ${formatBucket((-BigInt(bucket.netMinor)).toString(), profile.data.displayCurrency)}`} />)}</Card> : <Text selectable>No totals for this period.</Text>}
       </View>

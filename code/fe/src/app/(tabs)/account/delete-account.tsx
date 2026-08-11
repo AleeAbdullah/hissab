@@ -1,11 +1,13 @@
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert } from 'react-native';
+import { ActivityIndicator, Alert } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
 import { clearTokens } from '@/api/session-store';
-import { Button, ErrorMessage, Field, Notice, Screen } from '@/components/ui';
+import { ErrorMessage, Field, Notice, Screen } from '@/components/ui';
+import { Button } from '@/components/ui/button';
+import { Text } from '@/components/ui/text';
 import { deleteAccount } from '@/features/account/api';
 
 export default function DeleteAccountScreen() {
@@ -38,7 +40,7 @@ export default function DeleteAccountScreen() {
       {mutation.error ? <ErrorMessage error={mutation.error} /> : null}
       <Field label="Current password" secureTextEntry autoComplete="current-password" value={password} onChangeText={setPassword} />
       <Field label="Type DELETE to confirm" autoCapitalize="characters" value={confirmation} onChangeText={setConfirmation} error={confirmation.length > 0 && confirmation !== 'DELETE' ? 'Type DELETE exactly.' : undefined} />
-      <Button title={mutation.isPending ? 'Deleting account…' : 'Permanently delete account'} destructive loading={mutation.isPending} disabled={!valid} onPress={confirmDeletion} />
+      <Button variant="destructive" disabled={!valid || mutation.isPending} accessibilityState={{ disabled: !valid || mutation.isPending, busy: mutation.isPending }} onPress={confirmDeletion}>{mutation.isPending ? <ActivityIndicator className="text-destructive-foreground" /> : <Text>Permanently delete account</Text>}</Button>
     </Screen>
   );
 }

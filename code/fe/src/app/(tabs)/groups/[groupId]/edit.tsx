@@ -2,9 +2,12 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Stack } from 'expo-router/stack';
 import { useState } from 'react';
+import { ActivityIndicator } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
-import { Button, ErrorMessage, Field, Loading, Notice, Screen } from '@/components/ui';
+import { ErrorMessage, Field, Loading, Notice, Screen } from '@/components/ui';
+import { Button } from '@/components/ui/button';
+import { Text as ButtonText } from '@/components/ui/text';
 import { groupQuery, groupsQuery, updateGroup } from '@/features/groups/api';
 
 export default function EditGroupScreen() {
@@ -69,7 +72,7 @@ function GroupNameForm({
         editable={canManage}
         hint="Up to 100 characters"
       />
-      <Button title="Save changes" loading={loading} disabled={!canManage || !trimmedName} onPress={save} />
+      <Button disabled={!canManage || !trimmedName || loading} accessibilityState={{ disabled: !canManage || !trimmedName || loading, busy: loading }} onPress={save}>{loading ? <ActivityIndicator color="white" /> : <ButtonText>Save changes</ButtonText>}</Button>
     </>
   );
 }

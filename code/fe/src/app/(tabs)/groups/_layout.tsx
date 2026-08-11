@@ -1,11 +1,8 @@
 import { Stack } from 'expo-router/stack';
 
-import { useAppTheme } from '@/theme/theme';
-
 export default function GroupsLayout() {
-  const { colors } = useAppTheme();
   return (
-    <Stack screenOptions={{ headerBackButtonDisplayMode: 'minimal', headerShadowVisible: false, contentStyle: { backgroundColor: colors.canvas } }}>
+    <Stack screenOptions={{ headerBackButtonDisplayMode: 'minimal', headerShadowVisible: false }}>
       <Stack.Screen name="index" options={{ title: 'Groups', headerLargeTitle: true }} />
       <Stack.Screen name="[groupId]/index" options={{ title: 'Group' }} />
       <Stack.Screen name="[groupId]/edit" options={{ title: 'Edit group' }} />

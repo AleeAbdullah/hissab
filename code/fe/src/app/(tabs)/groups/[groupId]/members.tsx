@@ -1,10 +1,12 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { useLocalSearchParams } from 'expo-router';
+import { Link, useLocalSearchParams } from 'expo-router';
 import { Stack } from 'expo-router/stack';
-import { Alert, View } from 'react-native';
+import { ActivityIndicator, Alert, View } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
-import { Button, Card, ErrorMessage, Loading, Notice, Row, Screen, SectionLabel } from '@/components/ui';
+import { Card, ErrorMessage, Loading, Notice, Row, Screen, SectionLabel } from '@/components/ui';
+import { Button } from '@/components/ui/button';
+import { Text } from '@/components/ui/text';
 import {
   cancelGroupInvitation,
   groupInvitationsQuery,
@@ -42,9 +44,9 @@ export default function GroupMembersScreen() {
           />
         ))}
       </Card>
-      {canManage ? <Button title="Invite member" href={{ pathname: '/members-select', params: { groupId } }} /> : null}
+      {canManage ? <Link href={{ pathname: '/members-select', params: { groupId } }} asChild><Button role="link"><Text>Invite member</Text></Button></Link> : null}
       {invitations.data?.length ? (
-        <View style={{ gap: 12 }}>
+        <View className="gap-3">
           <SectionLabel>PENDING INVITATIONS</SectionLabel>
           <Card>
             {invitations.data.map((invitation) => (
@@ -52,7 +54,7 @@ export default function GroupMembersScreen() {
                 key={invitation.userId}
                 title={invitation.userDisplayName}
                 subtitle={`Invited by ${invitation.invitedByDisplayName}`}
-                trailing={<View style={{ flexShrink: 0 }}><Button title="Cancel" secondary destructive loading={cancel.isPending && cancel.variables === invitation.userId} disabled={cancel.isPending} onPress={() => Alert.alert('Cancel invitation?', `Remove ${invitation.userDisplayName}'s pending invitation to ${group.data.name}?`, [{ text: 'Keep invitation', style: 'cancel' }, { text: 'Cancel invitation', style: 'destructive', onPress: () => cancel.mutate(invitation.userId) }])} /></View>}
+                trailing={<View className="shrink-0"><Button variant="destructiveOutline" disabled={cancel.isPending} accessibilityState={{ disabled: cancel.isPending, busy: cancel.isPending && cancel.variables === invitation.userId }} onPress={() => Alert.alert('Cancel invitation?', `Remove ${invitation.userDisplayName}'s pending invitation to ${group.data.name}?`, [{ text: 'Keep invitation', style: 'cancel' }, { text: 'Cancel invitation', style: 'destructive', onPress: () => cancel.mutate(invitation.userId) }])}>{cancel.isPending && cancel.variables === invitation.userId ? <ActivityIndicator className="text-destructive" /> : <Text>Cancel</Text>}</Button></View>}
               />
             ))}
           </Card>

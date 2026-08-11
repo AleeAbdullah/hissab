@@ -1,8 +1,11 @@
 import { useMutation } from '@tanstack/react-query';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
+import { ActivityIndicator } from 'react-native';
 
-import { Button, ErrorMessage, Notice, Screen } from '@/components/ui';
+import { ErrorMessage, Notice, Screen } from '@/components/ui';
+import { Button } from '@/components/ui/button';
+import { Text as ButtonText } from '@/components/ui/text';
 import { exportAccount } from '@/features/account/api';
 
 async function shareExport() {
@@ -27,10 +30,12 @@ export default function ExportScreen() {
       <Notice title="Your complete Hissab record">This creates a versioned JSON snapshot of your profile, social state, financial history, activity, reminders, and notifications.</Notice>
       {mutation.error ? <ErrorMessage error={mutation.error} /> : null}
       <Button
-        title={mutation.isPending ? 'Preparing export…' : 'Create and share JSON export'}
-        loading={mutation.isPending}
+        disabled={mutation.isPending}
+        accessibilityState={{ disabled: mutation.isPending, busy: mutation.isPending }}
         onPress={() => mutation.mutate()}
-      />
+      >
+        {mutation.isPending ? <ActivityIndicator color="white" /> : <ButtonText>Create and share JSON export</ButtonText>}
+      </Button>
     </Screen>
   );
 }

@@ -1,8 +1,9 @@
-import type { Href } from 'expo-router';
-import { Text, View } from 'react-native';
+import { Link, type Href } from 'expo-router';
+import { View } from 'react-native';
 
-import { Button, Card, Screen } from '@/components/ui';
-import { useAppTheme } from '@/theme/theme';
+import { Card, Screen } from '@/components/ui';
+import { Button } from '@/components/ui/button';
+import { Text } from '@/components/ui/text';
 
 export function ComingLaterScreen({
   actionLabel,
@@ -19,26 +20,25 @@ export function ComingLaterScreen({
   links?: { label: string; href: Href }[];
   title?: string;
 }) {
-  const { colors } = useAppTheme();
   return (
     <Screen>
-      <View style={{ flex: 1, justifyContent: 'center', gap: 16, paddingVertical: 48 }}>
-        {eyebrow ? <Text selectable style={{ color: colors.brand, fontSize: 12, lineHeight: 16, fontWeight: '700', letterSpacing: 1 }}>{eyebrow}</Text> : null}
-        <View style={{ gap: 8 }}>
-          <Text selectable style={{ color: colors.text, fontSize: 32, lineHeight: 38, fontWeight: '700' }}>{title}</Text>
-          <Text selectable style={{ color: colors.secondary, fontSize: 16, lineHeight: 24 }}>{purpose}</Text>
+      <View className="flex-1 justify-center gap-4 py-12">
+        {eyebrow ? <Text selectable className="text-xs font-bold leading-4 tracking-[1px] text-primary">{eyebrow}</Text> : null}
+        <View className="gap-2">
+          <Text selectable className="text-[32px] font-bold leading-[38px]">{title}</Text>
+          <Text selectable className="leading-6 text-muted-foreground">{purpose}</Text>
         </View>
         {note ? (
           <Card>
-            <View style={{ gap: 4, padding: 16 }}>
-              <Text selectable style={{ color: colors.secondary, fontSize: 12, lineHeight: 16, fontWeight: '600', letterSpacing: 0.4 }}>BACKEND STATUS</Text>
-              <Text selectable style={{ color: colors.text, fontSize: 15, lineHeight: 22 }}>{note}</Text>
+            <View className="gap-1 p-4">
+              <Text selectable className="text-xs font-semibold leading-4 tracking-[0.4px] text-muted-foreground">BACKEND STATUS</Text>
+              <Text selectable className="text-[15px] leading-[22px]">{note}</Text>
             </View>
           </Card>
         ) : null}
-        {actionLabel ? <Button title={actionLabel} disabled /> : null}
+        {actionLabel ? <Button disabled><Text>{actionLabel}</Text></Button> : null}
       </View>
-      {links.map((link) => <Button key={String(link.href)} title={link.label} href={link.href} secondary />)}
+      {links.map((link) => <Link key={String(link.href)} href={link.href} asChild><Button variant="outline" role="link"><Text>{link.label}</Text></Button></Link>)}
     </Screen>
   );
 }

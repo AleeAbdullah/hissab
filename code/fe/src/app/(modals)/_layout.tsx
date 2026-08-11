@@ -1,11 +1,8 @@
 import { Stack } from 'expo-router/stack';
 
-import { useAppTheme } from '@/theme/theme';
-
 export default function ModalLayout() {
-  const { colors } = useAppTheme();
   return (
-    <Stack screenOptions={{ headerBackButtonDisplayMode: 'minimal', contentStyle: { backgroundColor: colors.canvas } }}>
+    <Stack screenOptions={{ headerBackButtonDisplayMode: 'minimal' }}>
       <Stack.Screen name="connection-new" options={{ title: 'Add connection', presentation: 'formSheet', sheetGrabberVisible: true }} />
       <Stack.Screen name="group-new" options={{ title: 'Create group', presentation: 'formSheet', sheetGrabberVisible: true }} />
       <Stack.Screen name="members-select" options={{ title: 'Invite members', presentation: 'formSheet', sheetGrabberVisible: true }} />

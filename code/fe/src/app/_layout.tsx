@@ -1,13 +1,16 @@
 import { QueryClientProvider } from '@tanstack/react-query';
+import { PortalHost } from '@rn-primitives/portal';
+import { ThemeProvider } from 'expo-router/react-navigation';
 import { Stack } from 'expo-router/stack';
 import * as Notifications from 'expo-notifications';
 import { StatusBar } from 'expo-status-bar';
+import { useColorScheme, View } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
 import { SessionProvider } from '@/features/auth/session';
 import { LedgerDraftProvider } from '@/features/ledger/draft';
 import { RealtimeProvider } from '@/features/realtime/provider';
-import { AppTheme, useAppTheme } from '@/theme/theme';
+import { useNavigationTheme } from '@/lib/theme';
 
 import '../../global.css';
 
@@ -21,19 +24,23 @@ Notifications.setNotificationHandler({
 });
 
 function Navigation() {
-  const { dark } = useAppTheme();
+  const colorScheme = useColorScheme();
+  const navigationTheme = useNavigationTheme();
   return (
-    <>
-      <StatusBar style={dark ? 'light' : 'dark'} />
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="index" />
-        <Stack.Screen name="home" />
-        <Stack.Screen name="(auth)" />
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="(shared)" />
-        <Stack.Screen name="(modals)" options={{ presentation: 'modal' }} />
-      </Stack>
-    </>
+    <ThemeProvider value={navigationTheme}>
+      <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+      <View className="flex-1 bg-background">
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="index" />
+          <Stack.Screen name="home" />
+          <Stack.Screen name="(auth)" />
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="(shared)" />
+          <Stack.Screen name="(modals)" options={{ presentation: 'modal' }} />
+        </Stack>
+        <PortalHost />
+      </View>
+    </ThemeProvider>
   );
 }
 
@@ -42,9 +49,7 @@ export default function RootLayout() {
     <QueryClientProvider client={queryClient}>
       <SessionProvider>
         <RealtimeProvider>
-          <AppTheme>
-            <LedgerDraftProvider><Navigation /></LedgerDraftProvider>
-          </AppTheme>
+          <LedgerDraftProvider><Navigation /></LedgerDraftProvider>
         </RealtimeProvider>
       </SessionProvider>
     </QueryClientProvider>

@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 
-import { Button, ErrorMessage, Field, Notice, SectionLabel } from '@/components/ui';
+import { ErrorMessage, Field, Notice, SectionLabel } from '@/components/ui';
+import { Button } from '@/components/ui/button';
+import { Text } from '@/components/ui/text';
 import type { CreateSettlementDto } from '@/api/generated/types.gen';
 import type { DisplayCurrency, LedgerBalances, Settlement } from '@/api/contracts';
-import { ChoiceChips } from '@/features/expenses/components/choice-chips';
+import { ChoiceChips } from '@/components/choice-chips';
 import { todayDate } from '@/features/expenses/form';
 import type { LedgerDraftMember } from '@/features/ledger/draft';
 import { buildSettlementBody, settlementInitialValues } from '@/features/settlements/form';
@@ -41,20 +43,22 @@ export function SettlementEditor({
   };
 
   return (
-    <View style={{ gap: 16 }}>
+    <View className="gap-4">
       <Notice title="External payment">Record money already paid or received elsewhere. Hissab does not move money.</Notice>
       {validationError ? <ErrorMessage error={new Error(validationError)} /> : null}
       <Field label={`Amount (${displayCurrency})`} placeholder="0.00" keyboardType="decimal-pad" value={amount} onChangeText={setAmount} />
       <Field label="Date" hint="YYYY-MM-DD" placeholder="2026-08-05" value={occurredDate} onChangeText={setOccurredDate} autoCapitalize="none" />
       <Choice label="PAID BY" choices={members.map((member) => ({ label: member.displayName, value: member.userId }))} value={fromUserId} onChange={setFromUserId} />
       <Choice label="RECEIVED BY" choices={members.map((member) => ({ label: member.displayName, value: member.userId }))} value={toUserId} onChange={setToUserId} />
-      <Button title={settlement ? 'Save changes' : 'Record payment'} loading={saving} disabled={saving || members.length < 2} onPress={save} />
+      <Button disabled={saving || members.length < 2} accessibilityState={{ disabled: saving || members.length < 2, busy: saving }} onPress={save}>
+        {saving ? <ActivityIndicator className="text-primary-foreground" /> : <Text>{settlement ? 'Save changes' : 'Record payment'}</Text>}
+      </Button>
     </View>
   );
 }
 
 function Choice({ label, choices, value, onChange }: { label: string; choices: { label: string; value: string }[]; value: string; onChange: (value: string) => void }) {
-  return <View style={{ gap: 8 }}><SectionLabel>{label}</SectionLabel><ChoiceChips choices={choices} value={value} onChange={onChange} /></View>;
+  return <View className="gap-2"><SectionLabel>{label}</SectionLabel><ChoiceChips choices={choices} value={value} onChange={onChange} /></View>;
 }
 
 function createsCredit(body: CreateSettlementDto, balances?: LedgerBalances, replacing?: Settlement) {

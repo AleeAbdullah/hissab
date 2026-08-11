@@ -1,9 +1,11 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { router, useLocalSearchParams } from 'expo-router';
-import { Alert } from 'react-native';
+import { Link, router, useLocalSearchParams } from 'expo-router';
+import { ActivityIndicator, Alert } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
-import { Button, Card, ErrorMessage, Loading, Notice, Row, Screen, SectionLabel } from '@/components/ui';
+import { Card, ErrorMessage, Loading, Notice, Row, Screen, SectionLabel } from '@/components/ui';
+import { Button } from '@/components/ui/button';
+import { Text } from '@/components/ui/text';
 import { profileQuery } from '@/features/account/api';
 import { ledgerBalancesQuery, userBalancesQuery } from '@/features/balances/api';
 import { formatMinorAmount } from '@/features/balances/format';
@@ -37,7 +39,7 @@ export default function PaymentDetailScreen() {
       <Card><Row title={`${names.get(settlement.data.fromUserId) ?? 'Member'} paid ${names.get(settlement.data.toUserId) ?? 'member'}`} subtitle={settlement.data.occurredAt.slice(0, 10)} detail={formatMinorAmount(settlement.data.amountMinor, profile.data.displayCurrency)} /></Card>
       <Notice title="Recorded only">This documents money paid elsewhere. Hissab did not move money.</Notice>
       {settlement.data.status === 'DELETED' ? <Notice title="Deleted payment">This record remains in Hissab’s audit history and no longer affects balances.</Notice> : null}
-      {editable ? <><Button title="Edit payment" href={{ pathname: '/payment/[paymentId]/edit', params: { paymentId } }} secondary /><Button title="Delete payment" secondary destructive loading={remove.isPending} onPress={() => Alert.alert('Delete payment?', 'This reverses its balance effect. It does not reverse any money paid outside Hissab.', [{ text: 'Keep payment', style: 'cancel' }, { text: 'Delete payment', style: 'destructive', onPress: () => remove.mutate() }])} /></> : null}
+      {editable ? <><Link href={{ pathname: '/payment/[paymentId]/edit', params: { paymentId } }} asChild><Button variant="outline" role="link"><Text>Edit payment</Text></Button></Link><Button variant="destructiveOutline" disabled={remove.isPending} accessibilityState={{ disabled: remove.isPending, busy: remove.isPending }} onPress={() => Alert.alert('Delete payment?', 'This reverses its balance effect. It does not reverse any money paid outside Hissab.', [{ text: 'Keep payment', style: 'cancel' }, { text: 'Delete payment', style: 'destructive', onPress: () => remove.mutate() }])}>{remove.isPending ? <ActivityIndicator className="text-destructive" /> : <Text>Delete payment</Text>}</Button></> : null}
     </Screen>
   );
 }

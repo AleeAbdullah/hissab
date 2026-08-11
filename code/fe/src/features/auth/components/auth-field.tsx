@@ -1,8 +1,11 @@
+import { Eye, EyeOff } from 'lucide-react-native';
 import { useState, type PropsWithChildren } from 'react';
-import { Pressable, Text, TextInput, type TextInputProps, View } from 'react-native';
-import { SymbolView } from 'expo-symbols';
+import { TextInput, type TextInputProps, View } from 'react-native';
 
-import { useAppTheme } from '@/theme/theme';
+import { Button } from '@/components/ui/button';
+import { Icon } from '@/components/ui/icon';
+import { Text } from '@/components/ui/text';
+import { cn } from '@/lib/utils';
 
 type AuthFieldProps = PropsWithChildren<{
   label: string;
@@ -12,53 +15,27 @@ type AuthFieldProps = PropsWithChildren<{
 }>;
 
 export function AuthField({ children, error, first, hint, label }: AuthFieldProps) {
-  const { colors } = useAppTheme();
   return (
-    <View
-      style={{
-        gap: 4,
-        padding: 16,
-        backgroundColor: error ? colors.negativeSubtle : undefined,
-        borderTopWidth: first ? 0 : 1,
-        borderTopColor: colors.divider,
-      }}
-    >
-      <Text selectable style={{ color: colors.secondary, fontSize: 12, lineHeight: 16, fontWeight: '600', letterSpacing: 0.4 }}>
-        {label}
-      </Text>
+    <View className={cn('gap-1 p-4', !first && 'border-t border-border', error && 'bg-destructive-muted')}>
+      <Text selectable className="text-xs font-semibold leading-4 tracking-[0.4px] text-muted-foreground">{label}</Text>
       {children}
-      {error || hint ? (
-        <Text selectable style={{ color: error ? colors.negative : colors.secondary, fontSize: 12, lineHeight: 16 }}>
-          {error ?? hint}
-        </Text>
-      ) : null}
+      {error || hint ? <Text selectable className={cn('text-xs leading-4', error ? 'text-destructive' : 'text-muted-foreground')}>{error ?? hint}</Text> : null}
     </View>
   );
 }
 
-export function AuthTextField({ error, first, hint, label, secureTextEntry, style, ...props }: TextInputProps & Omit<AuthFieldProps, 'children'>) {
-  const { colors } = useAppTheme();
+export function AuthTextField({ error, first, hint, label, secureTextEntry, className, style, ...props }: TextInputProps & Omit<AuthFieldProps, 'children'>) {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const isPassword = secureTextEntry === true;
   return (
     <AuthField error={error} first={first} hint={hint} label={label}>
-      <View style={{ minHeight: 44, flexDirection: 'row', alignItems: 'center' }}>
+      <View className="min-h-11 flex-row items-center">
         <TextInput
           accessibilityLabel={label}
-          placeholderTextColor={colors.secondary}
           secureTextEntry={isPassword && !passwordVisible}
           {...props}
-          style={[
-            {
-              flex: 1,
-              minHeight: 44,
-              paddingVertical: 0,
-              color: colors.text,
-              fontSize: 16,
-              lineHeight: 24,
-            },
-            style,
-          ]}
+          className={cn('min-h-11 flex-1 py-0 text-base leading-6 text-foreground placeholder:text-muted-foreground', className)}
+          style={style}
         />
         {isPassword ? <PasswordVisibilityButton visible={passwordVisible} onPress={() => setPasswordVisible((value) => !value)} /> : null}
       </View>
@@ -67,10 +44,9 @@ export function AuthTextField({ error, first, hint, label, secureTextEntry, styl
 }
 
 function PasswordVisibilityButton({ onPress, visible }: { onPress: () => void; visible: boolean }) {
-  const { colors } = useAppTheme();
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={visible ? 'Hide password' : 'Show password'} onPress={onPress} style={{ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}>
-      <SymbolView name={{ ios: visible ? 'eye.slash' : 'eye', android: visible ? 'visibility_off' : 'visibility', web: visible ? 'visibility_off' : 'visibility' }} size={20} tintColor={colors.secondary} />
-    </Pressable>
+    <Button variant="ghost" size="icon" accessibilityLabel={visible ? 'Hide password' : 'Show password'} onPress={onPress}>
+      <Icon as={visible ? EyeOff : Eye} size={20} className="text-muted-foreground" />
+    </Button>
   );
 }

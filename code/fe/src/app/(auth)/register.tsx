@@ -1,17 +1,17 @@
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Text, View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 
-import { Button, Card, ErrorMessage, Screen } from '@/components/ui';
+import { Card, ErrorMessage, Screen } from '@/components/ui';
+import { Button } from '@/components/ui/button';
+import { Text } from '@/components/ui/text';
 import { register } from '@/features/auth/api';
 import { AuthPageHeader } from '@/features/auth/components/auth-page-header';
 import { AuthTextField } from '@/features/auth/components/auth-field';
-import { useAppTheme } from '@/theme/theme';
 
 export default function RegisterScreen() {
   const router = useRouter();
-  const { colors } = useAppTheme();
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -31,14 +31,15 @@ export default function RegisterScreen() {
       <Card>
         <AuthTextField first label="Timezone" value={timezone} onChangeText={setTimezone} hint="Use an IANA timezone such as Asia/Karachi." />
       </Card>
-      <View style={{ gap: 12 }}>
+      <View className="gap-3">
         <Button
-          title={mutation.isPending ? 'Creating account…' : 'Create account'}
-          disabled={!valid}
-          loading={mutation.isPending}
+          disabled={!valid || mutation.isPending}
+          accessibilityState={{ disabled: !valid || mutation.isPending, busy: mutation.isPending }}
           onPress={() => mutation.mutate({ displayName: displayName.trim(), email, password, timezone })}
-        />
-        <Text selectable style={{ color: colors.secondary, fontSize: 12, lineHeight: 16, textAlign: 'center' }}>By creating an account you agree to the Terms and Privacy Policy.</Text>
+        >
+          {mutation.isPending ? <ActivityIndicator className="text-primary-foreground" /> : <Text>Create account</Text>}
+        </Button>
+        <Text selectable className="text-center text-xs leading-4 text-muted-foreground">By creating an account you agree to the Terms and Privacy Policy.</Text>
       </View>
     </Screen>
   );

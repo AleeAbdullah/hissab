@@ -1,8 +1,8 @@
 import type { GroupInvitation } from '@/api/contracts';
-import { Avatar, Button, Card } from '@/components/ui';
-import { Text, View } from 'react-native';
-
-import { useAppTheme } from '@/theme/theme';
+import { Avatar, Card } from '@/components/ui';
+import { Button } from '@/components/ui/button';
+import { Text } from '@/components/ui/text';
+import { ActivityIndicator, View } from 'react-native';
 
 export function GroupInvitationCard({
   invitation,
@@ -15,24 +15,23 @@ export function GroupInvitationCard({
   onAccept: () => void;
   onDecline: () => void;
 }) {
-  const { colors } = useAppTheme();
   return (
     <Card>
-      <View style={{ padding: 16, gap: 12 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+      <View className="gap-3 p-4">
+        <View className="flex-row items-center gap-3">
           <Avatar name={invitation.groupName} />
-          <View style={{ flex: 1, gap: 2 }}>
-            <Text selectable style={{ color: colors.text, fontSize: 16, lineHeight: 24, fontWeight: '600' }}>
+          <View className="flex-1 gap-0.5">
+            <Text selectable className="text-base font-semibold leading-6">
               {invitation.groupName}
             </Text>
-            <Text selectable style={{ color: colors.secondary, fontSize: 13, lineHeight: 18 }}>
+            <Text selectable className="text-[13px] leading-[18px] text-muted-foreground">
               Invited by {invitation.invitedByDisplayName}
             </Text>
           </View>
         </View>
-        <View style={{ flexDirection: 'row', gap: 8 }}>
-          <View style={{ flex: 1 }}><Button title="Accept" loading={loading} disabled={loading} onPress={onAccept} /></View>
-          <View style={{ flex: 1 }}><Button title="Decline" secondary destructive disabled={loading} onPress={onDecline} /></View>
+        <View className="flex-row gap-2">
+          <View className="flex-1"><Button disabled={loading} accessibilityState={{ disabled: loading, busy: loading }} onPress={onAccept}>{loading ? <ActivityIndicator className="text-primary-foreground" /> : <Text>Accept</Text>}</Button></View>
+          <View className="flex-1"><Button variant="destructiveOutline" disabled={loading} onPress={onDecline}><Text>Decline</Text></Button></View>
         </View>
       </View>
     </Card>

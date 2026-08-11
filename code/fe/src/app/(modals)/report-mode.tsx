@@ -1,14 +1,15 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Text, View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 
 import type { Profile } from '@/api/contracts';
 import { queryClient } from '@/api/query-client';
-import { Button, ErrorMessage, Loading, Notice, Screen, SectionLabel } from '@/components/ui';
+import { ErrorMessage, Loading, Notice, Screen, SectionLabel } from '@/components/ui';
+import { Button } from '@/components/ui/button';
+import { Text } from '@/components/ui/text';
 import { profileQuery, updateProfile } from '@/features/account/api';
-import { ChoiceChips } from '@/features/expenses/components/choice-chips';
-import { useAppTheme } from '@/theme/theme';
+import { ChoiceChips } from '@/components/choice-chips';
 
 export default function ReportModeScreen() {
   const query = useQuery(profileQuery);
@@ -18,7 +19,6 @@ export default function ReportModeScreen() {
 }
 
 function ReportModeForm({ profile }: { profile: Profile }) {
-  const { colors } = useAppTheme();
   const [mode, setMode] = useState(profile.personalReportMode);
   const update = useMutation({
     mutationFn: () => updateProfile({ personalReportMode: mode }),
@@ -35,12 +35,14 @@ function ReportModeForm({ profile }: { profile: Profile }) {
     <Screen>
       <Notice title="How shared expenses are counted">This changes Personal reports only. It never changes anyone’s balance.</Notice>
       {update.error ? <ErrorMessage error={update.error} /> : null}
-      <View style={{ gap: 8 }}>
+      <View className="gap-2">
         <SectionLabel>REPORT MODE</SectionLabel>
         <ChoiceChips choices={[{ label: 'Your share', value: 'OWED_SHARE' }, { label: 'Cash paid', value: 'CASH_OUT_OF_POCKET' }]} value={mode} onChange={(value) => setMode(value as Profile['personalReportMode'])} />
       </View>
-      <Text selectable style={{ color: colors.secondary, fontSize: 16, lineHeight: 24 }}>{explanation}</Text>
-      <Button title="Save report mode" loading={update.isPending} onPress={() => update.mutate()} />
+      <Text selectable className="leading-6 text-muted-foreground">{explanation}</Text>
+      <Button disabled={update.isPending} accessibilityState={{ disabled: update.isPending, busy: update.isPending }} onPress={() => update.mutate()}>
+        {update.isPending ? <ActivityIndicator className="text-primary-foreground" /> : <Text>Save report mode</Text>}
+      </Button>
     </Screen>
   );
 }

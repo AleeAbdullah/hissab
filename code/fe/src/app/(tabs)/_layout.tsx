@@ -3,16 +3,16 @@ import { NativeTabs } from 'expo-router/unstable-native-tabs';
 
 import { Loading } from '@/components/ui';
 import { useSession } from '@/features/auth/session';
-import { useAppTheme } from '@/theme/theme';
+import { THEME_VARIABLES, useThemeVariable } from '@/lib/theme';
 
 export default function TabLayout() {
   const session = useSession();
-  const { colors } = useAppTheme();
+  const primary = useThemeVariable(THEME_VARIABLES.primary);
   if (session === undefined) return <Loading />;
   if (!session) return <Redirect href="/sign-in" />;
 
   return (
-    <NativeTabs tintColor={colors.brand}>
+    <NativeTabs tintColor={primary}>
       <NativeTabs.Trigger name="friends">
         <NativeTabs.Trigger.Icon sf={{ default: 'person.2', selected: 'person.2.fill' }} md="group" />
         <NativeTabs.Trigger.Label>Friends</NativeTabs.Trigger.Label>

@@ -1,11 +1,8 @@
 import { Stack } from 'expo-router/stack';
 
-import { useAppTheme } from '@/theme/theme';
-
 export default function FriendsLayout() {
-  const { colors } = useAppTheme();
   return (
-    <Stack screenOptions={{ headerBackButtonDisplayMode: 'minimal', headerShadowVisible: false, contentStyle: { backgroundColor: colors.canvas } }}>
+    <Stack screenOptions={{ headerBackButtonDisplayMode: 'minimal', headerShadowVisible: false }}>
       <Stack.Screen name="index" options={{ title: 'Friends', headerLargeTitle: true }} />
       <Stack.Screen name="requests" options={{ title: 'Connection requests' }} />
       <Stack.Screen name="blocked" options={{ title: 'Blocked people' }} />

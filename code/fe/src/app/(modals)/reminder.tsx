@@ -1,11 +1,13 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert } from 'react-native';
+import { ActivityIndicator, Alert } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
 import { ApiError } from '@/api/transport';
-import { Button, Card, ErrorMessage, Loading, Notice, Row, Screen, SectionLabel } from '@/components/ui';
+import { Card, ErrorMessage, Loading, Notice, Row, Screen, SectionLabel } from '@/components/ui';
+import { Button } from '@/components/ui/button';
+import { Text as ButtonText } from '@/components/ui/text';
 import { ledgerBalancesQuery } from '@/features/balances/api';
 import { formatMinorAmount } from '@/features/balances/format';
 import { useLedgerDraft } from '@/features/ledger/draft';
@@ -71,7 +73,7 @@ export default function ReminderScreen() {
           </Card>
         </>
       ) : <Notice title="No one to remind">No active member currently owes a balance in this ledger.</Notice>}
-      <Button title={mutation.isPending ? 'Sending reminder…' : 'Send reminder'} loading={mutation.isPending} disabled={ownBalance <= 0n || !recipient} onPress={send} />
+      <Button disabled={mutation.isPending || ownBalance <= 0n || !recipient} accessibilityState={{ disabled: mutation.isPending || ownBalance <= 0n || !recipient, busy: mutation.isPending }} onPress={send}>{mutation.isPending ? <ActivityIndicator color="white" /> : <ButtonText>Send reminder</ButtonText>}</Button>
     </Screen>
   );
 }

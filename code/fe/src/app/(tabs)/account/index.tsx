@@ -1,14 +1,14 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import Constants from 'expo-constants';
-import { Alert, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, View } from 'react-native';
 
 import { notificationPreferencesQuery, profileQuery, sessionsQuery } from '@/features/account/api';
 import { signOut } from '@/features/auth/api';
-import { Avatar, Button, Card, ErrorMessage, Loading, Row, Screen, SectionLabel } from '@/components/ui';
-import { useAppTheme } from '@/theme/theme';
+import { Avatar, Card, ErrorMessage, Loading, Row, Screen, SectionLabel } from '@/components/ui';
+import { Button } from '@/components/ui/button';
+import { Text } from '@/components/ui/text';
 
 export default function AccountScreen() {
-  const { colors } = useAppTheme();
   const profile = useQuery(profileQuery);
   const sessions = useQuery(sessionsQuery);
   const notifications = useQuery(notificationPreferencesQuery);
@@ -44,14 +44,16 @@ export default function AccountScreen() {
         <Row title="Export your data" href="/account/export" />
         <Row title="Delete account" href="/account/delete-account" destructive />
       </Card>
-      <View style={{ gap: 8 }}>
+      <View className="gap-2">
         <Button
-          title={mutation.isPending ? 'Signing out…' : 'Sign out'}
-          secondary
-          loading={mutation.isPending}
+          variant="outline"
+          disabled={mutation.isPending}
+          accessibilityState={{ disabled: mutation.isPending, busy: mutation.isPending }}
           onPress={() => Alert.alert('Sign out?', 'This signs out only this device.', [{ text: 'Cancel', style: 'cancel' }, { text: 'Sign out', onPress: () => mutation.mutate() }])}
-        />
-        <Text selectable style={{ color: colors.secondary, fontSize: 13, textAlign: 'center' }}>Hissab {Constants.expoConfig?.version ?? '1.0'} · Other sessions stay signed in.</Text>
+        >
+          {mutation.isPending ? <ActivityIndicator className="text-primary" /> : <Text>Sign out</Text>}
+        </Button>
+        <Text selectable className="text-center text-[13px] text-muted-foreground">Hissab {Constants.expoConfig?.version ?? '1.0'} · Other sessions stay signed in.</Text>
       </View>
     </Screen>
   );

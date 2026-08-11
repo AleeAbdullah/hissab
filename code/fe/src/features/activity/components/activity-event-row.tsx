@@ -1,25 +1,21 @@
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 
 import type { ActivityItem, DisplayCurrency } from '@/api/contracts';
 import { Avatar } from '@/components/ui';
+import { Text } from '@/components/ui/text';
 import { activityTimeLabel, describeActivity } from '@/features/activity/presentation';
-import { useAppTheme } from '@/theme/theme';
 
 export function ActivityEventRow({ displayCurrency, item }: { displayCurrency: DisplayCurrency; item: ActivityItem }) {
-  const { colors } = useAppTheme();
   const event = describeActivity(item, displayCurrency);
   return (
-    <View
-      accessibilityLabel={`${event.actor} ${event.action}. ${event.context}. ${activityTimeLabel(item.createdAt)}${event.amount ? `. ${event.amount}` : ''}`}
-      style={{ minHeight: 68, padding: 12, gap: 12, flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: colors.divider }}
-    >
+    <View accessibilityLabel={`${event.actor} ${event.action}. ${event.context}. ${activityTimeLabel(item.createdAt)}${event.amount ? `. ${event.amount}` : ''}`} className="min-h-[68px] flex-row items-center gap-3 border-b border-border p-3">
       <Avatar name={event.actor} />
-      <View style={{ flex: 1, gap: 1 }}>
-        <Text selectable style={{ color: colors.text, fontSize: 16, lineHeight: 22, fontWeight: '600' }}>{event.actor}</Text>
-        <Text selectable style={{ color: colors.text, fontSize: 15, lineHeight: 20 }}>{event.action}</Text>
-        <Text selectable style={{ color: colors.secondary, fontSize: 13, lineHeight: 18 }}>{event.context} · {activityTimeLabel(item.createdAt)}</Text>
+      <View className="flex-1 gap-px">
+        <Text selectable className="text-base font-semibold leading-[22px]">{event.actor}</Text>
+        <Text selectable className="text-[15px] leading-5">{event.action}</Text>
+        <Text selectable className="text-[13px] leading-[18px] text-muted-foreground">{event.context} · {activityTimeLabel(item.createdAt)}</Text>
       </View>
-      {event.amount ? <Text selectable style={{ color: colors.text, fontSize: 15, lineHeight: 20, fontWeight: '600', textAlign: 'right', maxWidth: '30%' }}>{event.amount}</Text> : null}
+      {event.amount ? <Text selectable className="max-w-[30%] text-right text-[15px] font-semibold leading-5">{event.amount}</Text> : null}
     </View>
   );
 }

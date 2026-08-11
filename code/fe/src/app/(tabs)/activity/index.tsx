@@ -1,18 +1,20 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { Link, Stack, useLocalSearchParams } from 'expo-router';
 import { useMemo } from 'react';
-import { Pressable, RefreshControl, Text, View } from 'react-native';
+import { ActivityIndicator, RefreshControl, View } from 'react-native';
 
 import type { ActivityItem } from '@/api/contracts';
-import { Button, Card, ErrorMessage, Loading, Screen, SectionLabel } from '@/components/ui';
+import { Card, ErrorMessage, Loading, Screen, SectionLabel } from '@/components/ui';
+import { Button } from '@/components/ui/button';
+import { Text } from '@/components/ui/text';
 import { profileQuery } from '@/features/account/api';
 import { ActivityEventRow } from '@/features/activity/components/activity-event-row';
 import { activityAreaFromParam, activityInfiniteQuery } from '@/features/activity/api';
 import { activityDayLabel } from '@/features/activity/presentation';
-import { useAppTheme } from '@/theme/theme';
+import { THEME_VARIABLES, useThemeVariable } from '@/lib/theme';
 
 export default function ActivityScreen() {
-  const { colors } = useAppTheme();
+  const primary = useThemeVariable(THEME_VARIABLES.primary);
   const params = useLocalSearchParams<{ area?: string; ledgerId?: string }>();
   const filters = {
     area: activityAreaFromParam(params.area),
@@ -39,26 +41,22 @@ export default function ActivityScreen() {
         options={{
           headerRight: () => (
             <Link href={filterHref} asChild>
-              <Pressable accessibilityRole="button" accessibilityLabel="Filter activity" style={{ minWidth: 44, minHeight: 44, justifyContent: 'center' }}>
-                <Text style={{ color: colors.brand, fontSize: 16, fontWeight: '600' }}>Filter</Text>
-              </Pressable>
+              <Button variant="link" role="link" accessibilityLabel="Filter activity"><Text>Filter</Text></Button>
             </Link>
           ),
         }}
       />
       {activity.isLoading || profile.isLoading ? <Loading /> : (
-        <Screen refreshControl={<RefreshControl refreshing={activity.isRefetching && !activity.isFetchingNextPage} onRefresh={() => activity.refetch()} tintColor={colors.brand} colors={[colors.brand]} />}>
+        <Screen refreshControl={<RefreshControl refreshing={activity.isRefetching && !activity.isFetchingNextPage} onRefresh={() => activity.refetch()} tintColor={primary} colors={[primary]} />}>
           {activity.error || profile.error ? <ErrorMessage error={activity.error ?? profile.error} /> : null}
           {activeFilterText ? (
             <Link href={filterHref} asChild>
-              <Pressable accessibilityRole="button" accessibilityLabel={`Change filters: ${activeFilterText}`} style={{ minHeight: 44, justifyContent: 'center', paddingHorizontal: 12, borderRadius: 12, borderCurve: 'continuous', backgroundColor: colors.brandSubtle }}>
-                <Text selectable style={{ color: colors.brand, fontSize: 15, lineHeight: 20, fontWeight: '600' }}>{activeFilterText}</Text>
-              </Pressable>
+              <Button variant="outline" role="link" accessibilityLabel={`Change filters: ${activeFilterText}`}><Text>{activeFilterText}</Text></Button>
             </Link>
           ) : null}
           {items.length ? (
             sections.map((section) => (
-              <View key={section.title} style={{ gap: 8 }}>
+              <View key={section.title} className="gap-2">
                 <SectionLabel>{section.title.toUpperCase()}</SectionLabel>
                 <Card>{section.items.map((item) => profile.data ? <ActivityEventRow key={item.id} item={item} displayCurrency={profile.data.displayCurrency} /> : null)}</Card>
               </View>
@@ -66,7 +64,7 @@ export default function ActivityScreen() {
           ) : (
             <EmptyActivity filtered={Boolean(activeFilterText)} />
           )}
-          {activity.hasNextPage ? <Button title="Load more activity" secondary loading={activity.isFetchingNextPage} onPress={() => activity.fetchNextPage()} /> : null}
+          {activity.hasNextPage ? <Button variant="outline" disabled={activity.isFetchingNextPage} accessibilityState={{ disabled: activity.isFetchingNextPage, busy: activity.isFetchingNextPage }} onPress={() => activity.fetchNextPage()}>{activity.isFetchingNextPage ? <ActivityIndicator className="text-primary" /> : <Text>Load more activity</Text>}</Button> : null}
         </Screen>
       )}
     </>
@@ -74,13 +72,12 @@ export default function ActivityScreen() {
 }
 
 function EmptyActivity({ filtered }: { filtered: boolean }) {
-  const { colors } = useAppTheme();
   return (
-    <View style={{ alignItems: 'center', gap: 8, paddingVertical: 40 }}>
-      <Text selectable style={{ color: colors.text, fontSize: 20, lineHeight: 26, fontWeight: '600', textAlign: 'center' }}>
+    <View className="items-center gap-2 py-10">
+      <Text selectable className="text-center text-xl font-semibold leading-[26px]">
         {filtered ? 'No activity with these filters' : 'Nothing has happened yet'}
       </Text>
-      <Text selectable style={{ color: colors.secondary, fontSize: 16, lineHeight: 24, textAlign: 'center' }}>
+      <Text selectable className="text-center leading-6 text-muted-foreground">
         {filtered ? 'Try changing the area or ledger filter.' : 'Shared expenses, payments, groups, and connections will appear here.'}
       </Text>
     </View>

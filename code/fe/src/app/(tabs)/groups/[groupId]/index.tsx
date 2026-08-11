@@ -1,16 +1,17 @@
 import { useQuery } from '@tanstack/react-query';
-import { useLocalSearchParams } from 'expo-router';
+import { Link, useLocalSearchParams } from 'expo-router';
 import { Stack } from 'expo-router/stack';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 
-import { Avatar, Button, Card, ErrorMessage, Loading, Notice, Row, Screen } from '@/components/ui';
+import { Avatar, Card, ErrorMessage, Loading, Notice, Row, Screen } from '@/components/ui';
+import { Button } from '@/components/ui/button';
+import { Text } from '@/components/ui/text';
 import { userBalancesQuery } from '@/features/balances/api';
 import { ledgerBalanceDescriptions } from '@/features/balances/format';
 import { profileQuery } from '@/features/account/api';
 import { groupMembersQuery, groupQuery } from '@/features/groups/api';
 import { LedgerActivity } from '@/features/ledger/components/ledger-activity';
 import { LedgerActions } from '@/features/ledger/components/ledger-actions';
-import { useAppTheme } from '@/theme/theme';
 
 export default function GroupDetailScreen() {
   const { groupId } = useLocalSearchParams<{ groupId: string }>();
@@ -18,7 +19,6 @@ export default function GroupDetailScreen() {
   const balances = useQuery(userBalancesQuery);
   const profile = useQuery(profileQuery);
   const members = useQuery(groupMembersQuery(groupId));
-  const { colors } = useAppTheme();
 
   if (group.isLoading) return <Loading />;
   if (group.error || !group.data) return <Screen><ErrorMessage error={group.error ?? new Error('Group not found.')} /></Screen>;
@@ -27,11 +27,11 @@ export default function GroupDetailScreen() {
   return (
     <Screen>
       <Stack.Screen options={{ title: group.data.name }} />
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, paddingVertical: 8 }}>
+      <View className="flex-row items-center gap-4 py-2">
         <Avatar name={group.data.name} large />
-        <View style={{ flex: 1, gap: 2 }}>
-          <Text selectable style={{ color: colors.text, fontSize: 24, lineHeight: 30, fontWeight: '700' }}>{group.data.name}</Text>
-          <Text selectable style={{ color: colors.secondary, fontSize: 15, lineHeight: 22 }}>
+        <View className="flex-1 gap-0.5">
+          <Text selectable className="text-2xl font-bold leading-[30px]">{group.data.name}</Text>
+          <Text selectable className="text-[15px] leading-[22px] text-muted-foreground">
             {group.data.status === 'ARCHIVED' ? 'Archived group' : `${group.data.memberCount} ${group.data.memberCount === 1 ? 'member' : 'members'}`}
           </Text>
         </View>
@@ -48,8 +48,8 @@ export default function GroupDetailScreen() {
       {group.data.membershipStatus === 'LEFT' ? <Notice title="You left this group">You can still view its membership history, but cannot change it.</Notice> : null}
       {members.data && profile.data ? <LedgerActivity displayCurrency={profile.data.displayCurrency} ledgerId={groupId} members={members.data.map((member) => ({ userId: member.userId, displayName: member.displayName }))} /> : null}
       {profile.error || members.error ? <ErrorMessage error={profile.error ?? members.error} /> : null}
-      <Button title="View group balances" href={{ pathname: '/groups/[groupId]/balances', params: { groupId } }} />
-      <Button title="View members" href={{ pathname: '/groups/[groupId]/members', params: { groupId } }} secondary />
+      <Link href={{ pathname: '/groups/[groupId]/balances', params: { groupId } }} asChild><Button role="link"><Text>View group balances</Text></Button></Link>
+      <Link href={{ pathname: '/groups/[groupId]/members', params: { groupId } }} asChild><Button variant="outline" role="link"><Text>View members</Text></Button></Link>
     </Screen>
   );
 }

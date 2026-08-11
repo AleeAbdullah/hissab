@@ -1,11 +1,13 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link } from 'expo-router';
 import { Stack } from 'expo-router/stack';
-import { useMemo, useState } from 'react';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { useState } from 'react';
+import { TextInput, View } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
-import { Button, Card, ErrorMessage, Loading, Row, Screen, SectionLabel } from '@/components/ui';
+import { Card, ErrorMessage, Loading, Row, Screen, SectionLabel } from '@/components/ui';
+import { Button } from '@/components/ui/button';
+import { Text } from '@/components/ui/text';
 import { profileQuery } from '@/features/account/api';
 import { userBalancesQuery } from '@/features/balances/api';
 import { ledgerBalanceDescriptions } from '@/features/balances/format';
@@ -17,10 +19,8 @@ import {
 } from '@/features/groups/api';
 import { GroupInvitationCard } from '@/features/groups/components/group-invitation-card';
 import { homeQuery } from '@/features/home/api';
-import { useAppTheme } from '@/theme/theme';
 
 export default function GroupsScreen() {
-  const { colors } = useAppTheme();
   const [search, setSearch] = useState('');
   const groups = useQuery(groupsQuery);
   const invitations = useQuery(incomingGroupInvitationsQuery);
@@ -37,10 +37,7 @@ export default function GroupsScreen() {
       ]);
     },
   });
-  const filtered = useMemo(
-    () => (groups.data ?? []).filter((group) => group.name.toLowerCase().includes(search.trim().toLowerCase())),
-    [groups.data, search],
-  );
+  const filtered = (groups.data ?? []).filter((group) => group.name.toLowerCase().includes(search.trim().toLowerCase()));
 
   return (
     <>
@@ -48,9 +45,7 @@ export default function GroupsScreen() {
         options={{
           headerRight: () => (
             <Link href="/group-new" asChild>
-              <Pressable accessibilityRole="button" accessibilityLabel="Create group" style={{ minWidth: 44, minHeight: 44, alignItems: 'flex-end', justifyContent: 'center' }}>
-                <Text style={{ color: colors.brand, fontSize: 30, fontWeight: '300' }}>＋</Text>
-              </Pressable>
+              <Button variant="ghost" size="icon" role="link" accessibilityLabel="Create group"><Text className="text-[30px] font-light text-primary">＋</Text></Button>
             </Link>
           ),
         }}
@@ -62,14 +57,13 @@ export default function GroupsScreen() {
             <TextInput
               accessibilityLabel="Search groups"
               placeholder="Search"
-              placeholderTextColor={colors.secondary}
               value={search}
               onChangeText={setSearch}
-              style={{ minHeight: 44, borderRadius: 12, borderCurve: 'continuous', paddingHorizontal: 12, backgroundColor: colors.surfaceSubtle, color: colors.text, fontSize: 17 }}
+              className="min-h-11 rounded-xl bg-muted px-3 text-[17px] text-foreground placeholder:text-muted-foreground"
             />
           ) : null}
           {invitations.data?.length ? (
-            <View style={{ gap: 12 }}>
+            <View className="gap-3">
               <SectionLabel>INVITATIONS</SectionLabel>
               {invitations.data.map((invitation) => (
                 <GroupInvitationCard
@@ -96,11 +90,11 @@ export default function GroupsScreen() {
               ))}
             </Card>
           ) : (
-            <View style={{ paddingVertical: 24 }}>
-              <Text selectable style={{ color: colors.secondary, fontSize: 17, lineHeight: 23, textAlign: 'center' }}>
+            <View className="py-6">
+              <Text selectable className="text-center text-[17px] leading-[23px] text-muted-foreground">
                 {search ? 'No groups match your search.' : 'No groups yet. Create one to start a shared ledger.'}
               </Text>
-              {!search ? <Button title="Create group" href="/group-new" /> : null}
+              {!search ? <Link href="/group-new" asChild><Button role="link"><Text>Create group</Text></Button></Link> : null}
             </View>
           )}
         </Screen>

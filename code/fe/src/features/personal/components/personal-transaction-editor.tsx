@@ -1,11 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 
 import type { CreatePersonalTransactionDto } from '@/api/generated/types.gen';
 import type { DisplayCurrency, PersonalCategoryCode, PersonalTransaction, PersonalTransactionType } from '@/api/contracts';
-import { Button, ErrorMessage, Field, Notice, SectionLabel } from '@/components/ui';
-import { ChoiceChips } from '@/features/expenses/components/choice-chips';
+import { ErrorMessage, Field, Notice, SectionLabel } from '@/components/ui';
+import { Button } from '@/components/ui/button';
+import { Text } from '@/components/ui/text';
+import { ChoiceChips } from '@/components/choice-chips';
 import { todayDate } from '@/features/expenses/form';
 import { personalCategoriesQuery } from '@/features/personal/api';
 import { buildPersonalTransactionBody, personalTransactionInitialValues } from '@/features/personal/form';
@@ -34,7 +36,7 @@ export function PersonalTransactionEditor({ displayCurrency, onSave, saving, tra
   };
 
   return (
-    <View style={{ gap: 16 }}>
+    <View className="gap-4">
       <Notice title="Personal transaction">This record is private. It does not change any shared ledger or move money.</Notice>
       {categories.error || validationError ? <ErrorMessage error={categories.error ?? new Error(validationError ?? '')} /> : null}
       <Choice label="TYPE" choices={[{ label: 'Expense', value: 'EXPENSE' }, { label: 'Income', value: 'INCOME' }]} value={type} onChange={(value) => changeType(value as PersonalTransactionType)} />
@@ -44,12 +46,14 @@ export function PersonalTransactionEditor({ displayCurrency, onSave, saving, tra
       <Choice label="CATEGORY" choices={availableCategories.map((category) => ({ label: category.name, value: category.code }))} value={categoryCode} onChange={(value) => setCategoryCode(value as PersonalCategoryCode)} />
       <SectionLabel>OPTIONAL</SectionLabel>
       <Field label={type === 'INCOME' ? 'Source' : 'Merchant'} value={merchantOrSource} onChangeText={setMerchantOrSource} />
-      <Field label="Notes" multiline value={notes} onChangeText={setNotes} style={{ minHeight: 96, textAlignVertical: 'top' }} />
-      <Button title={transaction ? 'Save changes' : 'Save transaction'} loading={saving} disabled={saving || categories.isLoading} onPress={save} />
+      <Field label="Notes" multiline value={notes} onChangeText={setNotes} textAlignVertical="top" className="min-h-24" />
+      <Button disabled={saving || categories.isLoading} accessibilityState={{ disabled: saving || categories.isLoading, busy: saving }} onPress={save}>
+        {saving ? <ActivityIndicator className="text-primary-foreground" /> : <Text>{transaction ? 'Save changes' : 'Save transaction'}</Text>}
+      </Button>
     </View>
   );
 }
 
 function Choice({ choices, label, onChange, value }: { choices: { label: string; value: string }[]; label: string; onChange: (value: string) => void; value: string | null }) {
-  return <View style={{ gap: 8 }}><SectionLabel>{label}</SectionLabel><ChoiceChips choices={choices} value={value} onChange={onChange} /></View>;
+  return <View className="gap-2"><SectionLabel>{label}</SectionLabel><ChoiceChips choices={choices} value={value} onChange={onChange} /></View>;
 }

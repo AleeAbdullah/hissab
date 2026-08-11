@@ -1,14 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 
 import type { ActivityArea } from '@/api/contracts';
-import { Button, Card, ErrorMessage, Row, Screen, SectionLabel } from '@/components/ui';
+import { Card, ErrorMessage, Row, Screen, SectionLabel } from '@/components/ui';
+import { Button } from '@/components/ui/button';
+import { Text } from '@/components/ui/text';
 import { activityAreaFromParam } from '@/features/activity/api';
 import { connectionsQuery } from '@/features/connections/api';
 import { groupsQuery } from '@/features/groups/api';
-import { useAppTheme } from '@/theme/theme';
 
 const areas: { label: string; value?: ActivityArea }[] = [
   { label: 'All activity' },
@@ -40,13 +41,13 @@ export default function ActivitySearchScreen() {
   return (
     <Screen>
       {groups.error || connections.error ? <ErrorMessage error={groups.error ?? connections.error} /> : null}
-      <View style={{ gap: 8 }}>
+      <View className="gap-2">
         <SectionLabel>FILTER BY AREA</SectionLabel>
         <Card>
           {areas.map((choice) => <FilterRow key={choice.label} title={choice.label} selected={area === choice.value} onPress={() => setArea(choice.value)} />)}
         </Card>
       </View>
-      <View style={{ gap: 8 }}>
+      <View className="gap-2">
         <SectionLabel>FILTER BY LEDGER</SectionLabel>
         {groups.isLoading || connections.isLoading ? <Text selectable>Loading ledgers…</Text> : ledgers.length ? (
           <Card>
@@ -55,9 +56,9 @@ export default function ActivitySearchScreen() {
           </Card>
         ) : <Text selectable>No groups or connections are available to filter.</Text>}
       </View>
-      <View style={{ flexDirection: 'row', gap: 8 }}>
-        <View style={{ flex: 1 }}><Button title="Clear all" secondary onPress={clear} /></View>
-        <View style={{ flex: 1 }}><Button title="Show activity" onPress={apply} /></View>
+      <View className="flex-row gap-2">
+        <View className="flex-1"><Button variant="outline" onPress={clear}><Text>Clear all</Text></Button></View>
+        <View className="flex-1"><Button onPress={apply}><Text>Show activity</Text></Button></View>
       </View>
     </Screen>
   );
@@ -68,6 +69,5 @@ function FilterRow({ title, subtitle, selected, onPress }: { title: string; subt
 }
 
 function FilterMark({ selected }: { selected: boolean }) {
-  const { colors } = useAppTheme();
-  return <Text accessibilityLabel={selected ? 'Selected' : 'Not selected'} style={{ color: colors.brand, fontSize: 17, fontWeight: '700' }}>{selected ? '✓' : ''}</Text>;
+  return <Text accessibilityLabel={selected ? 'Selected' : 'Not selected'} className="text-[17px] font-bold text-primary">{selected ? '✓' : ''}</Text>;
 }

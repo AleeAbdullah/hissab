@@ -1,9 +1,11 @@
-import { SymbolView } from 'expo-symbols';
+import { ArrowUpDown } from 'lucide-react-native';
 import { useState, type ReactNode } from 'react';
-import { Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
+import { View } from 'react-native';
 import Animated, { LinearTransition, ReduceMotion } from 'react-native-reanimated';
 
-import { useAppTheme } from '@/theme/theme';
+import { Button } from '@/components/ui/button';
+import { Icon } from '@/components/ui/icon';
+import { cn } from '@/lib/utils';
 
 export type StackedCardItem = {
   id: string;
@@ -11,19 +13,15 @@ export type StackedCardItem = {
   backContent: ReactNode;
   accessibilityLabel: string;
   className?: string;
-  style?: StyleProp<ViewStyle>;
 };
 
 type StackedCardsProps = {
   cards: readonly [StackedCardItem, StackedCardItem];
 };
 
-const CARD_MIN_HEIGHT = 136;
-const CARD_OVERLAP = 80;
 const CARD_TRANSITION = LinearTransition.duration(240).reduceMotion(ReduceMotion.System);
 
 export function StackedCards({ cards }: StackedCardsProps) {
-  const { colors } = useAppTheme();
   const [frontId, setFrontId] = useState(cards[1].id);
   const orderedCards = frontId === cards[0].id ? [cards[1], cards[0]] : [cards[0], cards[1]];
   const rearCard = orderedCards[0];
@@ -32,48 +30,40 @@ export function StackedCards({ cards }: StackedCardsProps) {
     <View>
       {orderedCards.map((card, index) => {
         const isFront = index === 1;
-
         return (
           <Animated.View
             key={card.id}
-            className={card.className}
             layout={CARD_TRANSITION}
-            style={[
-              card.style,
-              {
-                minHeight: CARD_MIN_HEIGHT,
-                marginTop: isFront ? -CARD_OVERLAP : 0,
-                marginHorizontal: isFront ? 0 : 8,
-                borderRadius: 16,
-                borderCurve: 'continuous',
-                overflow: 'hidden',
-                zIndex: isFront ? 1 : 0,
-              },
-            ]}
+            className={cn(
+              'min-h-[136px] overflow-hidden rounded-2xl',
+              isFront ? '-mt-20 mx-0 z-[1]' : 'mx-2 mt-0 z-0',
+              card.className
+            )}
           >
             <View
               accessibilityElementsHidden={!isFront}
               importantForAccessibility={isFront ? 'auto' : 'no-hide-descendants'}
               pointerEvents={isFront ? 'auto' : 'none'}
-              style={{ flex: 1, minHeight: CARD_MIN_HEIGHT }}
+              className="min-h-[136px] flex-1"
             >
               {isFront ? card.frontContent : card.backContent}
             </View>
             {isFront ? (
-              <Pressable
+              <Button
+                variant="ghost"
+                size="icon"
                 accessibilityLabel={rearCard.accessibilityLabel}
-                accessibilityRole="button"
                 onPress={() => setFrontId(rearCard.id)}
-                style={{ position: 'absolute', right: 12, bottom: 12, width: 48, height: 48, borderRadius: 24, backgroundColor: colors.surfaceSubtle, alignItems: 'center', justifyContent: 'center' }}
+                className="absolute bottom-3 right-3 size-12 rounded-full bg-muted"
               >
-                <SymbolView name={{ ios: 'arrow.up.arrow.down', android: 'swap_vert', web: 'swap_vert' }} size={20} tintColor={colors.secondary} />
-              </Pressable>
+                <Icon as={ArrowUpDown} size={20} className="text-muted-foreground" />
+              </Button>
             ) : (
-              <Pressable
+              <Button
+                variant="ghost"
                 accessibilityLabel={card.accessibilityLabel}
-                accessibilityRole="button"
                 onPress={() => setFrontId(card.id)}
-                style={{ position: 'absolute', inset: 0 }}
+                className="absolute inset-0 rounded-none p-0"
               />
             )}
           </Animated.View>

@@ -1,16 +1,16 @@
+import { Link } from 'expo-router';
 import { Stack } from 'expo-router/stack';
-import { Text } from 'react-native';
 
-import { Button, Screen } from '@/components/ui';
-import { useAppTheme } from '@/theme/theme';
+import { Screen } from '@/components/ui';
+import { Button } from '@/components/ui/button';
+import { Text } from '@/components/ui/text';
 
 export default function NotFoundScreen() {
-  const { colors } = useAppTheme();
   return (
     <Screen>
       <Stack.Screen options={{ title: 'Not found' }} />
-      <Text selectable style={{ color: colors.text, fontSize: 20, fontWeight: '600' }}>This screen does not exist.</Text>
-      <Button title="Go home" href="/" />
+      <Text selectable className="text-xl font-semibold">This screen does not exist.</Text>
+      <Link href="/" asChild><Button role="link"><Text>Go home</Text></Button></Link>
     </Screen>
   );
 }

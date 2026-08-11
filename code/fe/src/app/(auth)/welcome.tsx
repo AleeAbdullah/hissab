@@ -1,7 +1,9 @@
-import { Text, View } from 'react-native';
+import { Link } from 'expo-router';
+import { View } from 'react-native';
 
-import { Button, Screen } from '@/components/ui';
-import { useAppTheme } from '@/theme/theme';
+import { Screen } from '@/components/ui';
+import { Button } from '@/components/ui/button';
+import { Text } from '@/components/ui/text';
 
 const points = [
   ['Split what you actually paid', 'One payer or several. Equal or exact amounts, down to the cent.'],
@@ -10,44 +12,43 @@ const points = [
 ];
 
 export default function WelcomeScreen() {
-  const { colors } = useAppTheme();
   return (
     <Screen>
-      <View style={{ flex: 1, justifyContent: 'space-between', gap: 32, paddingTop: 32 }}>
-        <View style={{ gap: 28 }}>
-          <View style={{ gap: 16 }}>
-            <Text selectable style={{ color: colors.text, fontFamily: 'serif', fontSize: 56, lineHeight: 60, fontWeight: '500' }}>Hissab</Text>
-            <View style={{ width: 48, height: 1, backgroundColor: colors.brand }} />
-            <View style={{ gap: 8 }}>
-              <Text selectable style={{ color: colors.brand, fontSize: 10, lineHeight: 14, fontWeight: '700', letterSpacing: 1.8 }}>
+      <View className="flex-1 justify-between gap-8 pt-8">
+        <View className="gap-7">
+          <View className="gap-4">
+            <Text selectable className="font-serif text-[56px] font-medium leading-[60px]">Hissab</Text>
+            <View className="h-px w-12 bg-primary" />
+            <View className="gap-2">
+              <Text selectable className="text-[10px] font-bold leading-[14px] tracking-[1.8px] text-primary">
                 CALM LEDGER. CLEAR RELATIONSHIPS.
               </Text>
-              <Text selectable style={{ color: colors.text, fontFamily: 'serif', fontSize: 32, lineHeight: 38, fontWeight: '500' }}>
+              <Text selectable className="font-serif text-[32px] font-medium leading-[38px]">
                 Keep the record clear.
               </Text>
-              <Text selectable style={{ color: colors.secondary, fontSize: 15, lineHeight: 22 }}>
+              <Text selectable className="text-[15px] leading-[22px] text-muted-foreground">
                 Shared expenses, and exactly who owes whom.
               </Text>
             </View>
           </View>
-          <View style={{ gap: 20 }}>
+          <View className="gap-5">
             {points.map(([title, detail]) => (
-              <View key={title} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
-                <View style={{ width: 26, height: 26, borderWidth: 1, borderColor: colors.divider, alignItems: 'center', justifyContent: 'center' }}>
-                  <View style={{ width: 10, height: 2, backgroundColor: colors.brand }} />
+              <View key={title} className="flex-row items-start gap-3">
+                <View className="size-[26px] items-center justify-center border border-border">
+                  <View className="h-0.5 w-2.5 bg-primary" />
                 </View>
-                <View style={{ flex: 1, gap: 2 }}>
-                  <Text selectable style={{ color: colors.text, fontSize: 16, lineHeight: 24, fontWeight: '600' }}>{title}</Text>
-                  <Text selectable style={{ color: colors.secondary, fontSize: 15, lineHeight: 22 }}>{detail}</Text>
+                <View className="flex-1 gap-0.5">
+                  <Text selectable className="text-base font-semibold leading-6">{title}</Text>
+                  <Text selectable className="text-[15px] leading-[22px] text-muted-foreground">{detail}</Text>
                 </View>
               </View>
             ))}
           </View>
         </View>
-        <View style={{ gap: 10 }}>
-          <Button title="Create account" href="/register" />
-          <Button title="Sign in" href="/sign-in" secondary />
-          <Text selectable style={{ color: colors.secondary, fontSize: 12, lineHeight: 16, textAlign: 'center' }}>
+        <View className="gap-2.5">
+          <Link href="/register" asChild><Button role="link"><Text>Create account</Text></Button></Link>
+          <Link href="/sign-in" asChild><Button variant="outline" role="link"><Text>Sign in</Text></Button></Link>
+          <Text selectable className="text-center text-xs leading-4 text-muted-foreground">
             Hissab records money that has already moved. It never transfers funds, links a bank account, or touches a card.
           </Text>
         </View>

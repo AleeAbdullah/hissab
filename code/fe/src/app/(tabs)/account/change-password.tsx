@@ -1,8 +1,11 @@
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
+import { ActivityIndicator } from 'react-native';
 
-import { Button, ErrorMessage, Field, Notice, Screen } from '@/components/ui';
+import { ErrorMessage, Field, Notice, Screen } from '@/components/ui';
+import { Button } from '@/components/ui/button';
+import { Text as ButtonText } from '@/components/ui/text';
 import { changePassword } from '@/features/auth/api';
 
 export default function ChangePasswordScreen() {
@@ -21,7 +24,7 @@ export default function ChangePasswordScreen() {
       <Field label="Current password" secureTextEntry autoComplete="current-password" value={current} onChangeText={setCurrent} />
       <Field label="New password" secureTextEntry autoComplete="new-password" value={password} onChangeText={setPassword} hint="At least 12 characters. Longer beats complicated." />
       <Field label="Confirm new password" secureTextEntry autoComplete="new-password" value={confirm} onChangeText={setConfirm} error={mismatch ? 'The two new passwords do not match.' : undefined} />
-      <Button title={mutation.isPending ? 'Changing password…' : 'Change password'} disabled={!valid} loading={mutation.isPending} onPress={() => mutation.mutate()} />
+      <Button disabled={!valid || mutation.isPending} accessibilityState={{ disabled: !valid || mutation.isPending, busy: mutation.isPending }} onPress={() => mutation.mutate()}>{mutation.isPending ? <ActivityIndicator color="white" /> : <ButtonText>Change password</ButtonText>}</Button>
     </Screen>
   );
 }
