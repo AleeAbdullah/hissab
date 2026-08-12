@@ -3,7 +3,7 @@ import type {
   ActivityGroupDetails,
   ActivityItem,
   ActivitySettlementDetails,
-  DisplayCurrency,
+  DisplayCurrency
 } from '@/api/contracts';
 import { formatMinorAmount } from '@/features/balances/format';
 
@@ -27,21 +27,40 @@ const actions: Record<string, string> = {
   CONNECTION_DECLINED: 'declined a connection request',
   CONNECTION_CANCELLED: 'cancelled a connection request',
   CONNECTION_USER_BLOCKED: 'blocked a connection',
-  CONNECTION_USER_UNBLOCKED: 'unblocked a connection',
+  CONNECTION_USER_UNBLOCKED: 'unblocked a connection'
 };
 
-export function describeActivity(item: ActivityItem, displayCurrency: DisplayCurrency) {
+export function describeActivity(
+  item: ActivityItem,
+  displayCurrency: DisplayCurrency
+) {
   const actor = item.actor?.displayName ?? 'Hissab';
-  const action = actions[item.eventType] ?? item.eventType.replaceAll('_', ' ').toLowerCase();
-  const context = item.ledger?.name ?? groupName(item) ?? item.counterparty?.displayName ?? 'Hissab';
+  const action =
+    actions[item.eventType] ??
+    item.eventType.replaceAll('_', ' ').toLowerCase();
+  const context =
+    item.ledger?.name ??
+    groupName(item) ??
+    item.counterparty?.displayName ??
+    'Hissab';
 
   if (item.area === 'EXPENSE') {
     const details = item.details as ActivityExpenseDetails;
-    return { actor, action, context: `${context} · ${details.description}`, amount: formatMinorAmount(details.totalMinor, displayCurrency) };
+    return {
+      actor,
+      action,
+      context: `${context} · ${details.description}`,
+      amount: formatMinorAmount(details.totalMinor, displayCurrency)
+    };
   }
   if (item.area === 'SETTLEMENT') {
     const details = item.details as ActivitySettlementDetails;
-    return { actor, action, context: `${context} · ${details.from.displayName} paid ${details.to.displayName}`, amount: formatMinorAmount(details.amountMinor, displayCurrency) };
+    return {
+      actor,
+      action,
+      context: `${context} · ${details.from.displayName} paid ${details.to.displayName}`,
+      amount: formatMinorAmount(details.amountMinor, displayCurrency)
+    };
   }
   return { actor, action, context: groupContext(item, context) };
 }
@@ -53,25 +72,38 @@ export function activityDayLabel(value: string) {
   yesterday.setDate(today.getDate() - 1);
   if (sameDay(date, today)) return 'Today';
   if (sameDay(date, yesterday)) return 'Yesterday';
-  return new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', year: date.getFullYear() === today.getFullYear() ? undefined : 'numeric' }).format(date);
+  return new Intl.DateTimeFormat(undefined, {
+    day: 'numeric',
+    month: 'short',
+    year: date.getFullYear() === today.getFullYear() ? undefined : 'numeric'
+  }).format(date);
 }
 
 export function activityTimeLabel(value: string) {
-  return new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(new Date(value));
+  return new Intl.DateTimeFormat(undefined, {
+    hour: 'numeric',
+    minute: '2-digit'
+  }).format(new Date(value));
 }
 
 function groupName(item: ActivityItem) {
-  return item.area === 'GROUP' ? (item.details as ActivityGroupDetails).name : undefined;
+  return item.area === 'GROUP'
+    ? (item.details as ActivityGroupDetails).name
+    : undefined;
 }
 
 function groupContext(item: ActivityItem, fallback: string) {
   if (item.area !== 'GROUP') return fallback;
   const details = item.details as ActivityGroupDetails;
-  return details.subjectUser ? `${fallback} · ${details.subjectUser.displayName}` : fallback;
+  return details.subjectUser
+    ? `${fallback} · ${details.subjectUser.displayName}`
+    : fallback;
 }
 
 function sameDay(left: Date, right: Date) {
-  return left.getFullYear() === right.getFullYear()
-    && left.getMonth() === right.getMonth()
-    && left.getDate() === right.getDate();
+  return (
+    left.getFullYear() === right.getFullYear() &&
+    left.getMonth() === right.getMonth() &&
+    left.getDate() === right.getDate()
+  );
 }

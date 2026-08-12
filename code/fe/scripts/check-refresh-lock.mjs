@@ -9,7 +9,10 @@ const refresh = async () => {
   return true;
 };
 
-assert.deepEqual(await Promise.all([runSingleRefresh(refresh), runSingleRefresh(refresh)]), [true, true]);
+assert.deepEqual(
+  await Promise.all([runSingleRefresh(refresh), runSingleRefresh(refresh)]),
+  [true, true]
+);
 assert.equal(calls, 1, 'concurrent 401s must share one refresh');
 await runSingleRefresh(refresh);
 assert.equal(calls, 2, 'a later expiry must be able to refresh again');

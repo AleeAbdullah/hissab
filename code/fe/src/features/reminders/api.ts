@@ -7,7 +7,7 @@ export function createReminder(ledgerId: string, recipientUserId: string) {
     remindersCreateReminder({
       path: { ledgerId },
       body: { recipientUserId },
-      headers: { 'Idempotency-Key': idempotencyKey() },
-    }),
+      headers: { 'Idempotency-Key': idempotencyKey() }
+    })
   );
 }

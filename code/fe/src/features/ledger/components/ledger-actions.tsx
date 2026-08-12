@@ -16,10 +16,20 @@ export function LedgerActions({ draft }: { draft: LedgerDraft }) {
   return (
     <View className="gap-2">
       <View className="flex-row gap-2">
-        <View className="flex-1"><Button onPress={() => open('/shared-expense')}><Text>Add expense</Text></Button></View>
-        <View className="flex-1"><Button variant="outline" onPress={() => open('/settlement')}><Text>Record payment</Text></Button></View>
+        <View className="flex-1">
+          <Button onPress={() => open('/shared-expense')}>
+            <Text>Add expense</Text>
+          </Button>
+        </View>
+        <View className="flex-1">
+          <Button variant="outline" onPress={() => open('/settlement')}>
+            <Text>Record payment</Text>
+          </Button>
+        </View>
       </View>
-      <Button variant="outline" onPress={() => open('/reminder')}><Text>Send reminder</Text></Button>
+      <Button variant="outline" onPress={() => open('/reminder')}>
+        <Text>Send reminder</Text>
+      </Button>
     </View>
   );
 }

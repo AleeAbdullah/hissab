@@ -1,7 +1,10 @@
 import { ArrowUpDown } from 'lucide-react-native';
 import { useState, type ReactNode } from 'react';
 import { View } from 'react-native';
-import Animated, { LinearTransition, ReduceMotion } from 'react-native-reanimated';
+import Animated, {
+  LinearTransition,
+  ReduceMotion
+} from 'react-native-reanimated';
 
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
@@ -19,11 +22,14 @@ type StackedCardsProps = {
   cards: readonly [StackedCardItem, StackedCardItem];
 };
 
-const CARD_TRANSITION = LinearTransition.duration(240).reduceMotion(ReduceMotion.System);
+const CARD_TRANSITION = LinearTransition.duration(240).reduceMotion(
+  ReduceMotion.System
+);
 
 export function StackedCards({ cards }: StackedCardsProps) {
   const [frontId, setFrontId] = useState(cards[1].id);
-  const orderedCards = frontId === cards[0].id ? [cards[1], cards[0]] : [cards[0], cards[1]];
+  const orderedCards =
+    frontId === cards[0].id ? [cards[1], cards[0]] : [cards[0], cards[1]];
   const rearCard = orderedCards[0];
 
   return (
@@ -35,14 +41,16 @@ export function StackedCards({ cards }: StackedCardsProps) {
             key={card.id}
             layout={CARD_TRANSITION}
             className={cn(
-              'min-h-[136px] overflow-hidden rounded-2xl',
-              isFront ? '-mt-20 mx-0 z-[1]' : 'mx-2 mt-0 z-0',
+              'min-h-[136px] rounded-2xl',
+              isFront ? 'z-[1] mx-0 -mt-24' : 'z-0 mx-2 mt-0',
               card.className
             )}
           >
             <View
               accessibilityElementsHidden={!isFront}
-              importantForAccessibility={isFront ? 'auto' : 'no-hide-descendants'}
+              importantForAccessibility={
+                isFront ? 'auto' : 'no-hide-descendants'
+              }
               pointerEvents={isFront ? 'auto' : 'none'}
               className="min-h-[136px] flex-1"
             >
@@ -56,7 +64,11 @@ export function StackedCards({ cards }: StackedCardsProps) {
                 onPress={() => setFrontId(rearCard.id)}
                 className="absolute bottom-3 right-3 size-12 rounded-full bg-muted"
               >
-                <Icon as={ArrowUpDown} size={20} className="text-muted-foreground" />
+                <Icon
+                  as={ArrowUpDown}
+                  size={20}
+                  className="text-muted-foreground"
+                />
               </Button>
             ) : (
               <Button

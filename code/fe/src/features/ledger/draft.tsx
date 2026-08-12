@@ -23,7 +23,10 @@ const LedgerDraftContext = createContext<LedgerDraftContextValue | null>(null);
 
 export function LedgerDraftProvider({ children }: PropsWithChildren) {
   const [draft, setDraft] = useState<LedgerDraft | null>(null);
-  const value = useMemo(() => ({ draft, startDraft: setDraft, clearDraft: () => setDraft(null) }), [draft]);
+  const value = useMemo(
+    () => ({ draft, startDraft: setDraft, clearDraft: () => setDraft(null) }),
+    [draft]
+  );
   return <LedgerDraftContext value={value}>{children}</LedgerDraftContext>;
 }
 

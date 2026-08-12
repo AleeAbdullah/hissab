@@ -15,12 +15,28 @@ export default function PersonalTransactionScreen() {
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['personal'] }),
-        queryClient.invalidateQueries({ queryKey: homeQuery.queryKey }),
+        queryClient.invalidateQueries({ queryKey: homeQuery.queryKey })
       ]);
       router.back();
-    },
+    }
   });
   if (profile.isLoading) return <Loading />;
-  if (profile.error || !profile.data) return <Screen><ErrorMessage error={profile.error ?? new Error('Profile is unavailable.')} /></Screen>;
-  return <Screen>{create.error ? <ErrorMessage error={create.error} /> : null}<PersonalTransactionEditor displayCurrency={profile.data.displayCurrency} saving={create.isPending} onSave={create.mutate} /></Screen>;
+  if (profile.error || !profile.data)
+    return (
+      <Screen>
+        <ErrorMessage
+          error={profile.error ?? new Error('Profile is unavailable.')}
+        />
+      </Screen>
+    );
+  return (
+    <Screen>
+      {create.error ? <ErrorMessage error={create.error} /> : null}
+      <PersonalTransactionEditor
+        displayCurrency={profile.data.displayCurrency}
+        saving={create.isPending}
+        onSave={create.mutate}
+      />
+    </Screen>
+  );
 }

@@ -1,4 +1,8 @@
-import { DarkTheme, DefaultTheme, type Theme } from 'expo-router/react-navigation';
+import {
+  DarkTheme,
+  DefaultTheme,
+  type Theme
+} from 'expo-router/react-navigation';
 import { useMemo } from 'react';
 import { useColorScheme } from 'react-native';
 import { useUnstableNativeVariable } from 'nativewind';
@@ -16,7 +20,7 @@ export const THEME_VARIABLES = {
   border: '--border',
   input: '--input',
   ring: '--ring',
-  radius: '--radius',
+  radius: '--radius'
 } as const;
 
 export const NAV_THEME_VARIABLES = {
@@ -25,10 +29,11 @@ export const NAV_THEME_VARIABLES = {
   card: THEME_VARIABLES.card,
   notification: THEME_VARIABLES.destructive,
   primary: THEME_VARIABLES.primary,
-  text: THEME_VARIABLES.foreground,
+  text: THEME_VARIABLES.foreground
 } as const;
 
-export type ThemeVariable = typeof THEME_VARIABLES[keyof typeof THEME_VARIABLES];
+export type ThemeVariable =
+  (typeof THEME_VARIABLES)[keyof typeof THEME_VARIABLES];
 
 export function useThemeVariable(variable: ThemeVariable) {
   return (useUnstableNativeVariable(variable) ?? `var(${variable})`) as string;
@@ -47,7 +52,15 @@ export function useNavigationTheme(): Theme {
     const base = scheme === 'dark' ? DarkTheme : DefaultTheme;
     return {
       ...base,
-      colors: { ...base.colors, background, border, card, notification, primary, text },
+      colors: {
+        ...base.colors,
+        background,
+        border,
+        card,
+        notification,
+        primary,
+        text
+      }
     };
   }, [background, border, card, notification, primary, scheme, text]);
 }

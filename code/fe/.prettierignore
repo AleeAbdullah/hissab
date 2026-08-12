@@ -1,0 +1,8 @@
+.expo/
+android/
+dist/
+ios/
+patches/
+pnpm-lock.yaml
+src/api/generated/
+web-build/

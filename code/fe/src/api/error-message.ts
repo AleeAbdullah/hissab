@@ -1,4 +1,5 @@
-const fallbackMessage = 'Something went wrong. Check your connection and try again.';
+const fallbackMessage =
+  'Something went wrong. Check your connection and try again.';
 
 export function errorMessage(error: unknown) {
   if (typeof error === 'string' && error) return error;

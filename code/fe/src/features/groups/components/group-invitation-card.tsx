@@ -8,7 +8,7 @@ export function GroupInvitationCard({
   invitation,
   loading,
   onAccept,
-  onDecline,
+  onDecline
 }: {
   invitation: GroupInvitation;
   loading: boolean;
@@ -24,14 +24,37 @@ export function GroupInvitationCard({
             <Text selectable className="text-base font-semibold leading-6">
               {invitation.groupName}
             </Text>
-            <Text selectable className="text-[13px] leading-[18px] text-muted-foreground">
+            <Text
+              selectable
+              className="text-[13px] leading-[18px] text-muted-foreground"
+            >
               Invited by {invitation.invitedByDisplayName}
             </Text>
           </View>
         </View>
         <View className="flex-row gap-2">
-          <View className="flex-1"><Button disabled={loading} accessibilityState={{ disabled: loading, busy: loading }} onPress={onAccept}>{loading ? <ActivityIndicator className="text-primary-foreground" /> : <Text>Accept</Text>}</Button></View>
-          <View className="flex-1"><Button variant="destructiveOutline" disabled={loading} onPress={onDecline}><Text>Decline</Text></Button></View>
+          <View className="flex-1">
+            <Button
+              disabled={loading}
+              accessibilityState={{ disabled: loading, busy: loading }}
+              onPress={onAccept}
+            >
+              {loading ? (
+                <ActivityIndicator className="text-primary-foreground" />
+              ) : (
+                <Text>Accept</Text>
+              )}
+            </Button>
+          </View>
+          <View className="flex-1">
+            <Button
+              variant="destructiveOutline"
+              disabled={loading}
+              onPress={onDecline}
+            >
+              <Text>Decline</Text>
+            </Button>
+          </View>
         </View>
       </View>
     </Card>

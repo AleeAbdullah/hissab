@@ -13,9 +13,10 @@ export function RealtimeProvider({ children }: PropsWithChildren) {
     if (!accessToken) return;
     const socket = io(`${apiBaseUrl}/events`, {
       auth: { accessToken },
-      transports: ['websocket'],
+      transports: ['websocket']
     });
-    const refetchAuthoritativeState = () => void queryClient.invalidateQueries();
+    const refetchAuthoritativeState = () =>
+      void queryClient.invalidateQueries();
     socket.on('connect', refetchAuthoritativeState);
     socket.on('invalidate', refetchAuthoritativeState);
     socket.on('resync', refetchAuthoritativeState);

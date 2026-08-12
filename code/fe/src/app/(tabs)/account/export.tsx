@@ -10,15 +10,17 @@ import { exportAccount } from '@/features/account/api';
 
 async function shareExport() {
   const snapshot = await exportAccount();
-  if (!FileSystem.cacheDirectory) throw new Error('This device cannot prepare an export file.');
-  if (!(await Sharing.isAvailableAsync())) throw new Error('Sharing is not available on this device.');
+  if (!FileSystem.cacheDirectory)
+    throw new Error('This device cannot prepare an export file.');
+  if (!(await Sharing.isAvailableAsync()))
+    throw new Error('Sharing is not available on this device.');
 
   const file = `${FileSystem.cacheDirectory}hissab-export.json`;
   await FileSystem.writeAsStringAsync(file, JSON.stringify(snapshot, null, 2));
   await Sharing.shareAsync(file, {
     mimeType: 'application/json',
     UTI: 'public.json',
-    dialogTitle: 'Export Hissab data',
+    dialogTitle: 'Export Hissab data'
   });
 }
 
@@ -27,14 +29,24 @@ export default function ExportScreen() {
 
   return (
     <Screen>
-      <Notice title="Your complete Hissab record">This creates a versioned JSON snapshot of your profile, social state, financial history, activity, reminders, and notifications.</Notice>
+      <Notice title="Your complete Hissab record">
+        This creates a versioned JSON snapshot of your profile, social state,
+        financial history, activity, reminders, and notifications.
+      </Notice>
       {mutation.error ? <ErrorMessage error={mutation.error} /> : null}
       <Button
         disabled={mutation.isPending}
-        accessibilityState={{ disabled: mutation.isPending, busy: mutation.isPending }}
+        accessibilityState={{
+          disabled: mutation.isPending,
+          busy: mutation.isPending
+        }}
         onPress={() => mutation.mutate()}
       >
-        {mutation.isPending ? <ActivityIndicator color="white" /> : <ButtonText>Create and share JSON export</ButtonText>}
+        {mutation.isPending ? (
+          <ActivityIndicator color="white" />
+        ) : (
+          <ButtonText>Create and share JSON export</ButtonText>
+        )}
       </Button>
     </Screen>
   );

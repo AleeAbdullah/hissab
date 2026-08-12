@@ -19,8 +19,8 @@ Notifications.setNotificationHandler({
     shouldShowBanner: true,
     shouldShowList: true,
     shouldPlaySound: false,
-    shouldSetBadge: false,
-  }),
+    shouldSetBadge: false
+  })
 });
 
 function Navigation() {
@@ -49,7 +49,9 @@ export default function RootLayout() {
     <QueryClientProvider client={queryClient}>
       <SessionProvider>
         <RealtimeProvider>
-          <LedgerDraftProvider><Navigation /></LedgerDraftProvider>
+          <LedgerDraftProvider>
+            <Navigation />
+          </LedgerDraftProvider>
         </RealtimeProvider>
       </SessionProvider>
     </QueryClientProvider>

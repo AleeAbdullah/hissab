@@ -15,7 +15,7 @@ export function MemberAmounts({
   selectedUserIds,
   showAmounts = true,
   onAmountsChange,
-  onSelectionChange,
+  onSelectionChange
 }: {
   amounts: Record<string, string>;
   displayCurrency: DisplayCurrency;
@@ -27,7 +27,12 @@ export function MemberAmounts({
   onSelectionChange: (userIds: string[]) => void;
 }) {
   const groupId = useId();
-  const toggle = (userId: string) => onSelectionChange(selectedUserIds.includes(userId) ? selectedUserIds.filter((id) => id !== userId) : [...selectedUserIds, userId]);
+  const toggle = (userId: string) =>
+    onSelectionChange(
+      selectedUserIds.includes(userId)
+        ? selectedUserIds.filter((id) => id !== userId)
+        : [...selectedUserIds, userId]
+    );
   return (
     <View className="gap-3">
       <SectionLabel>{label}</SectionLabel>
@@ -37,10 +42,29 @@ export function MemberAmounts({
           return (
             <View key={member.userId} className="gap-2">
               <View className="min-h-12 flex-row items-center gap-2.5">
-                <Checkbox id={`${groupId}-${member.userId}`} checked={selected} onCheckedChange={() => toggle(member.userId)} />
-                <Label htmlFor={`${groupId}-${member.userId}`} className="text-base">{member.displayName}</Label>
+                <Checkbox
+                  id={`${groupId}-${member.userId}`}
+                  checked={selected}
+                  onCheckedChange={() => toggle(member.userId)}
+                />
+                <Label
+                  htmlFor={`${groupId}-${member.userId}`}
+                  className="text-base"
+                >
+                  {member.displayName}
+                </Label>
               </View>
-              {selected && showAmounts ? <Field label={`${member.displayName} amount (${displayCurrency})`} placeholder="0.00" keyboardType="decimal-pad" value={amounts[member.userId] ?? ''} onChangeText={(value) => onAmountsChange({ ...amounts, [member.userId]: value })} /> : null}
+              {selected && showAmounts ? (
+                <Field
+                  label={`${member.displayName} amount (${displayCurrency})`}
+                  placeholder="0.00"
+                  keyboardType="decimal-pad"
+                  value={amounts[member.userId] ?? ''}
+                  onChangeText={(value) =>
+                    onAmountsChange({ ...amounts, [member.userId]: value })
+                  }
+                />
+              ) : null}
             </View>
           );
         })}

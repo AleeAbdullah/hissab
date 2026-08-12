@@ -18,20 +18,32 @@ export default function EditGroupScreen() {
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: groupsQuery.queryKey }),
-        queryClient.invalidateQueries({ queryKey: groupQuery(groupId).queryKey }),
+        queryClient.invalidateQueries({
+          queryKey: groupQuery(groupId).queryKey
+        })
       ]);
       router.back();
-    },
+    }
   });
 
   if (group.isLoading) return <Loading />;
-  if (group.error || !group.data) return <Screen><ErrorMessage error={group.error ?? new Error('Group not found.')} /></Screen>;
+  if (group.error || !group.data)
+    return (
+      <Screen>
+        <ErrorMessage error={group.error ?? new Error('Group not found.')} />
+      </Screen>
+    );
 
-  const canManage = group.data.status === 'ACTIVE' && group.data.membershipStatus === 'ACTIVE';
+  const canManage =
+    group.data.status === 'ACTIVE' && group.data.membershipStatus === 'ACTIVE';
   return (
     <Screen>
       <Stack.Screen options={{ title: 'Edit group' }} />
-      {!canManage ? <Notice title="Editing unavailable">Only active members can edit an active group.</Notice> : null}
+      {!canManage ? (
+        <Notice title="Editing unavailable">
+          Only active members can edit an active group.
+        </Notice>
+      ) : null}
       {update.error ? <ErrorMessage error={update.error} /> : null}
       <GroupNameForm
         key={group.data.name}
@@ -50,7 +62,7 @@ function GroupNameForm({
   canManage,
   loading,
   onChange,
-  onSave,
+  onSave
 }: {
   initialName: string;
   canManage: boolean;
@@ -66,13 +78,29 @@ function GroupNameForm({
       <Field
         label="Group name"
         value={name}
-        onChangeText={(value) => { setName(value); onChange(); }}
+        onChangeText={(value) => {
+          setName(value);
+          onChange();
+        }}
         onSubmitEditing={() => canManage && trimmedName && save()}
         maxLength={100}
         editable={canManage}
         hint="Up to 100 characters"
       />
-      <Button disabled={!canManage || !trimmedName || loading} accessibilityState={{ disabled: !canManage || !trimmedName || loading, busy: loading }} onPress={save}>{loading ? <ActivityIndicator color="white" /> : <ButtonText>Save changes</ButtonText>}</Button>
+      <Button
+        disabled={!canManage || !trimmedName || loading}
+        accessibilityState={{
+          disabled: !canManage || !trimmedName || loading,
+          busy: loading
+        }}
+        onPress={save}
+      >
+        {loading ? (
+          <ActivityIndicator color="white" />
+        ) : (
+          <ButtonText>Save changes</ButtonText>
+        )}
+      </Button>
     </>
   );
 }

@@ -7,7 +7,7 @@ const buttonVariants = cva(
   cn(
     'group shrink-0 flex-row items-center justify-center gap-2 rounded-xl',
     Platform.select({
-      web: "focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive whitespace-nowrap outline-none transition-all focus-visible:ring-[3px] disabled:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+      web: "focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive whitespace-nowrap outline-none transition-all focus-visible:ring-[3px] disabled:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0"
     })
   ),
   {
@@ -20,13 +20,13 @@ const buttonVariants = cva(
         destructive: cn(
           'bg-destructive active:bg-destructive/90',
           Platform.select({
-            web: 'hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40',
+            web: 'hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40'
           })
         ),
         outline: cn(
           'border-primary bg-transparent active:bg-accent border',
           Platform.select({
-            web: 'hover:bg-accent',
+            web: 'hover:bg-accent'
           })
         ),
         destructiveOutline: cn(
@@ -41,19 +41,25 @@ const buttonVariants = cva(
           'active:bg-accent dark:active:bg-accent/50',
           Platform.select({ web: 'hover:bg-accent dark:hover:bg-accent/50' })
         ),
-        link: '',
+        link: ''
       },
       size: {
-        default: cn('min-h-12 px-4 py-2', Platform.select({ web: 'has-[>svg]:px-3' })),
-        sm: cn('min-h-12 gap-1.5 px-3', Platform.select({ web: 'has-[>svg]:px-2.5' })),
+        default: cn(
+          'min-h-12 px-4 py-2',
+          Platform.select({ web: 'has-[>svg]:px-3' })
+        ),
+        sm: cn(
+          'min-h-12 gap-1.5 px-3',
+          Platform.select({ web: 'has-[>svg]:px-2.5' })
+        ),
         lg: cn('min-h-12 px-6', Platform.select({ web: 'has-[>svg]:px-4' })),
-        icon: 'h-12 w-12',
-      },
+        icon: 'h-12 w-12'
+      }
     },
     defaultVariants: {
       variant: 'default',
-      size: 'default',
-    },
+      size: 'default'
+    }
   }
 );
 
@@ -73,30 +79,38 @@ const buttonTextVariants = cva(
         ghost: 'group-active:text-accent-foreground',
         link: cn(
           'text-primary group-active:underline',
-          Platform.select({ web: 'underline-offset-4 hover:underline group-hover:underline' })
-        ),
+          Platform.select({
+            web: 'underline-offset-4 hover:underline group-hover:underline'
+          })
+        )
       },
       size: {
         default: '',
         sm: '',
         lg: '',
-        icon: '',
-      },
+        icon: ''
+      }
     },
     defaultVariants: {
       variant: 'default',
-      size: 'default',
-    },
+      size: 'default'
+    }
   }
 );
 
-type ButtonProps = React.ComponentProps<typeof Pressable> & React.RefAttributes<typeof Pressable> & VariantProps<typeof buttonVariants>;
+type ButtonProps = React.ComponentProps<typeof Pressable> &
+  React.RefAttributes<typeof Pressable> &
+  VariantProps<typeof buttonVariants>;
 
 function Button({ className, variant, size, ...props }: ButtonProps) {
   return (
     <TextClassContext.Provider value={buttonTextVariants({ variant, size })}>
       <Pressable
-        className={cn(props.disabled && 'opacity-50', buttonVariants({ variant, size }), className)}
+        className={cn(
+          props.disabled && 'opacity-50',
+          buttonVariants({ variant, size }),
+          className
+        )}
         role="button"
         {...props}
       />

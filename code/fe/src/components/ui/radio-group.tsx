@@ -6,7 +6,9 @@ function RadioGroup({
   className,
   ...props
 }: React.ComponentProps<typeof RadioGroupPrimitive.Root>) {
-  return <RadioGroupPrimitive.Root className={cn('gap-3', className)} {...props} />;
+  return (
+    <RadioGroupPrimitive.Root className={cn('gap-3', className)} {...props} />
+  );
 }
 
 function RadioGroupItem({
@@ -16,15 +18,16 @@ function RadioGroupItem({
   return (
     <RadioGroupPrimitive.Item
       className={cn(
-        'border-input dark:bg-input/30 aspect-square size-[22px] shrink-0 items-center justify-center rounded-full border',
+        'dark:bg-input/30 aspect-square size-[22px] shrink-0 items-center justify-center rounded-full border border-input',
         Platform.select({
-          web: 'focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive outline-none transition-all focus-visible:ring-[3px] disabled:cursor-not-allowed',
+          web: 'focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive outline-none transition-all focus-visible:border-ring focus-visible:ring-[3px] disabled:cursor-not-allowed'
         }),
         props.disabled && 'opacity-50',
         className
       )}
-      {...props}>
-      <RadioGroupPrimitive.Indicator className="bg-primary size-3 rounded-full" />
+      {...props}
+    >
+      <RadioGroupPrimitive.Indicator className="size-3 rounded-full bg-primary" />
     </RadioGroupPrimitive.Item>
   );
 }

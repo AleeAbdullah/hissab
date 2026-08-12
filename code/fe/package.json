@@ -55,6 +55,8 @@
     "babel-preset-expo": "~57.0.5",
     "eslint": "^9.39.5",
     "eslint-config-expo": "~57.0.1",
+    "prettier": "^3.9.6",
+    "prettier-plugin-tailwindcss": "^0.8.1",
     "tailwindcss": "3.4.17",
     "typescript": "~6.0.3"
   },
@@ -72,6 +74,8 @@
     "android:rebuild": "expo run:android --no-build-cache",
     "ios:rebuild": "expo run:ios --no-build-cache",
     "web": "expo start --web",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "lint": "expo lint",
     "type-check": "tsc --noEmit"
   },

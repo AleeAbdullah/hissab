@@ -9,7 +9,7 @@ export function ConnectionCandidateCard({
   candidate,
   isSending,
   requestSent,
-  onSend,
+  onSend
 }: {
   candidate: ConnectionCandidate;
   isSending: boolean;
@@ -25,14 +25,25 @@ export function ConnectionCandidateCard({
             <Text selectable className="text-base font-semibold leading-6">
               {candidate.displayName}
             </Text>
-            <Text selectable className="text-xs leading-4 text-muted-foreground">
+            <Text
+              selectable
+              className="text-xs leading-4 text-muted-foreground"
+            >
               {candidate.email}
             </Text>
           </View>
         </View>
         {candidate.state === 'AVAILABLE' && !requestSent ? (
-          <Button disabled={isSending} accessibilityState={{ disabled: isSending, busy: isSending }} onPress={onSend}>
-            {isSending ? <ActivityIndicator className="text-primary-foreground" /> : <Text>Send connection request</Text>}
+          <Button
+            disabled={isSending}
+            accessibilityState={{ disabled: isSending, busy: isSending }}
+            onPress={onSend}
+          >
+            {isSending ? (
+              <ActivityIndicator className="text-primary-foreground" />
+            ) : (
+              <Text>Send connection request</Text>
+            )}
           </Button>
         ) : null}
         {requestSent || candidate.state === 'PENDING_OUTGOING' ? (
@@ -41,10 +52,24 @@ export function ConnectionCandidateCard({
           </Text>
         ) : null}
         {candidate.state === 'PENDING_INCOMING' ? (
-          <Link href="/friends/requests" asChild><Button variant="outline" role="link"><Text>Review incoming request</Text></Button></Link>
+          <Link href="/friends/requests" asChild>
+            <Button variant="outline" role="link">
+              <Text>Review incoming request</Text>
+            </Button>
+          </Link>
         ) : null}
         {candidate.state === 'CONNECTED' ? (
-          <Link href={{ pathname: '/friends/[friendId]', params: { friendId: candidate.userId } }} asChild><Button variant="outline" role="link"><Text>View friend</Text></Button></Link>
+          <Link
+            href={{
+              pathname: '/friends/[friendId]',
+              params: { friendId: candidate.userId }
+            }}
+            asChild
+          >
+            <Button variant="outline" role="link">
+              <Text>View friend</Text>
+            </Button>
+          </Link>
         ) : null}
       </View>
     </Card>

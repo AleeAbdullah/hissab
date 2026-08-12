@@ -1,10 +1,4 @@
-export type DisplayCurrency =
-  | 'PKR'
-  | 'USD'
-  | 'GBP'
-  | 'EUR'
-  | 'AED'
-  | 'SAR';
+export type DisplayCurrency = 'PKR' | 'USD' | 'GBP' | 'EUR' | 'AED' | 'SAR';
 
 export type AuthUser = {
   id: string;
@@ -131,11 +125,7 @@ export type BlockedUser = {
 };
 
 export type GroupMembershipStatus =
-  | 'INVITED'
-  | 'ACTIVE'
-  | 'DECLINED'
-  | 'CANCELLED'
-  | 'LEFT';
+  'INVITED' | 'ACTIVE' | 'DECLINED' | 'CANCELLED' | 'LEFT';
 
 export type Group = {
   id: string;
@@ -308,7 +298,8 @@ export type ActivityGroupDetails = {
 };
 
 export type ActivityConnectionDetails = {
-  status: 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'CANCELLED' | 'BLOCKED' | 'UNBLOCKED';
+  status:
+    'PENDING' | 'ACCEPTED' | 'DECLINED' | 'CANCELLED' | 'BLOCKED' | 'UNBLOCKED';
   ledgerId?: string;
 };
 
@@ -320,7 +311,11 @@ export type ActivityItem = {
   actor: ActivityUser | null;
   ledger: ActivityLedger | null;
   counterparty: ActivityUser | null;
-  details: ActivityExpenseDetails | ActivitySettlementDetails | ActivityGroupDetails | ActivityConnectionDetails;
+  details:
+    | ActivityExpenseDetails
+    | ActivitySettlementDetails
+    | ActivityGroupDetails
+    | ActivityConnectionDetails;
   createdAt: string;
 };
 
@@ -363,14 +358,10 @@ export type Home = {
 export type PersonalTransactionType = 'INCOME' | 'EXPENSE';
 
 export type PersonalIncomeCategoryCode =
-  | 'SALARY'
-  | 'FREELANCE'
-  | 'BUSINESS'
-  | 'GIFTS'
-  | 'REFUNDS'
-  | 'OTHER_INCOME';
+  'SALARY' | 'FREELANCE' | 'BUSINESS' | 'GIFTS' | 'REFUNDS' | 'OTHER_INCOME';
 
-export type PersonalCategoryCode = SharedExpenseCategoryCode | PersonalIncomeCategoryCode;
+export type PersonalCategoryCode =
+  SharedExpenseCategoryCode | PersonalIncomeCategoryCode;
 
 export type PersonalCategory = {
   code: PersonalCategoryCode;

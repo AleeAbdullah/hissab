@@ -15,7 +15,8 @@ const localApiUrl =
   process.env.EXPO_OS === 'android'
     ? 'http://10.0.2.2:3000'
     : 'http://127.0.0.1:3000';
-export const apiBaseUrl = process.env.EXPO_PUBLIC_API_URL ?? (__DEV__ ? localApiUrl : '');
+export const apiBaseUrl =
+  process.env.EXPO_PUBLIC_API_URL ?? (__DEV__ ? localApiUrl : '');
 
 if (!apiBaseUrl) {
   throw new Error('EXPO_PUBLIC_API_URL is required outside development.');
@@ -23,14 +24,14 @@ if (!apiBaseUrl) {
 
 client.setConfig({
   baseUrl: apiBaseUrl,
-  auth: () => getTokens()?.accessToken,
+  auth: () => getTokens()?.accessToken
 });
 
 export class ApiError extends Error {
   constructor(
     message: string,
     readonly status?: number,
-    readonly details?: Record<string, unknown>,
+    readonly details?: Record<string, unknown>
   ) {
     super(message);
     this.name = 'ApiError';
@@ -44,7 +45,9 @@ export function idempotencyKey() {
   );
 }
 
-export async function publicRequest<T>(call: () => Promise<Result>): Promise<T> {
+export async function publicRequest<T>(
+  call: () => Promise<Result>
+): Promise<T> {
   return unwrap<T>(await call());
 }
 
@@ -69,7 +72,7 @@ async function doRefresh() {
 
   const result = await authRefresh({
     body: { refreshToken: tokens.refreshToken },
-    headers: { 'Idempotency-Key': idempotencyKey() },
+    headers: { 'Idempotency-Key': idempotencyKey() }
   });
   if (result.error || !result.data) return false;
   await setTokens(result.data as AuthTokens);
@@ -78,7 +81,11 @@ async function doRefresh() {
 
 function unwrap<T>(result: Result): T {
   if (result.error !== undefined) {
-    throw new ApiError(errorMessage(result.error), result.response?.status, errorDetails(result.error));
+    throw new ApiError(
+      errorMessage(result.error),
+      result.response?.status,
+      errorDetails(result.error)
+    );
   }
   return result.data as T;
 }
@@ -86,5 +93,7 @@ function unwrap<T>(result: Result): T {
 function errorDetails(error: unknown) {
   if (!error || typeof error !== 'object') return undefined;
   const details = (error as Record<string, unknown>).details;
-  return details && typeof details === 'object' ? details as Record<string, unknown> : undefined;
+  return details && typeof details === 'object'
+    ? (details as Record<string, unknown>)
+    : undefined;
 }

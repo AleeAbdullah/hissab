@@ -10,7 +10,7 @@ export function ConnectionRequestCard({
   loading,
   onAccept,
   onDecline,
-  onCancel,
+  onCancel
 }: {
   request: ConnectionRequest;
   disabled: boolean;
@@ -29,18 +29,60 @@ export function ConnectionRequestCard({
             <Text selectable className="text-base font-semibold leading-6">
               {request.personDisplayName}
             </Text>
-            <Text selectable className="text-xs leading-4 text-muted-foreground">
-              {incoming ? 'Wants to connect with you' : 'Connection request sent'}
+            <Text
+              selectable
+              className="text-xs leading-4 text-muted-foreground"
+            >
+              {incoming
+                ? 'Wants to connect with you'
+                : 'Connection request sent'}
             </Text>
           </View>
         </View>
         {incoming ? (
           <View className="flex-row gap-2">
-            <View className="flex-1"><Button disabled={disabled || loading} accessibilityState={{ disabled: disabled || loading, busy: loading }} onPress={onAccept}>{loading ? <ActivityIndicator className="text-primary-foreground" /> : <Text>Accept</Text>}</Button></View>
-            <View className="flex-1"><Button variant="destructiveOutline" disabled={disabled} onPress={onDecline}><Text>Decline</Text></Button></View>
+            <View className="flex-1">
+              <Button
+                disabled={disabled || loading}
+                accessibilityState={{
+                  disabled: disabled || loading,
+                  busy: loading
+                }}
+                onPress={onAccept}
+              >
+                {loading ? (
+                  <ActivityIndicator className="text-primary-foreground" />
+                ) : (
+                  <Text>Accept</Text>
+                )}
+              </Button>
+            </View>
+            <View className="flex-1">
+              <Button
+                variant="destructiveOutline"
+                disabled={disabled}
+                onPress={onDecline}
+              >
+                <Text>Decline</Text>
+              </Button>
+            </View>
           </View>
         ) : (
-          <Button variant="destructiveOutline" disabled={disabled || loading} accessibilityState={{ disabled: disabled || loading, busy: loading }} onPress={onCancel}>{loading ? <ActivityIndicator className="text-destructive" /> : <Text>Cancel request</Text>}</Button>
+          <Button
+            variant="destructiveOutline"
+            disabled={disabled || loading}
+            accessibilityState={{
+              disabled: disabled || loading,
+              busy: loading
+            }}
+            onPress={onCancel}
+          >
+            {loading ? (
+              <ActivityIndicator className="text-destructive" />
+            ) : (
+              <Text>Cancel request</Text>
+            )}
+          </Button>
         )}
       </View>
     </Card>

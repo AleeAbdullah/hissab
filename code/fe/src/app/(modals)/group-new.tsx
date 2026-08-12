@@ -17,10 +17,13 @@ export default function NewGroupScreen() {
     onSuccess: async (group) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: groupsQuery.queryKey }),
-        queryClient.invalidateQueries({ queryKey: homeQuery.queryKey }),
+        queryClient.invalidateQueries({ queryKey: homeQuery.queryKey })
       ]);
-      router.replace({ pathname: '/groups/[groupId]', params: { groupId: group.id } });
-    },
+      router.replace({
+        pathname: '/groups/[groupId]',
+        params: { groupId: group.id }
+      });
+    }
   });
   const trimmedName = name.trim();
 
@@ -31,14 +34,28 @@ export default function NewGroupScreen() {
         label="Group name"
         placeholder="e.g. Weekend trip"
         value={name}
-        onChangeText={(value) => { setName(value); create.reset(); }}
+        onChangeText={(value) => {
+          setName(value);
+          create.reset();
+        }}
         onSubmitEditing={() => trimmedName && create.mutate(trimmedName)}
         maxLength={100}
         autoFocus
         hint="Up to 100 characters"
       />
-      <Button disabled={!trimmedName || create.isPending} accessibilityState={{ disabled: !trimmedName || create.isPending, busy: create.isPending }} onPress={() => create.mutate(trimmedName)}>
-        {create.isPending ? <ActivityIndicator color="white" /> : <ButtonText>Create group</ButtonText>}
+      <Button
+        disabled={!trimmedName || create.isPending}
+        accessibilityState={{
+          disabled: !trimmedName || create.isPending,
+          busy: create.isPending
+        }}
+        onPress={() => create.mutate(trimmedName)}
+      >
+        {create.isPending ? (
+          <ActivityIndicator color="white" />
+        ) : (
+          <ButtonText>Create group</ButtonText>
+        )}
       </Button>
     </Screen>
   );

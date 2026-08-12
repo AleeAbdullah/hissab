@@ -5,5 +5,5 @@ import { request } from '@/api/transport';
 export const homeQuery = {
   queryKey: ['home'] as const,
   queryFn: () => request<Home>(() => homeGetHome()),
-  refetchOnReconnect: true,
+  refetchOnReconnect: true
 };
