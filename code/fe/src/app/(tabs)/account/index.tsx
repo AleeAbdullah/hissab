@@ -42,14 +42,6 @@ export default function AccountScreen() {
           />
         </Card>
       ) : null}
-      <SectionLabel>TEMPORARY</SectionLabel>
-      <Card>
-        <Row
-          title="Home"
-          subtitle="Temporary access while navigation is being decided"
-          href="/home"
-        />
-      </Card>
       <SectionLabel>PREFERENCES</SectionLabel>
       <Card>
         <Row

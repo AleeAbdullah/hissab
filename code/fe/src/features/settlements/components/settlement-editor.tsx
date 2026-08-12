@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
 import { ErrorMessage, Field, Notice, SectionLabel } from '@/components/ui';
@@ -18,12 +18,22 @@ import {
   settlementInitialValues
 } from '@/features/settlements/form';
 
+export type SettlementFormDraft = {
+  amount: string;
+  fromUserId: string;
+  occurredDate: string;
+  toUserId: string;
+};
+
 export function SettlementEditor({
   balances,
   currentUserId,
   displayCurrency,
   members,
   onSave,
+  onDraftChange,
+  onDiscard,
+  savedDraft,
   saving,
   settlement
 }: {
@@ -32,10 +42,15 @@ export function SettlementEditor({
   displayCurrency: DisplayCurrency;
   members: LedgerDraftMember[];
   onSave: (body: CreateSettlementDto, createsCredit: boolean) => void;
+  onDraftChange?: (draft: SettlementFormDraft | null) => void;
+  onDiscard?: () => void;
+  savedDraft?: SettlementFormDraft | null;
   saving: boolean;
   settlement?: Settlement;
 }) {
-  const initial = settlement ? settlementInitialValues(settlement) : null;
+  const initial = settlement
+    ? settlementInitialValues(settlement)
+    : (savedDraft ?? null);
   const otherUserId =
     members.find((member) => member.userId !== currentUserId)?.userId ?? '';
   const [amount, setAmount] = useState(initial?.amount ?? '');
@@ -47,6 +62,28 @@ export function SettlementEditor({
     initial?.occurredDate ?? todayDate()
   );
   const [validationError, setValidationError] = useState<string | null>(null);
+  useEffect(() => {
+    const value: SettlementFormDraft = {
+      amount,
+      fromUserId,
+      occurredDate,
+      toUserId
+    };
+    const hasContent =
+      Boolean(amount) ||
+      occurredDate !== todayDate() ||
+      fromUserId !== currentUserId ||
+      toUserId !== otherUserId;
+    onDraftChange?.(hasContent ? value : null);
+  }, [
+    amount,
+    currentUserId,
+    fromUserId,
+    occurredDate,
+    onDraftChange,
+    otherUserId,
+    toUserId
+  ]);
   const save = () => {
     const built = buildSettlementBody({
       amount,
@@ -115,6 +152,15 @@ export function SettlementEditor({
           <Text>{settlement ? 'Save changes' : 'Record payment'}</Text>
         )}
       </Button>
+      {onDiscard ? (
+        <Button
+          variant="destructiveOutline"
+          disabled={saving}
+          onPress={onDiscard}
+        >
+          <Text>Discard draft</Text>
+        </Button>
+      ) : null}
     </View>
   );
 }

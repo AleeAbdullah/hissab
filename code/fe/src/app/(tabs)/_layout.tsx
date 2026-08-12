@@ -13,13 +13,6 @@ export default function TabLayout() {
 
   return (
     <NativeTabs tintColor={primary}>
-      <NativeTabs.Trigger name="friends">
-        <NativeTabs.Trigger.Icon
-          sf={{ default: 'person.2', selected: 'person.2.fill' }}
-          md="group"
-        />
-        <NativeTabs.Trigger.Label>Friends</NativeTabs.Trigger.Label>
-      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="groups">
         <NativeTabs.Trigger.Icon
           sf={{ default: 'person.3', selected: 'person.3.fill' }}
@@ -33,6 +26,13 @@ export default function TabLayout() {
           md="history"
         />
         <NativeTabs.Trigger.Label>Activity</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="home">
+        <NativeTabs.Trigger.Icon
+          sf={{ default: 'house', selected: 'house.fill' }}
+          md="home"
+        />
+        <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="personal">
         <NativeTabs.Trigger.Icon

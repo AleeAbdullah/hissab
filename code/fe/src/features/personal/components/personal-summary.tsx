@@ -3,7 +3,7 @@ import { View } from 'react-native';
 import type { DisplayCurrency, PersonalReportBucket } from '@/api/contracts';
 import { Card, Row, SectionLabel } from '@/components/ui';
 import { Text } from '@/components/ui/text';
-import { formatMinorAmount } from '@/features/balances/format';
+import { formatMinorAmount } from '@/lib/utils';
 
 export function PersonalSummary({
   displayCurrency,

@@ -1,10 +1,10 @@
-import { Eye, EyeOff } from 'lucide-react-native';
 import { useState, type PropsWithChildren } from 'react';
 import { TextInput, type TextInputProps, View } from 'react-native';
 
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
+import { Icons } from '@/components/icons';
 import { cn } from '@/lib/utils';
 
 type AuthFieldProps = PropsWithChildren<{
@@ -102,7 +102,7 @@ function PasswordVisibilityButton({
       onPress={onPress}
     >
       <Icon
-        as={visible ? EyeOff : Eye}
+        as={visible ? Icons.eyeOff : Icons.eye}
         size={20}
         className="text-muted-foreground"
       />

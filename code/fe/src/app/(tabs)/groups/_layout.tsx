@@ -27,6 +27,26 @@ export default function GroupsLayout() {
         name="[groupId]/settings"
         options={{ title: 'Group settings' }}
       />
+      <Stack.Screen
+        name="friends/index"
+        options={{ title: 'Friends', headerLargeTitle: true }}
+      />
+      <Stack.Screen
+        name="friends/requests"
+        options={{ title: 'Connection requests' }}
+      />
+      <Stack.Screen
+        name="friends/blocked"
+        options={{ title: 'Blocked people' }}
+      />
+      <Stack.Screen
+        name="friends/[friendId]/index"
+        options={{ title: 'Friend' }}
+      />
+      <Stack.Screen
+        name="friends/[friendId]/settings"
+        options={{ title: 'Friend settings' }}
+      />
     </Stack>
   );
 }

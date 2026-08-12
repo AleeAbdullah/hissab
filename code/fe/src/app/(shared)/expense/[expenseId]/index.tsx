@@ -19,7 +19,7 @@ import {
   ledgerBalancesQuery,
   userBalancesQuery
 } from '@/features/balances/api';
-import { formatMinorAmount } from '@/features/balances/format';
+import { formatMinorAmount } from '@/lib/utils';
 import { homeQuery } from '@/features/home/api';
 import { deleteExpense, expenseQuery } from '@/features/expenses/api';
 

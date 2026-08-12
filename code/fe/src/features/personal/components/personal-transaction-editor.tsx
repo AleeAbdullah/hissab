@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
 import type { CreatePersonalTransactionDto } from '@/api/generated/types.gen';
@@ -20,20 +20,36 @@ import {
   personalTransactionInitialValues
 } from '@/features/personal/form';
 
+export type PersonalTransactionFormDraft = {
+  amount: string;
+  categoryCode: PersonalCategoryCode | null;
+  description: string;
+  merchantOrSource: string;
+  notes: string;
+  occurredDate: string;
+  type: PersonalTransactionType;
+};
+
 export function PersonalTransactionEditor({
   displayCurrency,
   onSave,
+  onDraftChange,
+  onDiscard,
+  savedDraft,
   saving,
   transaction
 }: {
   displayCurrency: DisplayCurrency;
   onSave: (body: CreatePersonalTransactionDto) => void;
+  onDraftChange?: (draft: PersonalTransactionFormDraft | null) => void;
+  onDiscard?: () => void;
+  savedDraft?: PersonalTransactionFormDraft | null;
   saving: boolean;
   transaction?: PersonalTransaction;
 }) {
   const initial = transaction
     ? personalTransactionInitialValues(transaction)
-    : null;
+    : (savedDraft ?? null);
   const categories = useQuery(personalCategoriesQuery);
   const [type, setType] = useState<PersonalTransactionType>(
     initial?.type ?? 'EXPENSE'
@@ -51,6 +67,33 @@ export function PersonalTransactionEditor({
   );
   const [notes, setNotes] = useState(initial?.notes ?? '');
   const [validationError, setValidationError] = useState<string | null>(null);
+  useEffect(() => {
+    const value: PersonalTransactionFormDraft = {
+      amount,
+      categoryCode,
+      description,
+      merchantOrSource,
+      notes,
+      occurredDate,
+      type
+    };
+    const hasContent =
+      Boolean(
+        amount || categoryCode || description || merchantOrSource || notes
+      ) ||
+      occurredDate !== todayDate() ||
+      type !== 'EXPENSE';
+    onDraftChange?.(hasContent ? value : null);
+  }, [
+    amount,
+    categoryCode,
+    description,
+    merchantOrSource,
+    notes,
+    occurredDate,
+    onDraftChange,
+    type
+  ]);
   const availableCategories = (categories.data ?? []).filter(
     (category) => category.kind === type
   );
@@ -156,6 +199,15 @@ export function PersonalTransactionEditor({
           <Text>{transaction ? 'Save changes' : 'Save transaction'}</Text>
         )}
       </Button>
+      {onDiscard ? (
+        <Button
+          variant="destructiveOutline"
+          disabled={saving}
+          onPress={onDiscard}
+        >
+          <Text>Discard draft</Text>
+        </Button>
+      ) : null}
     </View>
   );
 }

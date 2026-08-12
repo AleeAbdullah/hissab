@@ -17,7 +17,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Text as ButtonText } from '@/components/ui/text';
 import { ledgerBalancesQuery } from '@/features/balances/api';
-import { formatMinorAmount } from '@/features/balances/format';
+import { formatMinorAmount } from '@/lib/utils';
 import { useLedgerDraft } from '@/features/ledger/draft';
 import { createReminder } from '@/features/reminders/api';
 

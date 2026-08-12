@@ -15,7 +15,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { profileQuery } from '@/features/account/api';
-import { formatMinorAmount } from '@/features/balances/format';
+import { formatMinorAmount } from '@/lib/utils';
 import { homeQuery } from '@/features/home/api';
 import {
   deletePersonalTransaction,

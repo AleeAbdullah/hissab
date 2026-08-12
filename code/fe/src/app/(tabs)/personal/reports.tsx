@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { View } from 'react-native';
 
-import type { DisplayCurrency, PersonalReport } from '@/api/contracts';
+import type { PersonalReport } from '@/api/contracts';
 import {
   Card,
   ErrorMessage,
@@ -15,7 +15,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { profileQuery } from '@/features/account/api';
-import { formatMinorAmount } from '@/features/balances/format';
+import { formatMinorAmount } from '@/lib/utils';
 import { ChoiceChips } from '@/components/choice-chips';
 import { dateToIso } from '@/features/expenses/form';
 import { PersonalSummary } from '@/features/personal/components/personal-summary';
@@ -123,11 +123,11 @@ export default function ReportsScreen() {
                 <Row
                   key={bucket.period}
                   title={periodLabel(bucket.period, report.data.bucket)}
-                  subtitle={`Income ${formatBucket(bucket.incomeMinor, profile.data.displayCurrency)} · Spending ${formatBucket(bucket.expenseMinor, profile.data.displayCurrency)}`}
+                  subtitle={`Income ${formatMinorAmount(bucket.incomeMinor, profile.data.displayCurrency)} · Spending ${formatMinorAmount(bucket.expenseMinor, profile.data.displayCurrency)}`}
                   detail={
                     BigInt(bucket.netMinor) >= 0n
-                      ? `Left ${formatBucket(bucket.netMinor, profile.data.displayCurrency)}`
-                      : `Over ${formatBucket((-BigInt(bucket.netMinor)).toString(), profile.data.displayCurrency)}`
+                      ? `Left ${formatMinorAmount(bucket.netMinor, profile.data.displayCurrency)}`
+                      : `Over ${formatMinorAmount((-BigInt(bucket.netMinor)).toString(), profile.data.displayCurrency)}`
                   }
                 />
               ))}
@@ -138,8 +138,4 @@ export default function ReportsScreen() {
       </View>
     </Screen>
   );
-}
-
-function formatBucket(minor: string, displayCurrency: DisplayCurrency) {
-  return formatMinorAmount(minor, displayCurrency);
 }

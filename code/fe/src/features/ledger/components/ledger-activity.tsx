@@ -6,7 +6,7 @@ import { Card, ErrorMessage, Notice, Row, SectionLabel } from '@/components/ui';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import type { DisplayCurrency } from '@/api/contracts';
-import { formatMinorAmount } from '@/features/balances/format';
+import { formatMinorAmount } from '@/lib/utils';
 import { listExpenses } from '@/features/expenses/api';
 import type { LedgerDraftMember } from '@/features/ledger/draft';
 import { listSettlements } from '@/features/settlements/api';

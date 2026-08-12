@@ -1,14 +1,9 @@
 import { Icon } from '@/components/ui/icon';
 import { NativeOnlyAnimatedView } from '@/components/ui/native-only-animated-view';
 import { TextClassContext } from '@/components/ui/text';
+import { Icons } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import * as SelectPrimitive from '@rn-primitives/select';
-import {
-  Check,
-  ChevronDown,
-  ChevronDownIcon,
-  ChevronUpIcon
-} from 'lucide-react-native';
 import * as React from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import { FadeIn, FadeOut, ReduceMotion } from 'react-native-reanimated';
@@ -67,7 +62,7 @@ function SelectTrigger({
     >
       <>{children}</>
       <Icon
-        as={ChevronDown}
+        as={Icons.chevronDown}
         aria-hidden={true}
         className="size-4 text-muted-foreground"
       />
@@ -184,7 +179,10 @@ function SelectItem({
     >
       <View className="absolute right-2 flex size-3.5 items-center justify-center">
         <SelectPrimitive.ItemIndicator>
-          <Icon as={Check} className="size-4 shrink-0 text-muted-foreground" />
+          <Icon
+            as={Icons.check}
+            className="size-4 shrink-0 text-muted-foreground"
+          />
         </SelectPrimitive.ItemIndicator>
       </View>
       <SelectPrimitive.ItemText className="select-none text-sm text-foreground group-active:text-accent-foreground" />
@@ -227,7 +225,7 @@ function SelectScrollUpButton({
       )}
       {...props}
     >
-      <Icon as={ChevronUpIcon} className="size-4" />
+      <Icon as={Icons.chevronUp} className="size-4" />
     </SelectPrimitive.ScrollUpButton>
   );
 }
@@ -251,7 +249,7 @@ function SelectScrollDownButton({
       )}
       {...props}
     >
-      <Icon as={ChevronDownIcon} className="size-4" />
+      <Icon as={Icons.chevronDown} className="size-4" />
     </SelectPrimitive.ScrollDownButton>
   );
 }

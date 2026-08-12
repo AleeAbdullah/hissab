@@ -5,6 +5,8 @@ import { useState } from 'react';
 import { TextInput, View } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
+import { IconsV2 } from '@/components/icons-v2';
+import { Icons } from '@/components/icons';
 import {
   Card,
   ErrorMessage,
@@ -14,6 +16,7 @@ import {
   SectionLabel
 } from '@/components/ui';
 import { Button } from '@/components/ui/button';
+import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { profileQuery } from '@/features/account/api';
 import { userBalancesQuery } from '@/features/balances/api';
@@ -63,16 +66,28 @@ export default function GroupsScreen() {
       <Stack.Screen
         options={{
           headerRight: () => (
-            <Link href="/group-new" asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                role="link"
-                accessibilityLabel="Create group"
-              >
-                <Text className="text-[30px] font-light text-primary">＋</Text>
-              </Button>
-            </Link>
+            <View className="flex-row items-center">
+              <Link href="/groups/friends" asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  role="link"
+                  accessibilityLabel="Friends"
+                >
+                  <IconsV2.friends size={22} color="#A83A1B" />
+                </Button>
+              </Link>
+              <Link href="/group-new" asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  role="link"
+                  accessibilityLabel="Create group"
+                >
+                  <Icon as={Icons.add} size={24} className="text-primary" />
+                </Button>
+              </Link>
+            </View>
           )
         }}
       />

@@ -52,7 +52,7 @@ export function ConnectionCandidateCard({
           </Text>
         ) : null}
         {candidate.state === 'PENDING_INCOMING' ? (
-          <Link href="/friends/requests" asChild>
+          <Link href="/groups/friends/requests" asChild>
             <Button variant="outline" role="link">
               <Text>Review incoming request</Text>
             </Button>
@@ -61,7 +61,7 @@ export function ConnectionCandidateCard({
         {candidate.state === 'CONNECTED' ? (
           <Link
             href={{
-              pathname: '/friends/[friendId]',
+              pathname: '/groups/friends/[friendId]',
               params: { friendId: candidate.userId }
             }}
             asChild

@@ -2,7 +2,7 @@ import type { Href } from 'expo-router';
 
 import type { DisplayCurrency, PersonalTransaction } from '@/api/contracts';
 import { Row } from '@/components/ui';
-import { formatMinorAmount } from '@/features/balances/format';
+import { formatMinorAmount } from '@/lib/utils';
 
 export function PersonalTransactionRow({
   displayCurrency,

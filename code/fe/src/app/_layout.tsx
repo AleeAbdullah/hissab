@@ -9,6 +9,7 @@ import { useColorScheme, View } from 'react-native';
 import { queryClient } from '@/api/query-client';
 import { SessionProvider } from '@/features/auth/session';
 import { LedgerDraftProvider } from '@/features/ledger/draft';
+import { PersistedQueryProvider } from '@/features/local-data/query-cache';
 import { RealtimeProvider } from '@/features/realtime/provider';
 import { useNavigationTheme } from '@/lib/theme';
 
@@ -32,7 +33,6 @@ function Navigation() {
       <View className="flex-1 bg-background">
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="index" />
-          <Stack.Screen name="home" />
           <Stack.Screen name="(auth)" />
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="(shared)" />
@@ -48,11 +48,13 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <SessionProvider>
-        <RealtimeProvider>
-          <LedgerDraftProvider>
-            <Navigation />
-          </LedgerDraftProvider>
-        </RealtimeProvider>
+        <PersistedQueryProvider>
+          <RealtimeProvider>
+            <LedgerDraftProvider>
+              <Navigation />
+            </LedgerDraftProvider>
+          </RealtimeProvider>
+        </PersistedQueryProvider>
       </SessionProvider>
     </QueryClientProvider>
   );

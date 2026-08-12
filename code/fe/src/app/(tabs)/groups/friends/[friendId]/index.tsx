@@ -96,7 +96,7 @@ export default function FriendDetailScreen() {
       />
       <Link
         href={{
-          pathname: '/friends/[friendId]/settings',
+          pathname: '/groups/friends/[friendId]/settings',
           params: { friendId }
         }}
         asChild

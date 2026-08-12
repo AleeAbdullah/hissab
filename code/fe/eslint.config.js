@@ -7,7 +7,7 @@ const themeBoundaryFiles = [
   'src/app/(tabs)/_layout.tsx',
   'src/app/(tabs)/account/notifications.tsx',
   'src/app/(tabs)/activity/index.tsx',
-  'src/features/home/screen.tsx'
+  'src/app/(tabs)/home/index.tsx'
 ];
 
 module.exports = defineConfig([

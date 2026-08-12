@@ -35,7 +35,7 @@ export default function FriendSettingsScreen() {
         queryClient.invalidateQueries({ queryKey: userBalancesQuery.queryKey }),
         queryClient.invalidateQueries({ queryKey: homeQuery.queryKey })
       ]);
-      router.replace('/friends');
+      router.replace('/groups/friends');
     }
   });
   const settled = (balances.data?.members ?? []).every(
@@ -124,7 +124,7 @@ export default function FriendSettingsScreen() {
           <Text>Block person</Text>
         )}
       </Button>
-      <Link href="/friends/blocked" asChild>
+      <Link href="/groups/friends/blocked" asChild>
         <Button variant="outline" role="link">
           <Text>View blocked people</Text>
         </Button>

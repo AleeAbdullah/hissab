@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
 import { ErrorMessage, Field, Notice, SectionLabel } from '@/components/ui';
@@ -21,12 +21,27 @@ import {
 } from '@/features/expenses/form';
 import type { LedgerDraftMember } from '@/features/ledger/draft';
 
+export type ExpenseFormDraft = {
+  amount: string;
+  categoryCode: SharedExpenseCategoryCode | null;
+  description: string;
+  occurredDate: string;
+  payerAmounts: Record<string, string>;
+  payerUserIds: string[];
+  participantUserIds: string[];
+  splitMethod: 'EQUAL' | 'EXACT';
+  exactAmounts: Record<string, string>;
+};
+
 export function ExpenseEditor({
   currentUserId,
   displayCurrency,
   expense,
   members,
   onSave,
+  onDraftChange,
+  onDiscard,
+  savedDraft,
   saving
 }: {
   currentUserId: string;
@@ -34,9 +49,14 @@ export function ExpenseEditor({
   expense?: SharedExpense;
   members: LedgerDraftMember[];
   onSave: (body: CreateExpenseDto) => void;
+  onDraftChange?: (draft: ExpenseFormDraft | null) => void;
+  onDiscard?: () => void;
+  savedDraft?: ExpenseFormDraft | null;
   saving: boolean;
 }) {
-  const initial = expense ? expenseInitialValues(expense) : null;
+  const initial = expense
+    ? expenseInitialValues(expense)
+    : (savedDraft ?? null);
   const categories = useQuery(expenseCategoriesQuery);
   const [amount, setAmount] = useState(initial?.amount ?? '');
   const [categoryCode, setCategoryCode] =
@@ -59,6 +79,48 @@ export function ExpenseEditor({
   );
   const [exactAmounts, setExactAmounts] = useState(initial?.exactAmounts ?? {});
   const [validationError, setValidationError] = useState<string | null>(null);
+  useEffect(() => {
+    const value: ExpenseFormDraft = {
+      amount,
+      categoryCode,
+      description,
+      occurredDate,
+      payerAmounts,
+      payerUserIds,
+      participantUserIds,
+      splitMethod,
+      exactAmounts
+    };
+    const defaultParticipants = members.map((member) => member.userId);
+    const changedPayers =
+      payerUserIds.length !== 1 || payerUserIds[0] !== currentUserId;
+    const changedParticipants =
+      participantUserIds.length !== defaultParticipants.length ||
+      participantUserIds.some(
+        (userId, index) => userId !== defaultParticipants[index]
+      );
+    const hasContent =
+      Boolean(amount || categoryCode || description) ||
+      occurredDate !== todayDate() ||
+      changedPayers ||
+      changedParticipants ||
+      splitMethod === 'EXACT' ||
+      Object.values(exactAmounts).some(Boolean);
+    onDraftChange?.(hasContent ? value : null);
+  }, [
+    amount,
+    categoryCode,
+    currentUserId,
+    description,
+    exactAmounts,
+    members,
+    occurredDate,
+    onDraftChange,
+    participantUserIds,
+    payerAmounts,
+    payerUserIds,
+    splitMethod
+  ]);
 
   const updateAmount = (value: string) => {
     setAmount(value);
@@ -175,6 +237,15 @@ export function ExpenseEditor({
           <Text>{expense ? 'Save changes' : 'Save expense'}</Text>
         )}
       </Button>
+      {onDiscard ? (
+        <Button
+          variant="destructiveOutline"
+          disabled={saving}
+          onPress={onDiscard}
+        >
+          <Text>Discard draft</Text>
+        </Button>
+      ) : null}
     </View>
   );
 }

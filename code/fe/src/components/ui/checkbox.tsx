@@ -1,7 +1,6 @@
-import { Icon } from '@/components/ui/icon';
+import { Icons } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import * as CheckboxPrimitive from '@rn-primitives/checkbox';
-import { Check } from 'lucide-react-native';
 import { Platform } from 'react-native';
 
 const DEFAULT_HIT_SLOP = 24;
@@ -38,8 +37,7 @@ function Checkbox({
           indicatorClassName
         )}
       >
-        <Icon
-          as={Check}
+        <Icons.check
           size={12}
           strokeWidth={Platform.OS === 'web' ? 2.5 : 3.5}
           className={cn('text-primary-foreground', iconClassName)}

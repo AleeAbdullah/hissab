@@ -81,9 +81,9 @@ export default function FriendsScreen() {
           detail={
             requests.data?.length ? String(requests.data.length) : undefined
           }
-          href="/friends/requests"
+          href="/groups/friends/requests"
         />
-        <Row title="Blocked people" href="/friends/blocked" />
+        <Row title="Blocked people" href="/groups/friends/blocked" />
       </Card>
       <SectionLabel>CONNECTIONS</SectionLabel>
       {filtered.length ? (
@@ -104,7 +104,7 @@ export default function FriendsScreen() {
                       ).join(' · ') || 'No recorded balance'
               }
               href={{
-                pathname: '/friends/[friendId]',
+                pathname: '/groups/friends/[friendId]',
                 params: { friendId: friend.userId }
               }}
               leading={<Avatar name={friend.displayName} />}

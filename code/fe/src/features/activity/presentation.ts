@@ -5,7 +5,7 @@ import type {
   ActivitySettlementDetails,
   DisplayCurrency
 } from '@/api/contracts';
-import { formatMinorAmount } from '@/features/balances/format';
+import { formatMinorAmount } from '@/lib/utils';
 
 const actions: Record<string, string> = {
   EXPENSE_CREATED: 'added an expense',

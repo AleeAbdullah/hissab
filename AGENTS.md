@@ -17,7 +17,7 @@ Do not silently resolve conflicts. Keep current behavior safe, report the confli
 ## Product contract
 
 - Hissab records debts and settlements. It never holds, sends, or converts money.
-- Keep exactly five tabs: Friends, Groups, Activity, Personal, Account.
+- Keep exactly five tabs in this order: Groups, Activity, Home, Personal, Account. Friends is accessed from the Groups screen and remains part of the Groups navigation stack.
 - Shared and Personal are separate contexts. Shared activity must not silently become a personal transaction or vice versa.
 - Financial amounts are currency-neutral integer minor units. Hissab does not hold, send, convert, or record a money denomination.
 - Each user may select a `displayCurrency` in Settings from PKR, USD, GBP, EUR, AED, and SAR. It controls only the symbol rendered by that user’s frontend, may differ between viewers, and never converts or changes a financial record.

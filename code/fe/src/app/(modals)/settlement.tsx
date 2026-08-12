@@ -3,18 +3,25 @@ import { router } from 'expo-router';
 import { Alert } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
-import { ErrorMessage, Notice, Screen } from '@/components/ui';
+import { ErrorMessage, Loading, Notice, Screen } from '@/components/ui';
 import {
   ledgerBalancesQuery,
   userBalancesQuery
 } from '@/features/balances/api';
-import { SettlementEditor } from '@/features/settlements/components/settlement-editor';
+import {
+  SettlementEditor,
+  type SettlementFormDraft
+} from '@/features/settlements/components/settlement-editor';
 import { createSettlement } from '@/features/settlements/api';
 import { homeQuery } from '@/features/home/api';
 import { useLedgerDraft } from '@/features/ledger/draft';
+import { usePersistentDraft } from '@/features/local-data/draft';
 
 export default function SettlementScreen() {
-  const { clearDraft, draft } = useLedgerDraft();
+  const { clearDraft, draft, ready: ledgerReady } = useLedgerDraft();
+  const persistedDraft = usePersistentDraft<SettlementFormDraft>(
+    draft ? `settlement:${draft.ledgerId}` : null
+  );
   const balances = useQuery({
     ...ledgerBalancesQuery(draft?.ledgerId ?? ''),
     enabled: Boolean(draft)
@@ -30,10 +37,12 @@ export default function SettlementScreen() {
         queryClient.invalidateQueries({ queryKey: userBalancesQuery.queryKey }),
         queryClient.invalidateQueries({ queryKey: homeQuery.queryKey })
       ]);
+      persistedDraft.clear();
       clearDraft();
       router.back();
     }
   });
+  if (!ledgerReady || !persistedDraft.ready) return <Loading />;
   if (!draft)
     return (
       <Screen>
@@ -59,6 +68,23 @@ export default function SettlementScreen() {
       ]
     );
   };
+  const discard = () =>
+    Alert.alert(
+      'Discard draft?',
+      'This removes the saved payment details from this device.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Discard draft',
+          style: 'destructive',
+          onPress: () => {
+            persistedDraft.clear();
+            clearDraft();
+            router.back();
+          }
+        }
+      ]
+    );
   return (
     <Screen>
       {create.error || balances.error ? (
@@ -71,6 +97,9 @@ export default function SettlementScreen() {
         members={draft.members}
         saving={create.isPending}
         onSave={save}
+        savedDraft={persistedDraft.draft}
+        onDraftChange={persistedDraft.save}
+        onDiscard={discard}
       />
     </Screen>
   );

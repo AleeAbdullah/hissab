@@ -1,4 +1,3 @@
-import { ArrowUpDown } from 'lucide-react-native';
 import { useState, type ReactNode } from 'react';
 import { View } from 'react-native';
 import Animated, {
@@ -8,6 +7,7 @@ import Animated, {
 
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
+import { Icons } from '@/components/icons';
 import { cn } from '@/lib/utils';
 
 export type StackedCardItem = {
@@ -42,7 +42,7 @@ export function StackedCards({ cards }: StackedCardsProps) {
             layout={CARD_TRANSITION}
             className={cn(
               'min-h-[136px] rounded-2xl',
-              isFront ? 'z-[1] mx-0 -mt-24' : 'z-0 mx-2 mt-0',
+              isFront ? 'z-[1] mx-0 -mt-20' : 'z-0 mx-2 mt-0',
               card.className
             )}
           >
@@ -62,10 +62,10 @@ export function StackedCards({ cards }: StackedCardsProps) {
                 size="icon"
                 accessibilityLabel={rearCard.accessibilityLabel}
                 onPress={() => setFrontId(rearCard.id)}
-                className="absolute bottom-3 right-3 size-12 rounded-full bg-muted"
+                className="absolute bottom-3 right-3 size-10 rounded-full bg-muted"
               >
                 <Icon
-                  as={ArrowUpDown}
+                  as={Icons.arrowUpDown}
                   size={20}
                   className="text-muted-foreground"
                 />
@@ -75,7 +75,7 @@ export function StackedCards({ cards }: StackedCardsProps) {
                 variant="ghost"
                 accessibilityLabel={card.accessibilityLabel}
                 onPress={() => setFrontId(card.id)}
-                className="absolute inset-0 rounded-none p-0"
+                className="absolute inset-0 rounded-none p-0 active:bg-transparent dark:active:bg-transparent"
               />
             )}
           </Animated.View>

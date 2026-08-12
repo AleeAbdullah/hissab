@@ -1,0 +1,10 @@
+{
+  "name": "hissab",
+  "private": true,
+  "packageManager": "pnpm@10.32.1",
+  "scripts": {
+    "start": "PORT=${PORT:-3001} EXPO_PUBLIC_API_URL=${EXPO_PUBLIC_API_URL:-http://127.0.0.1:${PORT:-3001}} pnpm run \"/^start:(api|app)$/\"",
+    "start:api": "npm --prefix be run start:dev",
+    "start:app": "npm --prefix fe run start"
+  }
+}

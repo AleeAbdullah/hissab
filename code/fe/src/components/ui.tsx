@@ -1,4 +1,3 @@
-import { Eye, EyeOff } from 'lucide-react-native';
 import type { Href } from 'expo-router';
 import { Link } from 'expo-router';
 import {
@@ -19,6 +18,7 @@ import {
 import { Button as RnrButton } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
+import { Icons } from '@/components/icons';
 import { cn } from '@/lib/utils';
 
 export function Screen({
@@ -211,7 +211,7 @@ export function Field({
             onPress={() => setPasswordVisible((value) => !value)}
           >
             <Icon
-              as={passwordVisible ? EyeOff : Eye}
+              as={passwordVisible ? Icons.eyeOff : Icons.eye}
               size={20}
               className="text-muted-foreground"
             />
