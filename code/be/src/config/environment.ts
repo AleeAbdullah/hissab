@@ -32,6 +32,11 @@ export interface EnvironmentVariables extends Record<string, unknown> {
   OUTBOX_LEASE_SECONDS: number;
   OUTBOX_MAX_ATTEMPTS: number;
   OUTBOX_ENABLED: boolean;
+  R2_ENABLED: boolean;
+  R2_ACCOUNT_ID?: string;
+  R2_ACCESS_KEY_ID?: string;
+  R2_SECRET_ACCESS_KEY?: string;
+  R2_BUCKET?: string;
   EXPO_PUSH_ENABLED: boolean;
   EXPO_PUSH_ACCESS_TOKEN?: string;
   EXPO_PUSH_SEND_URL: string;
@@ -177,6 +182,22 @@ export function validateEnvironment(
   config: Record<string, unknown>,
 ): EnvironmentVariables {
   const nodeEnvironment = parseNodeEnvironment(config.NODE_ENV);
+  const r2Enabled = parseBoolean('R2_ENABLED', config.R2_ENABLED, false);
+
+  const r2 = r2Enabled
+    ? {
+        R2_ACCOUNT_ID: parseR2AccountId(config.R2_ACCOUNT_ID),
+        R2_ACCESS_KEY_ID: parseString(
+          'R2_ACCESS_KEY_ID',
+          config.R2_ACCESS_KEY_ID,
+        ),
+        R2_SECRET_ACCESS_KEY: parseString(
+          'R2_SECRET_ACCESS_KEY',
+          config.R2_SECRET_ACCESS_KEY,
+        ),
+        R2_BUCKET: parseString('R2_BUCKET', config.R2_BUCKET),
+      }
+    : {};
 
   return {
     ...config,
@@ -280,6 +301,8 @@ export function validateEnvironment(
       config.OUTBOX_ENABLED,
       false,
     ),
+    R2_ENABLED: r2Enabled,
+    ...r2,
     EXPO_PUSH_ENABLED: parseBoolean(
       'EXPO_PUSH_ENABLED',
       config.EXPO_PUSH_ENABLED,
@@ -306,4 +329,12 @@ export function validateEnvironment(
       nodeEnvironment !== 'production',
     ),
   };
+}
+
+function parseR2AccountId(value: unknown): string {
+  const accountId = parseString('R2_ACCOUNT_ID', value);
+  if (!/^[0-9a-f]{32}$/i.test(accountId)) {
+    throw new Error('R2_ACCOUNT_ID must be a 32-character hexadecimal ID.');
+  }
+  return accountId;
 }

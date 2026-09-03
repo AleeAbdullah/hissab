@@ -900,8 +900,11 @@ export const attachments = pgTable(
       { onDelete: 'restrict' },
     ),
     objectKey: text('object_key').notNull(),
+    originalFileName: text('original_file_name').notNull(),
     contentType: text('content_type').notNull(),
     sizeBytes: bigint('size_bytes', { mode: 'bigint' }).notNull(),
+    sha256: char('sha256', { length: 64 }).notNull(),
+    deletedAt: timestamp('deleted_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -914,7 +917,22 @@ export const attachments = pgTable(
       'attachments_one_parent_check',
       sql`num_nonnulls(${table.expenseId}, ${table.personalTransactionId}) = 1`,
     ),
-    check('attachments_nonnegative_size_check', sql`${table.sizeBytes} >= 0`),
+    check(
+      'attachments_size_check',
+      sql`${table.sizeBytes} BETWEEN 1 AND 10485760`,
+    ),
+    check(
+      'attachments_content_type_check',
+      sql`${table.contentType} IN ('image/jpeg', 'image/png', 'application/pdf')`,
+    ),
+    check(
+      'attachments_filename_length_check',
+      sql`char_length(${table.originalFileName}) BETWEEN 1 AND 255`,
+    ),
+    check(
+      'attachments_sha256_check',
+      sql`${table.sha256} ~ '^[0-9a-f]{64}$'`,
+    ),
     uniqueIndex('attachments_object_key_uq').on(table.objectKey),
     index('attachments_expense_idx')
       .on(table.expenseId)

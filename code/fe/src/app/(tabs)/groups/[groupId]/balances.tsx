@@ -2,7 +2,14 @@ import { useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
 import { Stack } from 'expo-router/stack';
 
-import { ErrorMessage, Loading, Screen, SectionLabel } from '@/components/ui';
+import {
+  Card,
+  ErrorMessage,
+  Loading,
+  Row,
+  Screen,
+  SectionLabel
+} from '@/components/ui';
 import { profileQuery } from '@/features/account/api';
 import { ledgerBalancesQuery } from '@/features/balances/api';
 import { LedgerBalanceCards } from '@/features/balances/components/ledger-balance-cards';
@@ -34,6 +41,16 @@ export default function GroupBalancesScreen() {
         balances={balances.data}
         displayCurrency={profile.data.displayCurrency}
       />
+      <Card>
+        <Row
+          title="Simplify debts"
+          subtitle="View read-only suggested payments"
+          href={{
+            pathname: '/groups/[groupId]/simplified-debts',
+            params: { groupId }
+          }}
+        />
+      </Card>
     </Screen>
   );
 }

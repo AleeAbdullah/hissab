@@ -132,14 +132,6 @@ export default function SessionsScreen() {
           No other active sessions.
         </Text>
       )}
-      <Text
-        selectable
-        className="text-[13px] leading-[18px] text-muted-foreground"
-      >
-        Locations are not shown because the backend does not provide an
-        authoritative location. Revoke any session you do not recognise and
-        change your password.
-      </Text>
     </Screen>
   );
 }

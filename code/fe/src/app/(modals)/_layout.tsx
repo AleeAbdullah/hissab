@@ -28,13 +28,6 @@ export default function ModalLayout() {
         }}
       />
       <Stack.Screen name="shared-expense" options={{ title: 'Add expense' }} />
-      <Stack.Screen name="payers" options={{ title: 'Payers' }} />
-      <Stack.Screen name="split" options={{ title: 'Split' }} />
-      <Stack.Screen name="ledger-picker" options={{ title: 'Choose ledger' }} />
-      <Stack.Screen
-        name="category-picker"
-        options={{ title: 'Choose category' }}
-      />
       <Stack.Screen name="receipt" options={{ title: 'Receipt' }} />
       <Stack.Screen
         name="settlement"
