@@ -112,7 +112,7 @@ Explicitly post-v1 or out of scope:
 - biometric app lock;
 - subscription billing;
 - restoring deleted expenses;
-- a web client.
+- a web client. The unauthenticated public marketing and legal site in `web/` is not a web client.
 
 ## Financial invariants
 

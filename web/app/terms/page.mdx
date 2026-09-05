@@ -1,0 +1,36 @@
+import { LegalClause, LegalPage } from '@/components/legal-page'
+
+export const metadata = {
+  title: 'Terms of service preview',
+  description: 'Development placeholder for the Hissab terms of service.',
+  robots: { index: false, follow: false }
+}
+
+<LegalPage
+  eyebrow="Agreement draft"
+  title="Terms of service"
+  lead="Approved terms have not been supplied. This preview intentionally creates no obligations, warranties, or legal commitments."
+  items={[
+    { href: '#eligibility', label: '01 · Eligibility and acceptance' },
+    { href: '#service-accounts', label: '02 · Service and accounts' },
+    { href: '#acceptable-use', label: '03 · Acceptable use' },
+    { href: '#risk-liability', label: '04 · Risk and liability' },
+    { href: '#ending-use', label: '05 · Ending use and changes' }
+  ]}
+>
+  <LegalClause number="01" id="eligibility" title="Eligibility and acceptance">
+    <p>Content required: who may use Hissab and how the agreement is accepted.</p>
+  </LegalClause>
+  <LegalClause number="02" id="service-accounts" title="Service and accounts">
+    <p>Content required: service description, account duties, security expectations, and availability.</p>
+  </LegalClause>
+  <LegalClause number="03" id="acceptable-use" title="Acceptable use">
+    <p>Content required: prohibited conduct, content rules, enforcement, and reporting paths.</p>
+  </LegalClause>
+  <LegalClause number="04" id="risk-liability" title="Risk and liability">
+    <p>Content required: disclaimers, liability limits, indemnity, and dispute process as legally approved.</p>
+  </LegalClause>
+  <LegalClause number="05" id="ending-use" title="Ending use and changes">
+    <p>Content required: suspension, termination, account deletion, amendments, notices, and contact details.</p>
+  </LegalClause>
+</LegalPage>

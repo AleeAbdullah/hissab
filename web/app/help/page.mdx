@@ -1,0 +1,89 @@
+import { HelpGroup, HelpPage, Question } from '@/components/help-page'
+
+export const metadata = {
+  title: 'Help',
+  description: 'Answers about using Hissab for shared expenses, balances, settlements, personal records, and account controls.'
+}
+
+<HelpPage>
+  <HelpGroup id="getting-started" title="Getting started">
+    <Question title="What does Hissab do?">
+      Hissab records shared expenses, personal transactions, debts, and settlements. It keeps the history behind each balance clear, but it never holds, sends, or converts money.
+    </Question>
+    <Question title="Does Hissab move money?">
+      No. Pay however you already pay—cash, bank transfer, or another method—then record the settlement in Hissab. Hissab records that the payment happened elsewhere.
+    </Question>
+  </HelpGroup>
+
+  <HelpGroup id="friends-groups" title="Friends and groups">
+    <Question title="How do I add a friend?">
+      Search using the person’s exact email address and send a connection request. Discovery uses a neutral result and does not expose arbitrary accounts.
+    </Question>
+    <Question title="Who can manage a group?">
+      Groups have no roles. Every active member can update the group, invite people, cancel invitations, and archive it once every balance is settled. Members cannot be removed.
+    </Question>
+    <Question title="Can I leave or archive a group with an open balance?">
+      No. Leaving and archiving are blocked until every member’s balance in that group is settled. If the last settled member leaves, Hissab archives the group automatically.
+    </Question>
+  </HelpGroup>
+
+  <HelpGroup id="expenses-splits" title="Expenses and splits">
+    <Question title="Who can add or edit a shared expense?">
+      Any active member of the friend or group ledger can add an expense. Only the person who created it can edit or delete it.
+    </Question>
+    <Question title="How can an expense be split?">
+      Use an equal split or enter exact amounts. One person or several can pay. Payers and participants can be different, and both sides must add up to the expense total.
+    </Question>
+    <Question title="What happens when an expense is edited?">
+      Hissab keeps the financial history immutable. An edit reverses the previous version and records its replacement instead of rewriting the original entry.
+    </Question>
+  </HelpGroup>
+
+  <HelpGroup id="balances-settlements" title="Balances and settlements">
+    <Question title="Where does a balance come from?">
+      Hissab computes each person’s balance from immutable ledger entries. It does not store a separate balance that can drift away from the underlying expenses and settlements.
+    </Question>
+    <Question title="Who can record a settlement?">
+      Any active ledger member can record a settlement between two active members. Only the recorder can later edit or delete that settlement.
+    </Question>
+    <Question title="Can a settlement create credit?">
+      Yes. Hissab accepts an overpayment as credit. The app warns before confirmation, but the settlement record itself is allowed.
+    </Question>
+  </HelpGroup>
+
+  <HelpGroup id="personal" title="Personal tracking">
+    <Question title="Are personal records mixed with shared activity?">
+      No. Every user has one private personal ledger. Manual income and expenses remain separate from shared activity.
+    </Question>
+    <Question title="What do personal reports show?">
+      Reports show your owed share by default, combining personal transactions with your allocation from shared expenses. You can switch to cash-out-of-pocket mode to use payer allocations instead. Settlements are excluded from income and expense reports.
+    </Question>
+  </HelpGroup>
+
+  <HelpGroup id="notifications" title="Notifications and reminders">
+    <Question title="What can Hissab notify me about?">
+      In-app notifications cover shared financial changes, group invitations, connection requests and acceptance, and reminders. Push preferences let you control expense, settlement, social, and reminder notifications.
+    </Question>
+    <Question title="When can I send a balance reminder?">
+      You must be owed by the recipient in the same active ledger. A rolling 24-hour cooldown applies to each sender, recipient, and ledger combination.
+    </Question>
+  </HelpGroup>
+
+  <HelpGroup id="account-data" title="Your account and data">
+    <Question title="Can I export my account data?">
+      Yes. Hissab provides an authenticated, read-only JSON export containing your profile and preferences, relevant social state, accessible financial history, personal transaction history, activity, reminders, and notifications. It excludes secrets and other users’ email addresses.
+    </Question>
+    <Question title="How does account deletion work?">
+      Account deletion is irreversible and requires your current password plus an exact confirmation. It is blocked while you have any non-zero ledger balance or active group membership. When allowed, personal data is anonymised while financial history remains intact for auditability.
+    </Question>
+    <Question title="Can I reset a forgotten password by email?">
+      Password-reset email delivery is not available yet. Do not rely on an email arriving from the current recovery flow.
+    </Question>
+  </HelpGroup>
+
+  <HelpGroup id="contact" title="Contact support">
+    <Question title="How do I contact Hissab support?">
+      A verified support address, response expectation, and escalation path have not been approved yet. This page will show them once they are available.
+    </Question>
+  </HelpGroup>
+</HelpPage>

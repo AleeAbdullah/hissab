@@ -1,0 +1,36 @@
+import { LegalClause, LegalPage } from '@/components/legal-page'
+
+export const metadata = {
+  title: 'Privacy policy preview',
+  description: 'Development placeholder for the Hissab privacy policy.',
+  robots: { index: false, follow: false }
+}
+
+<LegalPage
+  eyebrow="Policy draft"
+  title="Privacy policy"
+  lead="Approved privacy copy has not been supplied. This preview intentionally makes no claims about data practices."
+  items={[
+    { href: '#scope', label: '01 · Scope' },
+    { href: '#information', label: '02 · Information we collect' },
+    { href: '#use-sharing', label: '03 · Use and sharing' },
+    { href: '#retention-choices', label: '04 · Retention and choices' },
+    { href: '#contact-updates', label: '05 · Contact and updates' }
+  ]}
+>
+  <LegalClause number="01" id="scope" title="Scope">
+    <p>Content required: covered products, people, regions, and definitions.</p>
+  </LegalClause>
+  <LegalClause number="02" id="information" title="Information we collect">
+    <p>Content required: collected data categories, sources, purposes, and legal bases where applicable.</p>
+  </LegalClause>
+  <LegalClause number="03" id="use-sharing" title="Use and sharing">
+    <p>Content required: processing, service providers, disclosures, transfers, and safeguards.</p>
+  </LegalClause>
+  <LegalClause number="04" id="retention-choices" title="Retention and choices">
+    <p>Content required: retention rules, account controls, user rights, and request process.</p>
+  </LegalClause>
+  <LegalClause number="05" id="contact-updates" title="Contact and updates">
+    <p>Content required: approved privacy contact, complaint path, versioning, and notice of changes.</p>
+  </LegalClause>
+</LegalPage>
