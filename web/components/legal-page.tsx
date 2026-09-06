@@ -6,7 +6,7 @@ type DocumentMeta = { effective: string; lastUpdated: string; responsibleEntity:
 export function LegalPage({ eyebrow, title, lead, items, meta, notice, children }: { eyebrow: string; title: string; lead: string; items: IndexItem[]; meta?: DocumentMeta; notice?: ReactNode; children: ReactNode }) {
   return (
     <main id="main" className="site-width document-page">
-      <header className="document-header" data-reveal>
+      <header className="document-header">
         <p className="eyebrow">{eyebrow}</p>
         <h1>{title}</h1>
         <p className="lead">{lead}</p>
@@ -37,7 +37,7 @@ export function LegalPage({ eyebrow, title, lead, items, meta, notice, children 
 
 export function LegalClause({ number, id, title, children }: { number: string; id: string; title: string; children: ReactNode }) {
   return (
-    <section id={id} className="legal-clause" data-reveal>
+    <section id={id} className="legal-clause">
       <span className="clause-number" aria-hidden="true">{number}</span>
       <div><h2>{title}</h2>{children}</div>
     </section>

@@ -2,27 +2,6 @@
 
 import { useEffect, useState } from 'react';
 
-export function RevealObserver() {
-  useEffect(() => {
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    document.documentElement.classList.add('reveal-ready');
-    const items = document.querySelectorAll<HTMLElement>('[data-reveal]');
-    const observer = new IntersectionObserver((entries) => {
-      for (const entry of entries) {
-        if (!entry.isIntersecting) continue;
-        entry.target.setAttribute('data-visible', 'true');
-        observer.unobserve(entry.target);
-      }
-    }, { rootMargin: '0px 0px -8% 0px' });
-    items.forEach((item) => observer.observe(item));
-    return () => {
-      observer.disconnect();
-      document.documentElement.classList.remove('reveal-ready');
-    };
-  }, []);
-  return null;
-}
-
 export function StickyDownload() {
   const [visible, setVisible] = useState(false);
   const [dismissed, setDismissed] = useState(false);

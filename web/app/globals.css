@@ -1206,17 +1206,6 @@ h3 {
   gap: 24px;
 }
 
-.reveal-ready [data-reveal] {
-  opacity: 0;
-  transform: translateY(12px);
-  transition: opacity 480ms ease, transform 480ms ease;
-}
-
-.reveal-ready [data-reveal][data-visible='true'] {
-  opacity: 1;
-  transform: translateY(0);
-}
-
 @media (max-width: 899px) {
   .desktop-nav,
   .header-actions > .theme-toggle,
@@ -1593,10 +1582,6 @@ h3 {
     transition-duration: 0.01ms !important;
   }
 
-  .reveal-ready [data-reveal] {
-    opacity: 1;
-    transform: none;
-  }
 }
 
 @media print {

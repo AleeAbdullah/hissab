@@ -29,7 +29,7 @@ export default function HomePage() {
     <main id="main">
       <section id="hero" className="band hero-band">
         <div className="site-width hero-grid">
-          <div className="hero-copy" data-reveal>
+          <div className="hero-copy">
             <p className="eyebrow">Calm ledger. Clear relationships.</p>
             <h1>Shared expenses, and exactly who owes whom.</h1>
             <p className="lead">Hissab records who paid, who owes, and how people settle up — across friends, groups, and your own private ledger.</p>
@@ -47,7 +47,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="band ledger-band" data-reveal>
+      <section className="band ledger-band">
         <div className="site-width">
           <div className="section-rule"><Rule weight="copper" tick /></div>
           <div className="ledger-heading">
@@ -66,13 +66,13 @@ export default function HomePage() {
       <section id="how-it-works" className="band steps-band">
         <div className="site-width section-stack">
           <div className="section-rule"><Rule weight="ink" tick /></div>
-          <div className="section-intro" data-reveal>
+          <div className="section-intro">
             <p className="eyebrow">How it works</p>
             <h2>From expense to settled balance.</h2>
           </div>
           <ol className="steps-grid">
             {steps.map(([title, detail], index) => (
-              <li className="step-entry" key={title} data-reveal>
+              <li className="step-entry" key={title}>
                 <span className="step-number">{String(index + 1).padStart(2, '0')}</span>
                 <div><h3>{title}</h3><p>{detail}</p></div>
               </li>
@@ -85,7 +85,7 @@ export default function HomePage() {
         <div className="site-width section-stack">
           <div className="section-rule"><Rule weight="ink" tick /></div>
           <div className="paired-grid">
-            <article className="paired-panel" data-reveal>
+            <article className="paired-panel">
               <div className="paired-copy">
                 <p className="eyebrow">Groups</p>
                 <h2>Everyone in the group can keep it straight.</h2>
@@ -94,7 +94,7 @@ export default function HomePage() {
               <ScreenshotPlate number="02" title="Group ledger" />
             </article>
             <div className="paired-divider" aria-hidden="true" />
-            <article className="paired-panel" data-reveal>
+            <article className="paired-panel">
               <div className="paired-copy">
                 <p className="eyebrow">Friends</p>
                 <h2>Or just between the two of you.</h2>
@@ -107,7 +107,7 @@ export default function HomePage() {
       </section>
 
       <section className="band settlement-band">
-        <div className="site-width feature-grid" data-reveal>
+        <div className="site-width feature-grid">
           <div className="feature-copy">
             <p className="eyebrow">Settlements</p>
             <h2>A settlement is a record, not a transfer.</h2>
@@ -119,7 +119,7 @@ export default function HomePage() {
       </section>
 
       <section className="band personal-band">
-        <div className="site-width feature-grid feature-grid-reverse" data-reveal>
+        <div className="site-width feature-grid feature-grid-reverse">
           <ScreenshotPlate number="05" title="Personal reports" />
           <div className="feature-copy">
             <p className="eyebrow">Personal</p>
@@ -131,13 +131,13 @@ export default function HomePage() {
 
       <section className="band boundaries-band">
         <div className="site-width boundaries-grid">
-          <div className="section-intro" data-reveal>
+          <div className="section-intro">
             <p className="eyebrow">What Hissab does not do</p>
             <h2>Clear limits are part of a clear ledger.</h2>
           </div>
           <ul className="boundary-list">
             {boundaries.map(([title, detail]) => (
-              <li key={title} data-reveal>
+              <li key={title}>
                 <span className="mark-box"><EqualityMark /></span>
                 <div><h3>{title}</h3><p>{detail}</p></div>
               </li>
@@ -147,7 +147,7 @@ export default function HomePage() {
       </section>
 
       <section id="download" className="band download-band">
-        <div className="site-width download-grid" data-reveal>
+        <div className="site-width download-grid">
           <div><p className="eyebrow">App availability</p><h2>Get Hissab.</h2></div>
           <div className="download-copy"><p className="lead">Coming to iOS and Android. No account is needed to read the privacy policy or the terms.</p><StoreButtons /></div>
         </div>

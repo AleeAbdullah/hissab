@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import localFont from 'next/font/local';
 
-import { RevealObserver } from '@/components/client-effects';
 import { Footer } from '@/components/footer';
 import { Header } from '@/components/header';
 
@@ -39,7 +38,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <Header />
         {children}
         <Footer />
-        <RevealObserver />
       </body>
     </html>
   );

@@ -14,7 +14,7 @@ const groups = [
 export function HelpPage({ children }: { children: ReactNode }) {
   return (
     <main id="main" className="site-width help-page">
-      <header className="help-header" data-reveal>
+      <header className="help-header">
         <p className="eyebrow">Help</p>
         <h1>Clear answers, from the record itself.</h1>
         <p className="lead">How Hissab handles friends, groups, shared expenses, personal records, and your account.</p>
@@ -31,7 +31,7 @@ export function HelpPage({ children }: { children: ReactNode }) {
 }
 
 export function HelpGroup({ id, title, children }: { id: string; title: string; children: ReactNode }) {
-  return <section id={id} className="help-group" data-reveal><h2>{title}</h2>{children}</section>;
+  return <section id={id} className="help-group"><h2>{title}</h2>{children}</section>;
 }
 
 export function Question({ title, children }: { title: string; children: ReactNode }) {
