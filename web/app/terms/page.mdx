@@ -1,36 +1,110 @@
 import { LegalClause, LegalPage } from '@/components/legal-page'
 
 export const metadata = {
-  title: 'Terms of service preview',
-  description: 'Development placeholder for the Hissab terms of service.',
-  robots: { index: false, follow: false }
+  title: 'Terms and conditions',
+  description: 'The terms governing access to and use of Hissab.'
 }
 
 <LegalPage
-  eyebrow="Agreement draft"
-  title="Terms of service"
-  lead="Approved terms have not been supplied. This preview intentionally creates no obligations, warranties, or legal commitments."
+  eyebrow="Terms and conditions"
+  title="Clear terms for clear records."
+  lead="These Terms govern your access to and use of Hissab. By creating an account or using Hissab, you agree to them."
+  meta={{
+    effective: 'September 6, 2026',
+    lastUpdated: 'September 6, 2026',
+    responsibleEntity: 'aliabdullah',
+    contact: <a href="mailto:spam.alee.abd@gmail.com">spam.alee.abd@gmail.com</a>
+  }}
+  notice={null}
   items={[
-    { href: '#eligibility', label: '01 · Eligibility and acceptance' },
-    { href: '#service-accounts', label: '02 · Service and accounts' },
-    { href: '#acceptable-use', label: '03 · Acceptable use' },
-    { href: '#risk-liability', label: '04 · Risk and liability' },
-    { href: '#ending-use', label: '05 · Ending use and changes' }
+    { href: '#service-eligibility', label: '01 · Service and eligibility' },
+    { href: '#accounts-records', label: '02 · Accounts and records' },
+    { href: '#content-use', label: '03 · Content and acceptable use' },
+    { href: '#privacy-notifications', label: '04 · Privacy and notifications' },
+    { href: '#services-deletion', label: '05 · Services and deletion' },
+    { href: '#ownership-availability', label: '06 · Ownership and availability' },
+    { href: '#warranties-liability', label: '07 · Warranties and liability' },
+    { href: '#termination-disputes', label: '08 · Termination and disputes' },
+    { href: '#changes-contact', label: '09 · Changes and contact' }
   ]}
 >
-  <LegalClause number="01" id="eligibility" title="Eligibility and acceptance">
-    <p>Content required: who may use Hissab and how the agreement is accepted.</p>
+  <LegalClause number="01" id="service-eligibility" title="Service and eligibility">
+    <h3>About Hissab</h3>
+    <p>Hissab is a record-keeping application that helps users track shared expenses, personal transactions, debts, and settlements.</p>
+    <p>Hissab does not hold, receive, transfer, or convert money; process or guarantee payments; provide banking, accounting, tax, investment, or other professional financial advice; or verify that an expense, debt, settlement, or other entry is accurate or legally enforceable.</p>
+    <p>A settlement recorded in Hissab represents a payment or arrangement that occurred outside the application. Recording a settlement does not cause a payment to occur.</p>
+    <h3>Eligibility</h3>
+    <p>You must be at least 18 years old and legally capable of entering into an agreement to use Hissab. By using Hissab, you confirm that you meet these requirements. If you do not agree to these Terms, do not use the service.</p>
   </LegalClause>
-  <LegalClause number="02" id="service-accounts" title="Service and accounts">
-    <p>Content required: service description, account duties, security expectations, and availability.</p>
+
+  <LegalClause number="02" id="accounts-records" title="Accounts and records">
+    <h3>Your account</h3>
+    <p>You must provide accurate account information and keep it reasonably current. You are responsible for maintaining the confidentiality of your password and account, activity performed through your account, informing us if you believe your account has been accessed without authorization, and ensuring that information you enter is accurate and lawful.</p>
+    <p>You may not share access credentials, impersonate another person, or create an account using information you are not authorized to use.</p>
+    <h3>Expenses, debts, and settlements</h3>
+    <p>Hissab relies on information entered by users. You are responsible for reviewing expenses, participant allocations, settlements, and balances involving you. Displayed balances are calculations based on records available to the service. They are provided for organizational purposes and are not independent proof that a legally enforceable debt exists.</p>
+    <p>Users remain responsible for resolving disagreements and making actual payments outside Hissab. We are not a party to agreements or disputes between users.</p>
+    <p>Currency symbols selected in Hissab are display preferences only. Hissab does not assign a currency to financial records, perform foreign-exchange calculations, or convert amounts.</p>
   </LegalClause>
-  <LegalClause number="03" id="acceptable-use" title="Acceptable use">
-    <p>Content required: prohibited conduct, content rules, enforcement, and reporting paths.</p>
+
+  <LegalClause number="03" id="content-use" title="Content and acceptable use">
+    <h3>User-provided content</h3>
+    <p>You may provide information such as names, group names, expense descriptions, notes, transaction details, and settlement records. You retain ownership of information you provide and grant Hissab a limited right to store, process, reproduce, and display it only as necessary to operate, secure, and maintain the service.</p>
+    <p>You must not submit content that is fraudulent, unlawful, threatening, abusive, contains malware, violates another person’s privacy or intellectual-property rights, or that you do not have the right to provide. Information entered into a shared ledger may be visible to other authorized members of that ledger.</p>
+    <h3>Acceptable use</h3>
+    <p>You must not use Hissab for fraud, harassment, unlawful debt collection, or other illegal activity; attempt unauthorized access; interfere with the service or its security; reverse engineer or misuse the service except where law permits; use automated systems to overload, scrape, or disrupt it; or misrepresent Hissab as a payment provider, bank, or financial institution.</p>
+    <p>We may restrict or suspend access when reasonably necessary to protect users, comply with law, investigate abuse, or secure the service.</p>
   </LegalClause>
-  <LegalClause number="04" id="risk-liability" title="Risk and liability">
-    <p>Content required: disclaimers, liability limits, indemnity, and dispute process as legally approved.</p>
+
+  <LegalClause number="04" id="privacy-notifications" title="Privacy and notifications">
+    <h3>Privacy</h3>
+    <p>Our <a href="/privacy/">Privacy Policy</a> explains how we collect, use, disclose, retain, and protect personal information. By using Hissab, you acknowledge that you have read it.</p>
+    <h3>Notifications</h3>
+    <p>Hissab may provide in-app or push notifications about expenses, settlements, invitations, connections, reminders, account activity, or service-related matters. Delivery is not guaranteed and may be affected by your device, operating system, network, or notification settings. You remain responsible for checking your records directly.</p>
   </LegalClause>
-  <LegalClause number="05" id="ending-use" title="Ending use and changes">
-    <p>Content required: suspension, termination, account deletion, amendments, notices, and contact details.</p>
+
+  <LegalClause number="05" id="services-deletion" title="Third-party services and account deletion">
+    <h3>Third-party services</h3>
+    <p>Hissab may rely on service providers for hosting, infrastructure, security, notifications, application distribution, and related functionality. Your use of services such as Google Play may also be governed by their respective terms and privacy policies. We are not responsible for third-party services outside our reasonable control.</p>
+    <h3>Account deletion</h3>
+    <p>You may request account deletion in Hissab or through the designated <a href="/delete-account/">account deletion resource</a> on our website. Deletion may require identity verification, your current password, and explicit confirmation.</p>
+    <p>Deletion is blocked while you have an unsettled balance in a shared ledger or remain an active member of a group. You must resolve outstanding balances and leave every active group before deletion can be completed.</p>
+    <p>When deletion is permitted, personal account information and credentials are removed or anonymized and active sessions are revoked. Certain immutable financial records are retained in anonymized form to preserve shared ledgers, prevent other users’ resolved balances from changing, comply with legal obligations, or protect legitimate rights. See the Privacy Policy for details.</p>
+  </LegalClause>
+
+  <LegalClause number="06" id="ownership-availability" title="Intellectual property and availability">
+    <h3>Intellectual property</h3>
+    <p>Hissab, including its software, branding, interface, design, and original content, is owned by or licensed to its operator and protected by applicable intellectual-property laws.</p>
+    <p>These Terms give you a limited, personal, non-exclusive, non-transferable, and revocable right to use Hissab for its intended purpose. They do not transfer ownership of Hissab or its intellectual property to you.</p>
+    <h3>Service availability and changes</h3>
+    <p>We aim to keep Hissab available and reliable but do not guarantee uninterrupted or error-free operation. We may modify, suspend, restrict, or discontinue part or all of the service. Where reasonably possible, we will provide notice of material changes that significantly affect users. Features described as previews, experimental, or coming later may be changed or removed without notice.</p>
+  </LegalClause>
+
+  <LegalClause number="07" id="warranties-liability" title="Disclaimer of warranties and limitation of liability">
+    <h3>Disclaimer of warranties</h3>
+    <p>To the maximum extent permitted by applicable law, Hissab is provided on an “as is” and “as available” basis. We do not guarantee that the service will always be available, secure, or error-free; that user-provided information will be accurate; that calculated balances will resolve disputes; that data will never be lost despite reasonable safeguards; or that the service will meet every user’s requirements.</p>
+    <p>Nothing in these Terms excludes warranties or consumer rights that cannot legally be excluded.</p>
+    <h3>Limitation of liability</h3>
+    <p>To the maximum extent permitted by applicable law, Hissab and its operator will not be liable for indirect, incidental, special, punitive, or consequential losses arising from use of or inability to use the service. This includes losses involving incorrect or unauthorized entries; disputes between users; payments or settlements outside Hissab; reliance on balances, reports, reminders, or notifications; service interruptions or third-party services; or loss of profits, opportunities, goodwill, or data.</p>
+    <p>Our liability is limited to the greatest extent permitted by applicable law. Nothing in these Terms limits liability that cannot legally be limited or excluded.</p>
+  </LegalClause>
+
+  <LegalClause number="08" id="termination-disputes" title="Termination, governing law, and disputes">
+    <h3>Termination</h3>
+    <p>You may stop using Hissab at any time. We may suspend or terminate access if you materially violate these Terms, create a security risk, use the service unlawfully, or if doing so is reasonably necessary to protect Hissab or its users.</p>
+    <p>Termination does not eliminate obligations, disputes, or records that existed beforehand. Provisions that reasonably need to survive termination—including intellectual-property, disclaimer, liability, and dispute provisions—remain effective.</p>
+    <h3>Governing law and disputes</h3>
+    <p>These Terms are governed by the laws of Pakistan, excluding conflict-of-law principles. Before beginning formal legal proceedings, you agree to make a reasonable attempt to resolve a dispute by contacting us. If it cannot be resolved informally, it will be submitted to courts having lawful jurisdiction in Pakistan. Mandatory consumer protections applicable where you live remain unaffected.</p>
+  </LegalClause>
+
+  <LegalClause number="09" id="changes-contact" title="Changes and general terms">
+    <h3>Changes to these Terms</h3>
+    <p>We may update these Terms to reflect changes to Hissab, applicable law, security requirements, or operating practices. We will update the “Last updated” date and, where appropriate, provide reasonable notice of material changes. By continuing to use Hissab after revised Terms take effect, you agree to them. If you do not agree, you must stop using the service.</p>
+    <h3>Severability</h3>
+    <p>If any provision is found invalid or unenforceable, it will be limited or modified only to the minimum extent necessary. The remaining provisions continue in effect.</p>
+    <h3>Entire agreement</h3>
+    <p>These Terms and the Privacy Policy constitute the agreement between you and Hissab concerning use of the service and replace previous agreements concerning that use.</p>
+    <h3>Contact</h3>
+    <p>Questions about these Terms may be sent to <a href="mailto:spam.alee.abd@gmail.com">spam.alee.abd@gmail.com</a>.</p>
   </LegalClause>
 </LegalPage>

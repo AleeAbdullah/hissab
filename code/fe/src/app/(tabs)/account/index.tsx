@@ -93,6 +93,17 @@ export default function AccountScreen() {
           destructive
         />
       </Card>
+      <SectionLabel>LEGAL</SectionLabel>
+      <Card>
+        <Row
+          title="Privacy policy"
+          href="https://hisab-weld-psi.vercel.app/privacy/"
+        />
+        <Row
+          title="Terms and conditions"
+          href="https://hisab-weld-psi.vercel.app/terms/"
+        />
+      </Card>
       <View className="gap-2">
         <Button
           variant="outline"

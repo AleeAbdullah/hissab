@@ -17,7 +17,7 @@ const newsreader = localFont({
 export const metadata: Metadata = {
   title: { default: 'Hissab · Clear records, clear relationships', template: '%s · Hissab' },
   description: 'Hissab records shared expenses, personal transactions, and exactly who owes whom.',
-  robots: { index: false, follow: false }
+  robots: { index: true, follow: true }
 };
 
 export const viewport: Viewport = {
@@ -36,7 +36,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <head><script dangerouslySetInnerHTML={{ __html: themeScript }} /></head>
       <body>
         <a className="skip-link" href="#main">Skip to content</a>
-        <div className="preview-bar">Development preview · Terms approval pending</div>
         <Header />
         {children}
         <Footer />

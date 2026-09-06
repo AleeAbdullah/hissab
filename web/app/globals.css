@@ -214,20 +214,6 @@ h3 {
   transform: translateY(0);
 }
 
-.preview-bar {
-  z-index: 30;
-  padding: 8px var(--gutter);
-  border-block-end: 1px solid var(--copper-edge);
-  background: var(--copper-wash);
-  color: var(--copper-ink);
-  font-size: 0.6875rem;
-  font-weight: 750;
-  letter-spacing: 0.15em;
-  line-height: 1.4;
-  text-align: center;
-  text-transform: uppercase;
-}
-
 .site-header {
   position: sticky;
   z-index: 20;
@@ -1101,6 +1087,18 @@ h3 {
   line-height: 1.1;
 }
 
+.legal-clause h3 {
+  margin-block: 28px 8px;
+  font-family: var(--sans);
+  font-size: 1rem;
+  font-weight: 750;
+  line-height: 1.5;
+}
+
+.legal-clause h3:first-child {
+  margin-block-start: 0;
+}
+
 .mobile-index {
   display: none;
 }
@@ -1602,7 +1600,6 @@ h3 {
 }
 
 @media print {
-  .preview-bar,
   .site-header,
   .site-footer,
   .skip-link,

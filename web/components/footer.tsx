@@ -18,7 +18,7 @@ export function Footer() {
           <Link href="/delete-account/">Delete account</Link>
         </nav>
         <div className="footer-end">
-          <p>Public information preview</p>
+          <p>Operated by aliabdullah</p>
           <EqualityMark />
         </div>
       </div>

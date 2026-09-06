@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, Linking, View } from 'react-native';
 
 import { Card, ErrorMessage, Screen } from '@/components/ui';
 import { Button } from '@/components/ui/button';
@@ -98,7 +98,31 @@ export default function RegisterScreen() {
           selectable
           className="text-center text-xs leading-4 text-muted-foreground"
         >
-          By creating an account you agree to the Terms and Privacy Policy.
+          By creating an account you agree to the{' '}
+          <Text
+            accessibilityRole="link"
+            className="text-primary underline"
+            onPress={() =>
+              void Linking.openURL(
+                'https://hisab-weld-psi.vercel.app/terms/'
+              )
+            }
+          >
+            Terms
+          </Text>{' '}
+          and{' '}
+          <Text
+            accessibilityRole="link"
+            className="text-primary underline"
+            onPress={() =>
+              void Linking.openURL(
+                'https://hisab-weld-psi.vercel.app/privacy/'
+              )
+            }
+          >
+            Privacy Policy
+          </Text>
+          .
         </Text>
       </View>
     </Screen>

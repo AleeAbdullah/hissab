@@ -13,7 +13,6 @@ export default withMDX({
       {
         source: '/:path*',
         headers: [
-          { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
           { key: 'X-Content-Type-Options', value: 'nosniff' }
         ]
       }

@@ -17,6 +17,7 @@ Do not silently resolve conflicts. Keep current behavior safe, report the confli
 ## Product contract
 
 - Hissab records debts and settlements. It never holds, sends, or converts money.
+- Hissab is intended for users aged 18 or older. Configure Google Play's target audience as 18 and over and restrict minor access.
 - Keep exactly five tabs in this order: Groups, Activity, Home, Personal, Account. Friends is accessed from the Groups screen and remains part of the Groups navigation stack.
 - Shared and Personal are separate contexts. Shared activity must not silently become a personal transaction or vice versa.
 - Financial amounts are currency-neutral integer minor units. Hissab does not hold, send, convert, or record a money denomination.
@@ -161,7 +162,7 @@ Explicitly post-v1 or out of scope:
 - Friends may show connection state and authoritative balances using the viewing user’s display symbol.
 - Session screens must not infer device location from unavailable data.
 - “Revoke other sessions” is one backend mutation, not a client loop.
-- Terms and Privacy controls remain non-interactive until real URLs are approved.
+- Terms and Privacy controls link to `https://hisab-weld-psi.vercel.app/terms/` and `https://hisab-weld-psi.vercel.app/privacy/`. The public account-deletion resource is `https://hisab-weld-psi.vercel.app/delete-account/`.
 
 ## Design and accessibility
 
@@ -187,7 +188,6 @@ Do not guess these:
 
 - final wordmark and app icon;
 - duplicate-warning heuristic;
-- Terms and Privacy URLs;
 - localization, RTL, and tablet support.
 
 ## Verification
