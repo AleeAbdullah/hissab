@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react';
 
 type IndexItem = { href: string; label: string };
+type DocumentMeta = { effective: string; lastUpdated: string; responsibleEntity: string; contact: ReactNode };
 
-export function LegalPage({ eyebrow, title, lead, items, children }: { eyebrow: string; title: string; lead: string; items: IndexItem[]; children: ReactNode }) {
+export function LegalPage({ eyebrow, title, lead, items, meta, notice, children }: { eyebrow: string; title: string; lead: string; items: IndexItem[]; meta?: DocumentMeta; notice?: ReactNode; children: ReactNode }) {
   return (
     <main id="main" className="site-width document-page">
       <header className="document-header" data-reveal>
@@ -10,10 +11,10 @@ export function LegalPage({ eyebrow, title, lead, items, children }: { eyebrow: 
         <h1>{title}</h1>
         <p className="lead">{lead}</p>
         <dl className="document-meta">
-          <div><dt>Effective</dt><dd>Pending</dd></div>
-          <div><dt>Last updated</dt><dd>Pending</dd></div>
-          <div><dt>Responsible entity</dt><dd>Pending</dd></div>
-          <div><dt>Contact</dt><dd>Pending</dd></div>
+          <div><dt>Effective</dt><dd>{meta?.effective ?? 'Pending'}</dd></div>
+          <div><dt>Last updated</dt><dd>{meta?.lastUpdated ?? 'Pending'}</dd></div>
+          <div><dt>Responsible entity</dt><dd>{meta?.responsibleEntity ?? 'Pending'}</dd></div>
+          <div><dt>Contact</dt><dd>{meta?.contact ?? 'Pending'}</dd></div>
         </dl>
         <details className="mobile-index disclosure">
           <summary>On this page</summary>
@@ -26,7 +27,7 @@ export function LegalPage({ eyebrow, title, lead, items, children }: { eyebrow: 
           {items.map((item) => <a key={item.href} href={item.href}>{item.label}</a>)}
         </nav>
         <div className="clauses">
-          <aside className="pending-notice"><strong>Publication blocker</strong><p>Approved copy, responsible entity, contact channel, effective date, jurisdiction, and canonical URL are still required.</p></aside>
+          {notice === undefined ? <aside className="pending-notice"><strong>Publication blocker</strong><p>Approved copy, responsible entity, contact channel, effective date, jurisdiction, and canonical URL are still required.</p></aside> : notice}
           {children}
         </div>
       </div>

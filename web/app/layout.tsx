@@ -36,7 +36,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <head><script dangerouslySetInnerHTML={{ __html: themeScript }} /></head>
       <body>
         <a className="skip-link" href="#main">Skip to content</a>
-        <div className="preview-bar">Development preview · approved legal copy pending</div>
+        <div className="preview-bar">Development preview · Terms approval pending</div>
         <Header />
         {children}
         <Footer />

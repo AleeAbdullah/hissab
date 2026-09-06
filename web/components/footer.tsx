@@ -15,6 +15,7 @@ export function Footer() {
           <Link href="/help/">Help</Link>
           <Link href="/privacy/">Privacy</Link>
           <Link href="/terms/">Terms</Link>
+          <Link href="/delete-account/">Delete account</Link>
         </nav>
         <div className="footer-end">
           <p>Public information preview</p>

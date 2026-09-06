@@ -1,36 +1,87 @@
 import { LegalClause, LegalPage } from '@/components/legal-page'
 
 export const metadata = {
-  title: 'Privacy policy preview',
-  description: 'Development placeholder for the Hissab privacy policy.',
+  title: 'Privacy policy',
+  description: 'How Hissab collects, uses, shares, retains, and protects personal information.',
   robots: { index: false, follow: false }
 }
 
 <LegalPage
-  eyebrow="Policy draft"
-  title="Privacy policy"
-  lead="Approved privacy copy has not been supplied. This preview intentionally makes no claims about data practices."
+  eyebrow="Privacy policy"
+  title="Your records stay records."
+  lead="This policy explains how Hissab handles information when you use the mobile application or this website."
+  meta={{
+    effective: 'September 6, 2026',
+    lastUpdated: 'September 6, 2026',
+    responsibleEntity: 'aliabdullah',
+    contact: <a href="mailto:spam.alee.abd@gmail.com">spam.alee.abd@gmail.com</a>
+  }}
+  notice={null}
   items={[
     { href: '#scope', label: '01 · Scope' },
     { href: '#information', label: '02 · Information we collect' },
-    { href: '#use-sharing', label: '03 · Use and sharing' },
-    { href: '#retention-choices', label: '04 · Retention and choices' },
-    { href: '#contact-updates', label: '05 · Contact and updates' }
+    { href: '#use', label: '03 · How we use information' },
+    { href: '#sharing', label: '04 · How information is shared' },
+    { href: '#retention', label: '05 · Retention and deletion' },
+    { href: '#rights', label: '06 · Your choices and rights' },
+    { href: '#security', label: '07 · Security and transfers' },
+    { href: '#children', label: '08 · Age requirement' },
+    { href: '#changes-contact', label: '09 · Changes and contact' }
   ]}
 >
   <LegalClause number="01" id="scope" title="Scope">
-    <p>Content required: covered products, people, regions, and definitions.</p>
+    <p>This Privacy Policy applies to the Hissab mobile application, the public Hissab website, and the supporting services operated by aliabdullah. In this policy, “Hissab,” “we,” “us,” and “our” refer to aliabdullah, and “you” means a person using Hissab.</p>
+    <p>Hissab records shared expenses, personal transactions, debts, and settlements. Hissab does not hold, send, receive, or convert money. A settlement in Hissab is only a record of a payment made outside the service.</p>
   </LegalClause>
+
   <LegalClause number="02" id="information" title="Information we collect">
-    <p>Content required: collected data categories, sources, purposes, and legal bases where applicable.</p>
+    <p><strong>Account and profile information.</strong> We collect your email address, display name, password in hashed form, timezone, display-currency preference, and account and notification preferences. We never store your password in readable form.</p>
+    <p><strong>Financial records you enter.</strong> We store shared expenses, payer and participant allocations, settlements, personal income and expense records, categories, descriptions, optional merchant or source details, optional notes, dates, and revision history. Amounts are stored as currency-neutral integer values; your display-currency setting changes only the symbol you see.</p>
+    <p><strong>Social and activity information.</strong> We store friend requests and connections, blocks, group memberships and invitations, activity events, reminders, and in-app notifications needed to provide shared ledgers and account controls.</p>
+    <p><strong>Device and security information.</strong> We may collect device identifiers and names, device platform, push-notification tokens, IP addresses, browser or app user-agent information, session activity, and password-reset request information to authenticate users, protect accounts, deliver notifications, and prevent abuse.</p>
+    <p><strong>Support information.</strong> If you contact us, we receive the information contained in your message and the email address you use.</p>
+    <p><strong>Public website information.</strong> The website stores your light, dark, or system appearance choice in local browser storage. The website currently does not use advertising cookies, analytics cookies, web beacons, or advertising trackers. Website hosting infrastructure may process ordinary request information such as IP address, user agent, requested page, and request time to deliver and secure the site.</p>
+    <p>Hissab currently does not collect phone numbers, send SMS messages, serve advertising, or process purchases or subscriptions.</p>
   </LegalClause>
-  <LegalClause number="03" id="use-sharing" title="Use and sharing">
-    <p>Content required: processing, service providers, disclosures, transfers, and safeguards.</p>
+
+  <LegalClause number="03" id="use" title="How we use information">
+    <p>We use information to create and secure accounts; provide shared and personal ledgers; calculate balances from ledger records; manage groups, connections, invitations, reminders, and notifications; provide account exports and deletion controls; respond to support and privacy requests; diagnose faults; prevent misuse; and meet legal obligations.</p>
+    <p>Where applicable law requires a legal basis, we process information as needed to provide the service you request, with your consent where required, to comply with law, and for legitimate interests such as securing and maintaining Hissab without overriding your rights.</p>
+    <p>We do not sell personal information and do not use your financial records for advertising.</p>
   </LegalClause>
-  <LegalClause number="04" id="retention-choices" title="Retention and choices">
-    <p>Content required: retention rules, account controls, user rights, and request process.</p>
+
+  <LegalClause number="04" id="sharing" title="How information is shared">
+    <p><strong>With people you choose to interact with.</strong> Other members of a shared ledger may see information necessary to understand that ledger, including display names, expenses, allocations, settlements, balances, and revision history. Connection and group features may show your display name and email where needed for discovery, invitations, and relationship management. Personal-ledger records are private to your account.</p>
+    <p><strong>With service providers.</strong> We use infrastructure providers to host the website, application services, and database. Vercel currently hosts the public website. Expo processes device tokens and notification delivery information when push notifications are enabled. These providers process information only to provide their services to us and are subject to their own security and privacy obligations. We will update this policy when production infrastructure or active providers change.</p>
+    <p><strong>For legal or safety reasons.</strong> We may disclose information when reasonably necessary to comply with law or a valid legal request, protect users or the public, investigate misuse, or protect our rights and systems.</p>
+    <p><strong>Business changes.</strong> If Hissab is involved in a merger, acquisition, financing, reorganization, or sale of assets, information may be transferred as part of that transaction subject to appropriate notice and protection.</p>
+    <p>Hissab has no public posting area, and shared-ledger information is not made public through the service.</p>
   </LegalClause>
-  <LegalClause number="05" id="contact-updates" title="Contact and updates">
-    <p>Content required: approved privacy contact, complaint path, versioning, and notice of changes.</p>
+
+  <LegalClause number="05" id="retention" title="Retention and deletion">
+    <p>We retain account, ledger, notification, and related service information while your account is active and for as long as needed to operate, secure, and support Hissab. We do not claim a fixed retention period that the service does not currently enforce.</p>
+    <p>Account deletion is permanent. Before deletion, every ledger balance must be zero and you must leave every active group. Pending invitations and connection requests are cancelled, settled direct connections are archived, device tokens and notifications are deleted, credentials are removed, sessions are revoked, and profile and preference data are cleared or reset.</p>
+    <p>Hissab preserves immutable financial history so another participant’s ledger and resolved balance cannot be changed by someone deleting an account. The deleted account remains represented by an internal identifier and the label “Deleted user”; its email, credentials, device tokens, session details, and other non-financial personal information are removed. Historical shared and personal financial revisions may therefore be retained in anonymized form.</p>
+    <p>Limited residual copies may remain temporarily in protected backups until routine backup rotation. We may also retain information where required by law or necessary to establish, exercise, or defend legal claims.</p>
+  </LegalClause>
+
+  <LegalClause number="06" id="rights" title="Your choices and rights">
+    <p>You can update profile and preference information in the application, control push-notification categories, revoke sessions and notification devices, and export a versioned JSON snapshot of your account data.</p>
+    <p>You can permanently delete your account in the application after satisfying the balance and membership requirements. You may also follow the instructions on our <a href="/delete-account/">account deletion page</a> to submit a deletion request from the web.</p>
+    <p>Depending on where you live, you may have additional rights to access, correct, delete, restrict, object to, or receive a copy of your personal information, or to withdraw consent. Contact us to exercise an applicable right. We may need to verify your identity before acting on a request.</p>
+  </LegalClause>
+
+  <LegalClause number="07" id="security" title="Security and international transfers">
+    <p>We use safeguards designed to protect personal information, including encrypted network transport, hashed passwords, restricted authenticated access, revocable sessions, and authorization checks. No storage or transmission method is completely secure, so we cannot guarantee absolute security.</p>
+    <p>Our service providers may process information in countries other than your own. Where required, we use reasonable contractual, technical, and organizational safeguards for those transfers.</p>
+  </LegalClause>
+
+  <LegalClause number="08" id="children" title="Age requirement">
+    <p>Hissab is intended only for people aged 18 or older and is not directed to children. We do not knowingly collect personal information from anyone under 18. If you believe a person under 18 has provided information to Hissab, contact us so we can investigate and take appropriate action.</p>
+  </LegalClause>
+
+  <LegalClause number="09" id="changes-contact" title="Changes and contact">
+    <p>We may update this policy when Hissab, its providers, or applicable requirements change. We will publish the revised policy here, update the “Last updated” date, and provide additional notice when required.</p>
+    <p>For privacy questions or requests, email <a href="mailto:spam.alee.abd@gmail.com">spam.alee.abd@gmail.com</a>.</p>
   </LegalClause>
 </LegalPage>
