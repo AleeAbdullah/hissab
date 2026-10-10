@@ -1,5 +1,6 @@
+import { useDialog } from '@/components/ui/dialog';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { ActivityIndicator, Alert, View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
 import {
@@ -21,11 +22,13 @@ const date = (value: string | null) =>
   value
     ? new Intl.DateTimeFormat(undefined, {
         dateStyle: 'medium',
-        timeStyle: 'short'
-      }).format(new Date(value))
+        timeStyle: 'short',
+        timeZone: 'UTC'
+      }).format(new Date(value)) + ' UTC'
     : 'Not yet';
 
 export default function SessionsScreen() {
+  const dialog = useDialog();
   const query = useQuery(sessionsQuery);
   const mutation = useMutation({
     mutationFn: (sessionId?: string) =>
@@ -60,7 +63,7 @@ export default function SessionsScreen() {
               busy: mutation.isPending && mutation.variables === session.id
             }}
             onPress={() =>
-              Alert.alert(
+              dialog(
                 'Revoke this session?',
                 'That device will need to sign in again.',
                 [
@@ -107,7 +110,7 @@ export default function SessionsScreen() {
             busy: mutation.isPending && mutation.variables === undefined
           }}
           onPress={() =>
-            Alert.alert(
+            dialog(
               'Revoke all other sessions?',
               'Every other device will need to sign in again.',
               [

@@ -72,7 +72,9 @@ export default function FriendDetailScreen() {
       <SectionLabel>BALANCES</SectionLabel>
       <LedgerBalanceCards
         balances={balances.data}
+        currentUserId={profile.data.id}
         displayCurrency={profile.data.displayCurrency}
+        ledgerName={friend.displayName}
       />
       <LedgerActions
         draft={{

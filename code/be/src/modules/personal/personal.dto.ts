@@ -120,6 +120,26 @@ class PersonalTransactionFiltersDto {
 }
 
 export class ListPersonalTransactionsDto extends PersonalTransactionFiltersDto {
+  @ApiPropertyOptional({ pattern: '^[0-9]+$', maxLength: 19 })
+  @IsOptional()
+  @IsString()
+  @Matches(/^[0-9]+$/)
+  @MaxLength(19)
+  minAmountMinor?: string;
+
+  @ApiPropertyOptional({ pattern: '^[0-9]+$', maxLength: 19 })
+  @IsOptional()
+  @IsString()
+  @Matches(/^[0-9]+$/)
+  @MaxLength(19)
+  maxAmountMinor?: string;
+
+  @ApiPropertyOptional({ maxLength: 100 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  search?: string;
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
@@ -135,14 +155,27 @@ export class ListPersonalTransactionsDto extends PersonalTransactionFiltersDto {
   limit?: number;
 }
 
+export class ListPersonalHistoryDto extends ListPersonalTransactionsDto {
+  @ApiPropertyOptional({ enum: ['true', 'false'], default: 'true' })
+  @IsOptional()
+  @IsIn(['true', 'false'])
+  includeShared?: 'true' | 'false';
+
+  @ApiPropertyOptional({ enum: ['DAY', 'MONTH'], default: 'MONTH' })
+  @IsOptional()
+  @IsIn(['DAY', 'MONTH'])
+  bucket?: 'DAY' | 'MONTH';
+}
+
 export class PersonalReportDto extends PersonalTransactionFiltersDto {
   @ApiPropertyOptional({
-    enum: ['OWED_SHARE', 'CASH_OUT_OF_POCKET'],
-    description: 'Defaults to the user profile preference.',
+    enum: ['true', 'false'],
+    default: 'true',
+    description: "Includes the user's owed share of shared expenses.",
   })
   @IsOptional()
-  @IsIn(['OWED_SHARE', 'CASH_OUT_OF_POCKET'])
-  mode?: 'OWED_SHARE' | 'CASH_OUT_OF_POCKET';
+  @IsIn(['true', 'false'])
+  includeShared?: 'true' | 'false';
 
   @ApiPropertyOptional({ enum: ['DAY', 'MONTH'], default: 'MONTH' })
   @IsOptional()
@@ -218,6 +251,9 @@ export class PersonalTransactionPageDto {
 
   @ApiProperty({ nullable: true })
   nextCursor!: string | null;
+
+  @ApiProperty({ nullable: true, pattern: '^[0-9]+$' })
+  maxAmountMinor!: string | null;
 }
 
 export class PersonalReportBucketDto {
@@ -249,12 +285,58 @@ export class PersonalReportSummaryDto {
 }
 
 export class PersonalReportResponseDto extends PersonalReportSummaryDto {
-  @ApiProperty({ enum: ['OWED_SHARE', 'CASH_OUT_OF_POCKET'] })
-  mode!: 'OWED_SHARE' | 'CASH_OUT_OF_POCKET';
-
   @ApiProperty({ enum: ['DAY', 'MONTH'] })
   bucket!: 'DAY' | 'MONTH';
+}
 
-  @ApiProperty({ example: 'Asia/Karachi' })
-  timezone!: string;
+export class PersonalHistoryItemDto {
+  @ApiProperty({ enum: ['PERSONAL', 'SHARED'] })
+  kind!: 'PERSONAL' | 'SHARED';
+
+  @ApiProperty({ format: 'uuid' })
+  id!: string;
+
+  @ApiProperty({ enum: ['INCOME', 'EXPENSE'] })
+  type!: PersonalTransactionType;
+
+  @ApiProperty({ pattern: '^[0-9]+$' })
+  amountMinor!: string;
+
+  @ApiProperty({ nullable: true, pattern: '^[0-9]+$' })
+  totalMinor!: string | null;
+
+  @ApiProperty({ nullable: true, pattern: '^[0-9]+$' })
+  paidMinor!: string | null;
+
+  @ApiProperty({ nullable: true, pattern: '^[0-9]+$' })
+  owedMinor!: string | null;
+
+  @ApiProperty({ type: PersonalTransactionCategoryDto })
+  category!: PersonalTransactionCategoryDto;
+
+  @ApiProperty()
+  description!: string;
+
+  @ApiProperty({ type: String, format: 'date-time' })
+  occurredAt!: string;
+
+  @ApiProperty({ nullable: true, format: 'uuid' })
+  ledgerId!: string | null;
+
+  @ApiProperty({ nullable: true })
+  ledgerName!: string | null;
+}
+
+export class PersonalHistoryPageDto {
+  @ApiProperty({ type: [PersonalHistoryItemDto] })
+  items!: PersonalHistoryItemDto[];
+
+  @ApiProperty({ nullable: true })
+  nextCursor!: string | null;
+
+  @ApiProperty({ nullable: true, pattern: '^[0-9]+$' })
+  maxAmountMinor!: string | null;
+
+  @ApiProperty({ type: PersonalReportResponseDto })
+  report!: PersonalReportResponseDto;
 }

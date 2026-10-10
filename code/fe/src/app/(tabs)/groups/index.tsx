@@ -1,13 +1,13 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link } from 'expo-router';
 import { Stack } from 'expo-router/stack';
-import { useState } from 'react';
-import { TextInput, View } from 'react-native';
+import { UsersRound } from 'lucide-react-native';
+import { View } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
-import { IconsV2 } from '@/components/icons-v2';
 import { Icons } from '@/components/icons';
 import {
+  Avatar,
   Card,
   ErrorMessage,
   Loading,
@@ -17,6 +17,11 @@ import {
 } from '@/components/ui';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
+import {
+  ListSearchButton,
+  ListSearchField,
+  useListSearch
+} from '@/components/ui/list-search';
 import { Text } from '@/components/ui/text';
 import { profileQuery } from '@/features/account/api';
 import { userBalancesQuery } from '@/features/balances/api';
@@ -31,7 +36,7 @@ import { GroupInvitationCard } from '@/features/groups/components/group-invitati
 import { homeQuery } from '@/features/home/api';
 
 export default function GroupsScreen() {
-  const [search, setSearch] = useState('');
+  const { search, setSearch, isOpen, toggle } = useListSearch();
   const groups = useQuery(groupsQuery);
   const invitations = useQuery(incomingGroupInvitationsQuery);
   const balances = useQuery(userBalancesQuery);
@@ -67,6 +72,12 @@ export default function GroupsScreen() {
         options={{
           headerRight: () => (
             <View className="flex-row items-center">
+              <ListSearchButton
+                subject="groups"
+                isOpen={isOpen}
+                onPress={toggle}
+                disabled={groups.isLoading}
+              />
               <Link href="/groups/friends" asChild>
                 <Button
                   variant="ghost"
@@ -74,7 +85,7 @@ export default function GroupsScreen() {
                   role="link"
                   accessibilityLabel="Friends"
                 >
-                  <IconsV2.friends size={22} color="#A83A1B" />
+                  <Icon as={UsersRound} size={24} className="text-primary" />
                 </Button>
               </Link>
               <Link href="/group-new" asChild>
@@ -91,7 +102,7 @@ export default function GroupsScreen() {
           )
         }}
       />
-      {groups.isLoading && invitations.isLoading ? (
+      {groups.isLoading || invitations.isLoading ? (
         <Loading />
       ) : (
         <Screen>
@@ -110,13 +121,11 @@ export default function GroupsScreen() {
               }
             />
           ) : null}
-          {groups.data?.length ? (
-            <TextInput
-              accessibilityLabel="Search groups"
-              placeholder="Search"
+          {isOpen ? (
+            <ListSearchField
+              label="Search groups"
               value={search}
               onChangeText={setSearch}
-              className="min-h-11 rounded-xl bg-muted px-3 text-[17px] text-foreground placeholder:text-muted-foreground"
             />
           ) : null}
           {invitations.data?.length ? (
@@ -146,13 +155,13 @@ export default function GroupsScreen() {
               ))}
             </View>
           ) : null}
-          <SectionLabel>GROUPS</SectionLabel>
           {filtered.length ? (
             <Card>
               {filtered.map((group) => (
                 <Row
                   key={group.id}
                   title={group.name}
+                  leading={<Avatar name={group.name} />}
                   subtitle={`${group.memberCount} ${group.memberCount === 1 ? 'member' : 'members'} · ${balances.isLoading || profile.isLoading ? 'Loading balance…' : balances.error || profile.error || !profile.data ? 'Balance unavailable' : ledgerBalanceDescriptions(balances.data, group.id, profile.data.displayCurrency).join(' · ') || 'No recorded balance'}`}
                   detail={
                     group.status === 'ARCHIVED'
@@ -168,7 +177,7 @@ export default function GroupsScreen() {
                 />
               ))}
             </Card>
-          ) : (
+          ) : groups.isSuccess ? (
             <View className="py-6">
               <Text
                 selectable
@@ -186,7 +195,7 @@ export default function GroupsScreen() {
                 </Link>
               ) : null}
             </View>
-          )}
+          ) : null}
         </Screen>
       )}
     </>

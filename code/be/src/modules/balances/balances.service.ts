@@ -18,6 +18,8 @@ export interface LedgerBalancesView {
     userId: string;
     displayName: string;
     netMinor: string;
+    lastReminderAt: Date | null;
+    reminderAvailableAt: Date | null;
   }>;
 }
 
@@ -39,7 +41,7 @@ export class BalancesService {
     }
     return {
       ledgerId,
-      members: await this.repository.listLedgerBalances(ledgerId),
+      members: await this.repository.listLedgerBalances(userId, ledgerId),
     };
   }
 

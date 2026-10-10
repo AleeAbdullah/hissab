@@ -35,10 +35,6 @@ export class UsersService {
     if (Object.values(dto).every((value) => value === undefined)) {
       throw new BadRequestException('At least one profile field is required.');
     }
-    if (dto.timezone !== undefined && !isValidTimeZone(dto.timezone)) {
-      throw new BadRequestException('Timezone must be a valid IANA timezone.');
-    }
-
     return this.idempotency.execute(
       {
         actor: { kind: 'user', subject: userId, userId },
@@ -78,14 +74,5 @@ export class UsersService {
       aggregateId: userId,
       payload,
     });
-  }
-}
-
-function isValidTimeZone(timezone: string): boolean {
-  try {
-    new Intl.DateTimeFormat('en-US', { timeZone: timezone }).format();
-    return true;
-  } catch {
-    return false;
   }
 }

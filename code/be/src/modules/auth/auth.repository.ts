@@ -53,7 +53,6 @@ export class AuthRepository {
         email: users.email,
         displayName: users.displayName,
         displayCurrency: users.displayCurrency,
-        timezone: users.timezone,
         status: users.status,
         passwordHash: userIdentities.passwordHash,
       })
@@ -77,7 +76,6 @@ export class AuthRepository {
       email: account.email,
       displayName: account.displayName,
       displayCurrency: account.displayCurrency,
-      timezone: account.timezone,
       passwordHash: account.passwordHash,
       status: account.status,
     };
@@ -89,7 +87,6 @@ export class AuthRepository {
       email: string;
       passwordHash: string;
       displayName: string;
-      timezone: string;
     },
   ): Promise<AuthUser> {
     const userId = randomUUID();
@@ -100,7 +97,6 @@ export class AuthRepository {
         id: userId,
         email: input.email,
         displayName: input.displayName,
-        timezone: input.timezone,
         status: 'ACTIVE',
         createdAt: now,
         updatedAt: now,
@@ -110,7 +106,6 @@ export class AuthRepository {
         email: users.email,
         displayName: users.displayName,
         displayCurrency: users.displayCurrency,
-        timezone: users.timezone,
       });
 
     if (!user?.email) {
@@ -144,7 +139,6 @@ export class AuthRepository {
         email: users.email,
         displayName: users.displayName,
         displayCurrency: users.displayCurrency,
-        timezone: users.timezone,
       })
       .from(users)
       .where(and(eq(users.id, userId), eq(users.status, 'ACTIVE')))

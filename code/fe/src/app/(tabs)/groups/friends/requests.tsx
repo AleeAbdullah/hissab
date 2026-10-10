@@ -1,5 +1,5 @@
+import { useDialog } from '@/components/ui/dialog';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Alert } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
 import type { ConnectionRequest } from '@/api/contracts';
@@ -16,6 +16,7 @@ import { ConnectionRequestCard } from '@/features/connections/components/connect
 import { homeQuery } from '@/features/home/api';
 
 export default function RequestsScreen() {
+  const dialog = useDialog();
   const query = useQuery(pendingRequestsQuery);
   const mutation = useMutation({
     mutationFn: ({
@@ -47,7 +48,7 @@ export default function RequestsScreen() {
   const outgoing =
     query.data?.filter((item) => item.direction === 'outgoing') ?? [];
   const confirm = (request: ConnectionRequest, action: 'decline' | 'cancel') =>
-    Alert.alert(
+    dialog(
       action === 'decline' ? 'Decline request?' : 'Cancel request?',
       `${request.personDisplayName} will no longer see this pending request.`,
       [

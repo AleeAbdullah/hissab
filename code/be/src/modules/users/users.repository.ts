@@ -14,8 +14,6 @@ export interface UserProfile {
   email: string;
   displayName: string;
   displayCurrency: string;
-  timezone: string;
-  personalReportMode: 'OWED_SHARE' | 'CASH_OUT_OF_POCKET';
   createdAt: Date;
   updatedAt: Date;
 }
@@ -36,8 +34,6 @@ export class UsersRepository {
         email: users.email,
         displayName: users.displayName,
         displayCurrency: users.displayCurrency,
-        timezone: users.timezone,
-        personalReportMode: userPreferences.personalReportMode,
         createdAt: users.createdAt,
         updatedAt: users.updatedAt,
       })
@@ -61,7 +57,6 @@ export class UsersRepository {
       ...(dto.displayCurrency === undefined
         ? {}
         : { displayCurrency: dto.displayCurrency }),
-      ...(dto.timezone === undefined ? {} : { timezone: dto.timezone }),
     };
 
     if (Object.keys(userChanges).length > 0) {
@@ -69,15 +64,6 @@ export class UsersRepository {
         .update(users)
         .set({ ...userChanges, updatedAt: new Date() })
         .where(eq(users.id, userId));
-    }
-    if (dto.personalReportMode !== undefined) {
-      await transaction
-        .update(userPreferences)
-        .set({
-          personalReportMode: dto.personalReportMode,
-          updatedAt: new Date(),
-        })
-        .where(eq(userPreferences.userId, userId));
     }
   }
 }

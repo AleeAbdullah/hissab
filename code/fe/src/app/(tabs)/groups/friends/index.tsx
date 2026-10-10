@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'expo-router';
 import { Stack } from 'expo-router/stack';
-import { useState } from 'react';
-import { TextInput, View } from 'react-native';
+import { Bell, Plus } from 'lucide-react-native';
+import { View } from 'react-native';
 
 import {
   Avatar,
@@ -10,10 +10,15 @@ import {
   ErrorMessage,
   Loading,
   Row,
-  Screen,
-  SectionLabel
+  Screen
 } from '@/components/ui';
 import { Button } from '@/components/ui/button';
+import { Icon } from '@/components/ui/icon';
+import {
+  ListSearchButton,
+  ListSearchField,
+  useListSearch
+} from '@/components/ui/list-search';
 import { Text } from '@/components/ui/text';
 import { profileQuery } from '@/features/account/api';
 import { userBalancesQuery } from '@/features/balances/api';
@@ -24,7 +29,7 @@ import {
 } from '@/features/connections/api';
 
 export default function FriendsScreen() {
-  const [search, setSearch] = useState('');
+  const { search, setSearch, isOpen, toggle } = useListSearch();
   const connections = useQuery(connectionsQuery);
   const requests = useQuery(pendingRequestsQuery);
   const balances = useQuery(userBalancesQuery);
@@ -35,101 +40,135 @@ export default function FriendsScreen() {
       .includes(search.trim().toLowerCase())
   );
 
-  if (connections.isLoading || profile.isLoading) return <Loading />;
+  const incomingCount = requests.isSuccess
+    ? requests.data.filter(
+        (request) =>
+          request.direction === 'incoming' && request.status === 'PENDING'
+      ).length
+    : undefined;
 
   return (
-    <Screen>
+    <>
       <Stack.Screen
         options={{
           headerRight: () => (
-            <Link href="/connection-new" asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                role="link"
-                accessibilityLabel="Add connection"
-              >
-                <Text className="text-[30px] font-light text-primary">＋</Text>
-              </Button>
-            </Link>
+            <View className="flex-row items-center">
+              <ListSearchButton
+                subject="friends"
+                isOpen={isOpen}
+                onPress={toggle}
+                disabled={connections.isLoading || profile.isLoading}
+              />
+              <Link href="/groups/friends/requests" asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  role="link"
+                  accessibilityLabel={
+                    incomingCount === undefined
+                      ? 'Connection requests'
+                      : `Connection requests, ${incomingCount} incoming ${incomingCount === 1 ? 'request' : 'requests'}`
+                  }
+                >
+                  <Icon as={Bell} size={24} className="text-primary" />
+                  {incomingCount ? (
+                    <View
+                      pointerEvents="none"
+                      accessibilityElementsHidden
+                      importantForAccessibility="no-hide-descendants"
+                      className="absolute right-0 top-0 min-w-5 items-center rounded-full bg-destructive px-1"
+                    >
+                      <Text className="text-xs font-semibold leading-4 text-destructive-foreground">
+                        {incomingCount > 99 ? '99+' : incomingCount}
+                      </Text>
+                    </View>
+                  ) : null}
+                </Button>
+              </Link>
+              <Link href="/connection-new" asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  role="link"
+                  accessibilityLabel="Add connection"
+                >
+                  <Icon as={Plus} size={24} className="text-primary" />
+                </Button>
+              </Link>
+            </View>
           )
         }}
       />
-      {connections.error ||
-      requests.error ||
-      balances.error ||
-      profile.error ? (
-        <ErrorMessage
-          error={
-            connections.error ??
-            requests.error ??
-            balances.error ??
-            profile.error
-          }
-        />
-      ) : null}
-      <TextInput
-        accessibilityLabel="Search friends"
-        placeholder="Search"
-        value={search}
-        onChangeText={setSearch}
-        className="min-h-11 rounded-xl bg-muted px-3 text-[17px] text-foreground placeholder:text-muted-foreground"
-      />
-      <Card>
-        <Row
-          title="Connection requests"
-          detail={
-            requests.data?.length ? String(requests.data.length) : undefined
-          }
-          href="/groups/friends/requests"
-        />
-        <Row title="Blocked people" href="/groups/friends/blocked" />
-      </Card>
-      <SectionLabel>CONNECTIONS</SectionLabel>
-      {filtered.length ? (
-        <Card>
-          {filtered.map((friend) => (
-            <Row
-              key={friend.userId}
-              title={friend.displayName}
-              subtitle={
-                balances.isLoading || profile.isLoading
-                  ? 'Loading balance…'
-                  : balances.error || profile.error || !profile.data
-                    ? 'Balance unavailable'
-                    : ledgerBalanceDescriptions(
-                        balances.data,
-                        friend.ledgerId,
-                        profile.data.displayCurrency
-                      ).join(' · ') || 'No recorded balance'
-              }
-              href={{
-                pathname: '/groups/friends/[friendId]',
-                params: { friendId: friend.userId }
-              }}
-              leading={<Avatar name={friend.displayName} />}
-            />
-          ))}
-        </Card>
+      {connections.isLoading || profile.isLoading ? (
+        <Loading />
       ) : (
-        <View className="items-stretch gap-3 py-6">
-          <Text
-            selectable
-            className="text-center text-[17px] leading-[23px] text-muted-foreground"
-          >
-            {search
-              ? 'No connections match your search.'
-              : 'No connections yet. Connect with someone by their exact email address.'}
-          </Text>
-          {!search ? (
-            <Link href="/connection-new" asChild>
-              <Button role="link">
-                <Text>Add connection</Text>
-              </Button>
-            </Link>
+        <Screen>
+          {connections.error ||
+          requests.error ||
+          balances.error ||
+          profile.error ? (
+            <ErrorMessage
+              error={
+                connections.error ??
+                requests.error ??
+                balances.error ??
+                profile.error
+              }
+            />
           ) : null}
-        </View>
+          {isOpen ? (
+            <ListSearchField
+              label="Search friends"
+              value={search}
+              onChangeText={setSearch}
+            />
+          ) : null}
+          {filtered.length ? (
+            <Card>
+              {filtered.map((friend) => (
+                <Row
+                  key={friend.userId}
+                  title={friend.displayName}
+                  subtitle={
+                    balances.isLoading || profile.isLoading
+                      ? 'Loading balance…'
+                      : balances.error || profile.error || !profile.data
+                        ? 'Balance unavailable'
+                        : ledgerBalanceDescriptions(
+                            balances.data,
+                            friend.ledgerId,
+                            profile.data.displayCurrency
+                          ).join(' · ') || 'No recorded balance'
+                  }
+                  href={{
+                    pathname: '/groups/friends/[friendId]',
+                    params: { friendId: friend.userId }
+                  }}
+                  leading={<Avatar name={friend.displayName} />}
+                />
+              ))}
+            </Card>
+          ) : connections.isSuccess ? (
+            <View className="items-stretch gap-3 py-6">
+              <Text
+                selectable
+                className="text-center text-[17px] leading-[23px] text-muted-foreground"
+              >
+                {search
+                  ? 'No connections match your search.'
+                  : 'No connections yet. Connect with someone by their exact email address.'}
+              </Text>
+              {!search ? (
+                <Link href="/connection-new" asChild>
+                  <Button role="link">
+                    <Text>Add connection</Text>
+                  </Button>
+                </Link>
+              ) : null}
+            </View>
+          ) : null}
+        </Screen>
       )}
-    </Screen>
+    </>
   );
 }

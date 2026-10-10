@@ -43,11 +43,9 @@ interface AccountRow {
   email: string | null;
   displayName: string;
   displayCurrency: string;
-  timezone: string;
   status: 'ACTIVE' | 'DEACTIVATED' | 'ANONYMIZED';
   createdAt: Date;
   updatedAt: Date;
-  personalReportMode: 'OWED_SHARE' | 'CASH_OUT_OF_POCKET';
   preferenceCreatedAt: Date;
   preferenceUpdatedAt: Date;
   pushEnabled: boolean;
@@ -163,11 +161,9 @@ export class AccountRepository {
                    person.email,
                    person.display_name as "displayName",
                    person.display_currency as "displayCurrency",
-                   person.timezone,
                    person.status,
                    person.created_at as "createdAt",
                    person.updated_at as "updatedAt",
-                   preference.personal_report_mode as "personalReportMode",
                    preference.created_at as "preferenceCreatedAt",
                    preference.updated_at as "preferenceUpdatedAt",
                    notification_preference.push_enabled as "pushEnabled",
@@ -217,20 +213,18 @@ export class AccountRepository {
         );
 
         return {
-          schemaVersion: 1,
+          schemaVersion: 3,
           generatedAt,
           profile: {
             id: account.id,
             email: account.email,
             displayName: account.displayName,
             displayCurrency: account.displayCurrency,
-            timezone: account.timezone,
             status: 'ACTIVE',
             createdAt: account.createdAt,
             updatedAt: account.updatedAt,
           },
           preferences: {
-            personalReportMode: account.personalReportMode,
             createdAt: account.preferenceCreatedAt,
             updatedAt: account.preferenceUpdatedAt,
           },
@@ -493,7 +487,6 @@ export class AccountRepository {
         status: 'ANONYMIZED',
         email: null,
         displayName: 'Deleted user',
-        timezone: 'UTC',
         displayCurrency: 'PKR',
         deletedAt: now,
         updatedAt: now,

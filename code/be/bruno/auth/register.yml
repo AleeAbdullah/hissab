@@ -18,7 +18,6 @@ http:
         "email": "{{email}}",
         "password": "{{password}}",
         "displayName": "{{displayName}}",
-        "timezone": "{{timezone}}",
         "deviceName": "{{deviceName}}"
       }
 runtime:

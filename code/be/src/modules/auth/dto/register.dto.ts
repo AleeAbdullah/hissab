@@ -3,7 +3,6 @@ import {
   IsEmail,
   IsOptional,
   IsString,
-  IsTimeZone,
   Length,
   MaxLength,
   MinLength,
@@ -28,11 +27,6 @@ export class RegisterDto {
   @IsString()
   @Length(1, 100)
   displayName!: string;
-
-  @IsString()
-  @IsTimeZone()
-  @MaxLength(100)
-  timezone!: string;
 
   @IsOptional()
   @IsString()

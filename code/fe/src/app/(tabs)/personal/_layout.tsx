@@ -12,8 +12,11 @@ export default function PersonalLayout() {
         name="index"
         options={{ title: 'Personal', headerLargeTitle: true }}
       />
-      <Stack.Screen name="transactions" options={{ title: 'Transactions' }} />
-      <Stack.Screen name="reports" options={{ title: 'Reports' }} />
+      <Stack.Screen name="transactions" options={{ title: 'History' }} />
+      <Stack.Screen
+        name="spending"
+        options={{ title: 'Spending', headerTitleAlign: 'center' }}
+      />
       <Stack.Screen
         name="[transactionId]/index"
         options={{ title: 'Transaction' }}

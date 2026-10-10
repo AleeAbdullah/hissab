@@ -10,6 +10,7 @@ import { IdempotencyService } from '../idempotency';
 import {
   PERSONAL_CATEGORY_CODES,
   type CreatePersonalTransactionDto,
+  type ListPersonalHistoryDto,
   type ListPersonalTransactionsDto,
   type PersonalReportDto,
   type PersonalTransactionType,
@@ -19,6 +20,7 @@ import {
   type PersonalCategoryView,
   type PersonalTransactionCursor,
   type PersonalTransactionFilters,
+  type PersonalHistoryItemView,
   type PersonalTransactionRevision,
   type PersonalTransactionView,
   PersonalRepository,
@@ -38,9 +40,7 @@ interface PreparedPersonalTransaction {
 }
 
 export interface PersonalReportView {
-  mode: 'OWED_SHARE' | 'CASH_OUT_OF_POCKET';
   bucket: 'DAY' | 'MONTH';
-  timezone: string;
   incomeMinor: string;
   expenseMinor: string;
   netMinor: string;
@@ -107,15 +107,28 @@ export class PersonalService {
   async listTransactions(
     userId: string,
     query: ListPersonalTransactionsDto,
-  ): Promise<{ items: PersonalTransactionView[]; nextCursor: string | null }> {
+  ): Promise<{
+    items: PersonalTransactionView[];
+    nextCursor: string | null;
+    maxAmountMinor: string | null;
+  }> {
     const filters = this.filters(query);
+    const { minAmountMinor, maxAmountMinor } = this.amountFilters(query);
     const limit = query.limit ?? 50;
-    const rows = await this.repository.listTransactions(
-      userId,
-      filters,
-      query.cursor ? this.decodeCursor(query.cursor) : null,
-      limit + 1,
-    );
+    const [rows, largestAmountMinor] = await Promise.all([
+      this.repository.listTransactions(
+        userId,
+        {
+          ...filters,
+          search: query.search?.trim() || undefined,
+          minAmountMinor,
+          maxAmountMinor,
+        },
+        query.cursor ? this.decodeCursor(query.cursor) : null,
+        limit + 1,
+      ),
+      this.repository.maxTransactionAmountMinor(userId),
+    ]);
     const items = rows.slice(0, limit);
     return {
       items,
@@ -123,6 +136,50 @@ export class PersonalService {
         rows.length > limit && items.length > 0
           ? this.encodeCursor(items[items.length - 1])
           : null,
+      maxAmountMinor: largestAmountMinor,
+    };
+  }
+
+  async listHistory(
+    userId: string,
+    query: ListPersonalHistoryDto,
+  ): Promise<{
+    items: PersonalHistoryItemView[];
+    nextCursor: string | null;
+    maxAmountMinor: string | null;
+    report: PersonalReportView;
+  }> {
+    const { minAmountMinor, maxAmountMinor } = this.amountFilters(query);
+    const bucket = query.bucket ?? 'MONTH';
+    const limit = query.limit ?? 50;
+    const result = await this.repository.listHistory(
+      userId,
+      {
+        ...this.filters(query),
+        search: query.search?.trim() || undefined,
+        minAmountMinor,
+        maxAmountMinor,
+      },
+      query.includeShared !== 'false',
+      bucket,
+      query.cursor ? this.decodeCursor(query.cursor) : null,
+      limit + 1,
+    );
+    const items = result.items.slice(0, limit);
+    return {
+      items,
+      nextCursor:
+        result.items.length > limit && items.length > 0
+          ? this.encodeCursor(items[items.length - 1])
+          : null,
+      maxAmountMinor: result.maxAmountMinor,
+      report: {
+        bucket,
+        incomeMinor: result.incomeMinor,
+        expenseMinor: result.expenseMinor,
+        netMinor: result.netMinor,
+        buckets: result.buckets,
+      },
     };
   }
 
@@ -245,20 +302,14 @@ export class PersonalService {
     query: PersonalReportDto,
   ): Promise<PersonalReportView> {
     const filters = this.filters(query);
-    const profile = await this.repository.findReportProfile(userId);
-    if (!profile) {
-      throw new NotFoundException('User profile not found.');
-    }
-    const mode = query.mode ?? profile.defaultMode;
     const bucket = query.bucket ?? 'MONTH';
     const rows = await this.repository.listReportBuckets(
       userId,
       filters,
-      mode,
+      query.includeShared !== 'false',
       bucket,
-      profile.timezone,
     );
-    const report: Omit<PersonalReportView, 'mode' | 'bucket' | 'timezone'> = {
+    const report: Omit<PersonalReportView, 'bucket'> = {
       incomeMinor: '0',
       expenseMinor: '0',
       netMinor: '0',
@@ -296,9 +347,7 @@ export class PersonalService {
       ).toString();
     }
     return {
-      mode,
       bucket,
-      timezone: profile.timezone,
       ...report,
       buckets: report.buckets.sort((left, right) =>
         left.period.localeCompare(right.period),
@@ -453,6 +502,28 @@ export class PersonalService {
     };
   }
 
+  private amountFilters(query: {
+    minAmountMinor?: string;
+    maxAmountMinor?: string;
+  }): { minAmountMinor?: bigint; maxAmountMinor?: bigint } {
+    const minAmountMinor = query.minAmountMinor
+      ? BigInt(query.minAmountMinor)
+      : undefined;
+    const maxAmountMinor = query.maxAmountMinor
+      ? BigInt(query.maxAmountMinor)
+      : undefined;
+    if (
+      (minAmountMinor !== undefined && minAmountMinor > MAX_MINOR) ||
+      (maxAmountMinor !== undefined && maxAmountMinor > MAX_MINOR) ||
+      (minAmountMinor !== undefined &&
+        maxAmountMinor !== undefined &&
+        minAmountMinor > maxAmountMinor)
+    ) {
+      throw new BadRequestException('Amount filters are invalid.');
+    }
+    return { minAmountMinor, maxAmountMinor };
+  }
+
   private toView(
     revision: PersonalTransactionRevision,
     category: PersonalCategoryView,
@@ -472,9 +543,15 @@ export class PersonalService {
     };
   }
 
-  private encodeCursor(transaction: PersonalTransactionView): string {
+  private encodeCursor(transaction: {
+    occurredAt: Date | string;
+    id: string;
+  }): string {
     return Buffer.from(
-      JSON.stringify([transaction.occurredAt.toISOString(), transaction.id]),
+      JSON.stringify([
+        new Date(transaction.occurredAt).toISOString(),
+        transaction.id,
+      ]),
     ).toString('base64url');
   }
 

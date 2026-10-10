@@ -1,0 +1,4 @@
+interface:
+  display_name: "Hissab Mobile"
+  short_description: "Repo guidance for the Hissab Expo app"
+  default_prompt: "Use $hissab-mobile to make a safe, production-quality change in the Hissab Expo mobile app."

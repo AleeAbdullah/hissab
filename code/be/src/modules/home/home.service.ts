@@ -37,17 +37,14 @@ export class HomeService {
     ] = await Promise.all([
       this.users.getProfile(userId),
       this.balances.listUserBalances(userId),
-      this.personal.getReport(userId, {
-        mode: 'CASH_OUT_OF_POCKET',
-        bucket: 'MONTH',
-      }),
+      this.personal.getReport(userId, { bucket: 'MONTH' }),
       this.personal.listTransactions(userId, { limit: 5 }),
       this.activity.list(userId, { area: 'EXPENSE', limit: 5 }),
       this.activity.list(userId, { area: 'SETTLEMENT', limit: 5 }),
       this.repository.countPeopleInUnsettledLedgers(userId),
     ]);
 
-    const month = currentMonth(profile.timezone);
+    const month = new Date().toISOString().slice(0, 7);
     const monthNetMinor =
       report.buckets.find((bucket) => bucket.period === month)?.netMinor ?? '0';
     const recent = [
@@ -144,18 +141,4 @@ export class HomeService {
   private user(user: NonNullable<ActivityItemDto['actor']>): HomeUserDto {
     return { userId: user.userId, displayName: user.displayName };
   }
-}
-
-function currentMonth(timezone: string): string {
-  const values = new Intl.DateTimeFormat('en-US', {
-    timeZone: timezone,
-    year: 'numeric',
-    month: '2-digit',
-  }).formatToParts();
-  const year = values.find((part) => part.type === 'year')?.value;
-  const month = values.find((part) => part.type === 'month')?.value;
-  if (!year || !month) {
-    throw new Error('Could not determine the current month.');
-  }
-  return `${year}-${month}`;
 }

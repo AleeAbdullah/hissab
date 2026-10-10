@@ -15,6 +15,8 @@ export interface LedgerMemberBalanceRow {
   userId: string;
   displayName: string;
   netMinor: string;
+  lastReminderAt: Date | null;
+  reminderAvailableAt: Date | null;
 }
 
 @Injectable()
@@ -66,6 +68,7 @@ export class BalancesRepository {
   }
 
   async listLedgerBalances(
+    userId: string,
     ledgerId: string,
   ): Promise<LedgerMemberBalanceRow[]> {
     const result = await this.database.pool.query<LedgerMemberBalanceRow>(
@@ -78,19 +81,40 @@ export class BalancesRepository {
           JOIN ledger_postings posting ON posting.financial_event_id = event.id
           WHERE event.ledger_id = $1::uuid
           GROUP BY posting.user_id
+        ), latest_reminders AS (
+          SELECT recipient_user_id,
+                 max(created_at) AS last_reminder_at
+          FROM reminder_requests
+          WHERE ledger_id = $1::uuid
+            AND EXISTS (
+              SELECT 1
+              FROM ledgers ledger
+              JOIN ledger_members viewer
+                ON viewer.ledger_id = ledger.id
+              WHERE ledger.id = $1::uuid
+                AND ledger.status = 'ACTIVE'
+                AND viewer.user_id = $2::uuid
+                AND viewer.status = 'ACTIVE'
+            )
+          GROUP BY recipient_user_id
         )
         SELECT member.user_id AS "userId",
                person.display_name AS "displayName",
-               coalesce(balance.net_minor, 0)::text AS "netMinor"
+               coalesce(balance.net_minor, 0)::text AS "netMinor",
+               reminder.last_reminder_at AS "lastReminderAt",
+               reminder.last_reminder_at + interval '24 hours' AS "reminderAvailableAt"
         FROM ledger_members member
         JOIN users person ON person.id = member.user_id
         LEFT JOIN member_balances balance
           ON balance.user_id = member.user_id
+        LEFT JOIN latest_reminders reminder
+          ON reminder.recipient_user_id = member.user_id
+         AND member.status = 'ACTIVE'
         WHERE member.ledger_id = $1::uuid
           AND member.joined_at IS NOT NULL
         ORDER BY person.display_name, member.user_id
       `,
-      [ledgerId],
+      [ledgerId, userId],
     );
     return result.rows;
   }

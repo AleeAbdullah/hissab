@@ -1,6 +1,7 @@
 import type { Href } from 'expo-router';
 import { Link } from 'expo-router';
 import {
+  useEffect,
   useState,
   type PropsWithChildren,
   type ReactElement,
@@ -8,6 +9,7 @@ import {
 } from 'react';
 import {
   ActivityIndicator,
+  Keyboard,
   ScrollView,
   TextInput,
   type TextInputProps,
@@ -25,10 +27,28 @@ export function Screen({
   children,
   refreshControl
 }: PropsWithChildren<{ refreshControl?: ReactElement<RefreshControlProps> }>) {
+  const [keyboardHeight, setKeyboardHeight] = useState(
+    () => Keyboard.metrics()?.height ?? 0
+  );
+
+  useEffect(() => {
+    const show = Keyboard.addListener('keyboardDidShow', (event) =>
+      setKeyboardHeight(event.endCoordinates.height)
+    );
+    const hide = Keyboard.addListener('keyboardDidHide', () =>
+      setKeyboardHeight(0)
+    );
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
+
   return (
     <ScrollView
       className="flex-1 bg-background"
       contentContainerClassName="flex-grow gap-4 p-5"
+      contentContainerStyle={{ paddingBottom: 20 + keyboardHeight }}
       contentInsetAdjustmentBehavior="automatic"
       keyboardShouldPersistTaps="handled"
       refreshControl={refreshControl}
@@ -59,6 +79,7 @@ export function SectionLabel({ children }: PropsWithChildren) {
 
 export function Row({
   title,
+  titleBadge,
   detail,
   subtitle,
   href,
@@ -69,6 +90,7 @@ export function Row({
   disabled
 }: {
   title: string;
+  titleBadge?: string;
   detail?: string;
   subtitle?: string;
   href?: Href;
@@ -86,15 +108,22 @@ export function Row({
     <>
       {leading}
       <View className="flex-1 gap-0.5">
-        <Text
-          selectable
-          className={cn(
-            'text-[17px] leading-[23px]',
-            destructive && 'text-destructive'
-          )}
-        >
-          {title}
-        </Text>
+        <View className="flex-row flex-wrap items-center gap-2">
+          <Text
+            selectable
+            className={cn(
+              'max-w-full text-[17px] leading-[23px]',
+              destructive && 'text-destructive'
+            )}
+          >
+            {title}
+          </Text>
+          {titleBadge ? (
+            <Text className="rounded-md bg-muted px-2 py-1 text-xs leading-4 text-muted-foreground">
+              {titleBadge}
+            </Text>
+          ) : null}
+        </View>
         {subtitle ? (
           <Text
             selectable
@@ -174,10 +203,16 @@ export function Field({
   error,
   hint,
   secureTextEntry,
+  trailing,
   className,
   style,
   ...props
-}: TextInputProps & { label: string; error?: string; hint?: string }) {
+}: TextInputProps & {
+  label: string;
+  error?: string;
+  hint?: string;
+  trailing?: ReactNode;
+}) {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const isPassword = secureTextEntry === true;
   return (
@@ -201,6 +236,7 @@ export function Field({
           )}
           style={style}
         />
+        {trailing}
         {isPassword ? (
           <RnrButton
             variant="ghost"

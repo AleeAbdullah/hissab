@@ -4,6 +4,14 @@ This file applies to the entire repository. Read it before changing product beha
 
 Do not spawn, delegate to, or otherwise use sub-agents unless the user explicitly asks for sub-agent work in the current request.
 
+## Required mobile frontend preflight
+
+- Before implementing or reviewing code under `code/fe`, read `.codex/skills/hissab-mobile/SKILL.md`.
+- Identify the applicable standards from its reference matrix and read only those references before editing.
+- In the first progress update, state `Standards: <names>. Deviations: none|<reason>.`
+- Use `.codex/skills/hissab-mobile/references/repo-map.md` when ownership or placement is unclear.
+- Do not silently deviate from a repository standard. Discuss a material deviation before implementing it.
+
 ## Sources of truth
 
 Use this precedence:
@@ -13,6 +21,12 @@ Use this precedence:
 3. `mockups/` defines visual intent and state variants, not backend availability.
 
 Do not silently resolve conflicts. Keep current behavior safe, report the conflict, and update this file only after the product owner decides. Git history contains superseded research and design documents; do not restore them as active specifications.
+
+## Local Android audit references
+
+The preserved local audit is in `audits/Hissab-App-Audit-2026-10-04/` and is gitignored. When the user or Jira references a numbered screen, use `capture-manifest.json` to find its original in `screenshots/`, resolving paths relative to the audit folder. `index.html` provides the gallery, `AUDIT.md` contains the review, and `JIRA.md` / `jira-feedback-tracker.json` map the feedback to tickets.
+
+Preserve the audit contents and screen numbers. These screenshots are historical evidence; current code and the product contract still define behavior. If this ignored folder is unavailable in another checkout, the referenced Jira tickets contain screenshot bundles.
 
 ## Product contract
 
@@ -41,19 +55,19 @@ Do not silently resolve conflicts. Keep current behavior safe, report the confli
 - Any active group member may update the group, invite users, cancel invitations, or archive a fully settled group.
 - Invitees may accept or decline. A new invitation may be sent after a previous invitation reaches a terminal state.
 - Groups cannot be hard-deleted. The last settled member leaving archives the group automatically.
-- Personal reports default to the user's owed share. A toggle may show cash out of pocket.
+- Personal reports always count the user's owed share of shared expenses. There is no report-mode setting and no cash-out-of-pocket view. An "Include shared expenses" toggle may exclude shared expenses from a report or history view.
 - Settlements are excluded from personal income and expense reports.
 - Each user has exactly one private personal ledger.
 - Personal transactions are manual `INCOME` or `EXPENSE` records. They require a positive minor-unit amount, fixed system category, description, and occurrence time; merchant/source and notes are optional.
 - Personal expense categories reuse the shared-expense system categories. Personal income categories are Salary, Freelance, Business, Gifts, Refunds, and Other Income. Custom personal categories are out of scope in v1.
 - Personal transaction edits create immutable replacement revisions and tombstone deletion revisions. The personal ledger is immutable across revisions; edits and deletion require an expected version and return conflicts for stale versions.
-- Personal reports combine manual transactions with the user's shared-expense allocation. Owed-share mode uses participant allocations; cash-out-of-pocket mode uses payer allocations. Calendar grouping uses the user's stored timezone.
+- Personal reports combine manual transactions with the user's owed share (participant allocations) of shared expenses unless shared expenses are excluded. Calendar grouping uses UTC days and months for every user.
 - Personal transaction and report queries may filter by date range, type, and category. Duplicate warnings are entirely an app concern; the backend does not detect, block, merge, or annotate possible duplicates.
 - Shared Activity contains expense, settlement, group, invitation, connection, block, and unblock events. It excludes authentication, session, profile, and security events.
 - Activity supports area, ledger, opaque-cursor, and limit filters. Ledger events are visible to users who joined that ledger historically; connection events are visible to both parties; block and unblock events are actor-only.
 - Durable in-app notifications cover shared financial changes, group invitations, connection requests and acceptance, and manual reminders. Push preferences have master, expense, settlement, social, and reminder switches.
 - Realtime delivery uses authenticated Socket.IO invalidations without replay; clients refetch authoritative HTTP state after reconnect or invalidation.
-- A manual reminder requires the sender to be owed and the recipient to owe in the same active ledger. Apply a rolling 24-hour cooldown per sender, recipient, and ledger.
+- A manual reminder requires the sender to be owed and the recipient to owe in the same active ledger. Apply one rolling 24-hour cooldown per recipient and ledger, regardless of sender.
 - Reminder push copy is `Balance reminder from {name}` and `You have an unsettled balance in {ledger}.`; do not include an amount on the lock screen.
 - Receipt attachments are intentionally deferred for both shared expenses and personal transactions. Do not add attachment routes or storage without new product-owner approval.
 - Account export is an authenticated, read-only, streamed, versioned JSON snapshot. It includes the user's profile/preferences, social and membership state, complete accessible shared financial revision history, personal transaction history, visible activity, reminders, and notifications. Include other users' IDs and display names only when needed for financial context; exclude their email addresses and all secrets, token hashes, device tokens, IP addresses, outbox rows, and idempotency rows. It includes the user’s display preference but no financial currency data.
@@ -78,7 +92,7 @@ Implemented now:
 - durable in-app notifications, preferences, Expo device registration, push ticket/receipt handling, and invalid-token revocation;
 - authenticated Socket.IO invalidations over PostgreSQL `LISTEN`/`NOTIFY`;
 - balance-aware manual reminders with a rolling 24-hour cooldown;
-- fixed personal categories, immutable manual personal transactions, and timezone-aware personal reports that include shared allocations;
+- fixed personal categories, immutable manual personal transactions, and UTC-grouped personal reports that include shared allocations;
 - versioned JSON account export and irreversible, balance-aware account anonymization with immediate session revocation;
 - read-only operator reconciliation for schema guardrails, immutable histories, financial postings, and account lifecycle state.
 
@@ -148,7 +162,7 @@ Explicitly post-v1 or out of scope:
 - Password-reset tokens expire after 60 minutes.
 - Password change invalidates sessions; clear local credentials and return to sign-in.
 - Every protected HTTP request must verify that its user is active and its referenced session remains active, not merely that its JWT signature is valid.
-- Registration sends the device timezone. New accounts default to PKR as a display preference; Settings is the only currency-selection surface.
+- New accounts default to PKR as a display preference; Settings is the only currency-selection surface. Hissab does not store a user timezone.
 
 ## Frontend rules
 
@@ -156,7 +170,10 @@ Explicitly post-v1 or out of scope:
 - Keep route files focused on composition. Reuse existing components and hooks before adding helpers.
 - Use the generated client for request shapes and the shared response contracts for parsing.
 - A visible control must work or be visibly disabled with truthful copy.
-- Native dialogs own confirmation and destructive-action prompts.
+- Every app-owned choice, confirmation, warning, error, and success prompt uses the shared Hissab dialog on Android and iOS (KAN-4). OS permissions, folder pickers, and share sheets stay native.
+- Dialog confirmations dismiss only through their safe Cancel action or platform Back; backdrop taps do nothing. Cancellation preserves input and drafts and never runs the confirmed action. Keep all authorization, financial, deletion, and optimistic-version guards.
+- Dialogs use a centered popover-token surface, 20-point corners, a border hairline, no shadow, 20-point screen margins, maximum width 400, and 24-point padding over an Ink scrim (50% light / 70% dark). Keep actions visible above the keyboard, scroll the body as needed, announce title/body, contain focus, and restore it to the trigger.
+- Dialog actions use sentence case and native minimum touch targets. Place two short actions side by side with Cancel left; stack primary first and Cancel last for three actions, labels longer than 16 characters, or font scale 1.3+. Use filled Copper for primary, semantic destructive fill for destructive actions, Copper outlines with theme-aware primary text for peer choices, and borderless foreground text for Cancel. Warnings, errors, and success have semantic icons.
 - Use native platform chrome and predictive-back behavior where supported.
 - Use `Hissab` capitalization everywhere.
 - Friends may show connection state and authoritative balances using the viewing user’s display symbol.
@@ -169,6 +186,7 @@ Explicitly post-v1 or out of scope:
 - `mockups/` is the only retained visual reference. Its Python builders are the editable source for generated HTML variants.
 - Do not treat stale mockup copy as a business rule. Runtime facts in this file and code take precedence.
 - Copper is the locked primary brand and action color: `#A83A1B`. Use Ink `#1D1D1B` for core text and Paper `#F7F3EC` for warm light surfaces.
+- In dark appearance, Copper text and icons use `#E0805C` for contrast; filled primary buttons retain `#A83A1B`.
 - Reserve green `#2E7D59` for positive money and success states; it is not a second brand color.
 - The Copper/Paper system is implemented across every mockup section.
 - Use a 4-point spacing grid: 20-point page gutters, 16-point card gaps and field padding, and 32-point major sections. Controls use 12-point radii, cards use 16, sheets/dialogs use 20, and visible button bodies are 32 points high with a 48 dp/44 pt minimum touch region.
@@ -178,6 +196,7 @@ Explicitly post-v1 or out of scope:
 - Support light and dark appearance.
 - Minimum touch targets are 44 points on iOS and 48 dp on Android.
 - Support text scaling to 200% without hiding essential actions or values.
+- Android native tab labels may cap font scaling to keep all five labels visible. This exception applies only to tab labels; screen content retains 200% text support.
 - Do not communicate positive/negative money or status using color alone.
 - Charts require a textual equivalent.
 - The current icon and splash assets are temporary until final brand approval.

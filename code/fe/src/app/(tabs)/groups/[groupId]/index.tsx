@@ -40,11 +40,21 @@ export default function GroupDetailScreen() {
     group.data.status === 'ACTIVE' && group.data.membershipStatus === 'ACTIVE';
   return (
     <Screen>
-      <Stack.Screen options={{ title: group.data.name }} />
+      <Stack.Screen
+        options={{
+          title: group.data.name,
+          headerTitle: () => <View />,
+          headerBackVisible: true
+        }}
+      />
       <View className="flex-row items-center gap-4 py-2">
         <Avatar name={group.data.name} large />
         <View className="flex-1 gap-0.5">
-          <Text selectable className="text-2xl font-bold leading-[30px]">
+          <Text
+            selectable
+            accessibilityRole="header"
+            className="text-2xl font-bold leading-[30px]"
+          >
             {group.data.name}
           </Text>
           <Text

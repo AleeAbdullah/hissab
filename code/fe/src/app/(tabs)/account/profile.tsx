@@ -6,7 +6,6 @@ import { ActivityIndicator } from 'react-native';
 import type { Profile } from '@/api/contracts';
 import { queryClient } from '@/api/query-client';
 import { ErrorMessage, Field, Loading, Notice, Screen } from '@/components/ui';
-import { ChoiceChips } from '@/components/choice-chips';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { profileQuery, updateProfile } from '@/features/account/api';
@@ -30,25 +29,18 @@ function ProfileForm({ profile }: { profile: Profile }) {
   const [displayCurrency, setDisplayCurrency] = useState(
     profile.displayCurrency
   );
-  const [timezone, setTimezone] = useState(profile.timezone);
-  const [mode, setMode] = useState(profile.personalReportMode);
   const mutation = useMutation({
     mutationFn: () =>
       updateProfile({
         displayName: displayName.trim(),
-        displayCurrency,
-        timezone,
-        personalReportMode: mode
+        displayCurrency
       }),
     onSuccess: async (profile) => {
       queryClient.setQueryData(profileQuery.queryKey, profile);
       await queryClient.invalidateQueries({ queryKey: homeQuery.queryKey });
     }
   });
-  const valid =
-    displayName.trim().length > 0 &&
-    Boolean(displayCurrency) &&
-    timezone.length > 0;
+  const valid = displayName.trim().length > 0 && Boolean(displayCurrency);
 
   return (
     <Screen>
@@ -90,18 +82,6 @@ function ProfileForm({ profile }: { profile: Profile }) {
         hint="Changing your email is not supported in this version."
       />
       <CurrencyPicker value={displayCurrency} onChange={setDisplayCurrency} />
-      <Field label="Timezone" value={timezone} onChangeText={setTimezone} />
-      <Text selectable className="text-[13px] text-muted-foreground">
-        Report mode
-      </Text>
-      <ChoiceChips
-        choices={[
-          { value: 'OWED_SHARE', label: 'Your share' },
-          { value: 'CASH_OUT_OF_POCKET', label: 'Cash paid' }
-        ]}
-        value={mode}
-        onChange={(value) => setMode(value as Profile['personalReportMode'])}
-      />
       <Text
         selectable
         className="text-[13px] leading-[18px] text-muted-foreground"

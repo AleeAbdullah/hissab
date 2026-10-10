@@ -22,8 +22,10 @@ import { IdempotencyKey } from '../idempotency';
 import {
   CreatePersonalTransactionDto,
   DeletePersonalTransactionDto,
+  ListPersonalHistoryDto,
   ListPersonalTransactionsDto,
   PersonalCategoryDto,
+  PersonalHistoryPageDto,
   PersonalReportDto,
   PersonalReportResponseDto,
   PersonalTransactionDto,
@@ -61,6 +63,15 @@ export class PersonalController {
     @Query() query: ListPersonalTransactionsDto,
   ): Promise<PersonalTransactionPageDto> {
     return this.personal.listTransactions(user.userId, query);
+  }
+
+  @Get('history')
+  @ApiOkResponse({ type: PersonalHistoryPageDto })
+  listHistory(
+    @CurrentUser() user: AuthPrincipal,
+    @Query() query: ListPersonalHistoryDto,
+  ): Promise<PersonalHistoryPageDto> {
+    return this.personal.listHistory(user.userId, query);
   }
 
   @Get('transactions/:transactionId')

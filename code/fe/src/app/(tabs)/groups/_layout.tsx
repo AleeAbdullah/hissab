@@ -24,6 +24,17 @@ export default function GroupsLayout() {
       />
       <Stack.Screen name="[groupId]/members" options={{ title: 'Members' }} />
       <Stack.Screen
+        name="[groupId]/invite"
+        options={{
+          title: 'Invite members',
+          headerTitleAlign: 'center',
+          presentation: 'formSheet',
+          sheetAllowedDetents: [0.65, 1],
+          sheetGrabberVisible: true,
+          sheetCornerRadius: 20
+        }}
+      />
+      <Stack.Screen
         name="[groupId]/settings"
         options={{ title: 'Group settings' }}
       />

@@ -3,8 +3,8 @@ import {
   personalDeleteTransaction,
   personalGetReport,
   personalGetTransaction,
+  personalListHistory,
   personalListCategories,
-  personalListTransactions,
   personalReplaceTransaction
 } from '@/api/generated/sdk.gen';
 import type {
@@ -14,9 +14,9 @@ import type {
 import type {
   PersonalCategory,
   PersonalCategoryCode,
+  PersonalHistoryPage,
   PersonalReport,
   PersonalTransaction,
-  PersonalTransactionPage,
   PersonalTransactionType
 } from '@/api/contracts';
 import { idempotencyKey, request } from '@/api/transport';
@@ -24,9 +24,32 @@ import { idempotencyKey, request } from '@/api/transport';
 export type PersonalFilters = {
   type?: PersonalTransactionType;
   categoryCode?: PersonalCategoryCode;
+  search?: string;
   from?: string;
   to?: string;
+  minAmountMinor?: string;
+  maxAmountMinor?: string;
+  includeShared?: 'true' | 'false';
+  bucket?: PersonalReport['bucket'];
 };
+
+export function personalHistoryInfiniteQuery(
+  filters: PersonalFilters,
+  limit = 50
+) {
+  return {
+    queryKey: ['personal', 'history', filters, limit] as const,
+    initialPageParam: undefined as string | undefined,
+    queryFn: ({ pageParam }: { pageParam: string | undefined }) =>
+      request<PersonalHistoryPage>(() =>
+        personalListHistory({
+          query: { ...filters, cursor: pageParam, limit }
+        })
+      ),
+    getNextPageParam: (page: PersonalHistoryPage) =>
+      page.nextCursor ?? undefined
+  };
+}
 
 export const personalCategoriesQuery = {
   queryKey: ['personal', 'categories'] as const,
@@ -43,30 +66,7 @@ export function personalTransactionQuery(transactionId: string) {
   };
 }
 
-export function personalTransactionsInfiniteQuery(
-  filters: PersonalFilters,
-  limit = 50
-) {
-  return {
-    queryKey: ['personal', 'transactions', filters, limit] as const,
-    initialPageParam: undefined as string | undefined,
-    queryFn: ({ pageParam }: { pageParam: string | undefined }) =>
-      request<PersonalTransactionPage>(() =>
-        personalListTransactions({
-          query: { ...filters, cursor: pageParam, limit }
-        })
-      ),
-    getNextPageParam: (page: PersonalTransactionPage) =>
-      page.nextCursor ?? undefined
-  };
-}
-
-export function personalReportQuery(
-  filters: PersonalFilters & {
-    mode?: PersonalReport['mode'];
-    bucket?: PersonalReport['bucket'];
-  }
-) {
+export function personalReportQuery(filters: PersonalFilters) {
   return {
     queryKey: ['personal', 'report', filters] as const,
     queryFn: () =>

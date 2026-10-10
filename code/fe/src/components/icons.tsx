@@ -1,7 +1,9 @@
 import {
+  ArrowLeft,
   ArrowUpDown,
   Check,
   ChevronDown,
+  ChevronRight,
   ChevronUp,
   Eye,
   EyeOff,
@@ -14,9 +16,11 @@ export type Icon = LucideIcon;
 
 export const Icons = {
   add: Plus,
+  arrowLeft: ArrowLeft,
   arrowUpDown: ArrowUpDown,
   check: Check,
   chevronDown: ChevronDown,
+  chevronRight: ChevronRight,
   chevronUp: ChevronUp,
   eye: Eye,
   eyeOff: EyeOff

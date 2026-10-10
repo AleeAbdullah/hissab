@@ -1,6 +1,8 @@
 import { TextClassContext } from '@/components/ui/text';
+import { DialogTriggerContext } from '@/components/ui/dialog-trigger';
 import { cn } from '@/lib/utils';
 import { cva, type VariantProps } from 'class-variance-authority';
+import { useContext } from 'react';
 import { Platform, Pressable } from 'react-native';
 
 const buttonVariants = cva(
@@ -102,7 +104,8 @@ type ButtonProps = React.ComponentProps<typeof Pressable> &
   React.RefAttributes<typeof Pressable> &
   VariantProps<typeof buttonVariants>;
 
-function Button({ className, variant, size, ...props }: ButtonProps) {
+function Button({ className, variant, size, onPress, ...props }: ButtonProps) {
+  const captureTrigger = useContext(DialogTriggerContext);
   return (
     <TextClassContext.Provider value={buttonTextVariants({ variant, size })}>
       <Pressable
@@ -113,6 +116,14 @@ function Button({ className, variant, size, ...props }: ButtonProps) {
         )}
         role="button"
         {...props}
+        onPress={
+          onPress
+            ? (event) => {
+                captureTrigger?.(event.currentTarget);
+                onPress(event);
+              }
+            : undefined
+        }
       />
     </TextClassContext.Provider>
   );

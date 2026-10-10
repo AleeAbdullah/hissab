@@ -505,8 +505,7 @@ const checks: Check[] = [
       FROM users account
       WHERE account.status = 'ANONYMIZED'
         AND (
-          account.timezone <> 'UTC'
-          OR account.display_currency <> 'PKR'
+          account.display_currency <> 'PKR'
           OR EXISTS (SELECT 1 FROM user_identities identity WHERE identity.user_id = account.id)
           OR EXISTS (SELECT 1 FROM device_tokens token WHERE token.user_id = account.id)
           OR EXISTS (SELECT 1 FROM user_preferences preference WHERE preference.user_id = account.id)

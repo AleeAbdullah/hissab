@@ -9,7 +9,6 @@ export interface AuthUser {
   email: string;
   displayName: string;
   displayCurrency: string;
-  timezone: string;
 }
 
 export interface AuthTokens {

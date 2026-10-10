@@ -48,9 +48,6 @@ export class ExportProfileDto {
   @ApiProperty({ enum: DISPLAY_CURRENCIES })
   displayCurrency!: string;
 
-  @ApiProperty()
-  timezone!: string;
-
   @ApiProperty({ enum: ['ACTIVE'] })
   status!: 'ACTIVE';
 
@@ -62,9 +59,6 @@ export class ExportProfileDto {
 }
 
 export class ExportPreferencesDto {
-  @ApiProperty({ enum: ['OWED_SHARE', 'CASH_OUT_OF_POCKET'] })
-  personalReportMode!: 'OWED_SHARE' | 'CASH_OUT_OF_POCKET';
-
   @ApiProperty(date)
   createdAt!: Date;
 
@@ -562,8 +556,8 @@ export class ExportNotificationDto {
 }
 
 export class AccountExportDto {
-  @ApiProperty({ enum: [1] })
-  schemaVersion!: 1;
+  @ApiProperty({ enum: [3] })
+  schemaVersion!: 3;
 
   @ApiProperty(date)
   generatedAt!: Date;

@@ -5,7 +5,6 @@ export type AuthUser = {
   email: string;
   displayName: string;
   displayCurrency: DisplayCurrency;
-  timezone: string;
 };
 
 export type AuthTokens = {
@@ -18,7 +17,6 @@ export type AuthTokens = {
 };
 
 export type Profile = AuthUser & {
-  personalReportMode: 'OWED_SHARE' | 'CASH_OUT_OF_POCKET';
   createdAt: string;
   updatedAt: string;
 };
@@ -240,6 +238,8 @@ export type LedgerBalances = {
     userId: string;
     displayName: string;
     netMinor: string;
+    lastReminderAt: string | null;
+    reminderAvailableAt: string | null;
   }[];
 };
 
@@ -383,9 +383,26 @@ export type PersonalTransaction = {
   createdAt: string;
 };
 
-export type PersonalTransactionPage = {
-  items: PersonalTransaction[];
+export type PersonalHistoryItem = {
+  kind: 'PERSONAL' | 'SHARED';
+  id: string;
+  type: PersonalTransactionType;
+  amountMinor: string;
+  totalMinor: string | null;
+  paidMinor: string | null;
+  owedMinor: string | null;
+  category: Pick<PersonalCategory, 'code' | 'name'>;
+  description: string;
+  occurredAt: string;
+  ledgerId: string | null;
+  ledgerName: string | null;
+};
+
+export type PersonalHistoryPage = {
+  items: PersonalHistoryItem[];
   nextCursor: string | null;
+  maxAmountMinor: string | null;
+  report: PersonalReport;
 };
 
 export type PersonalReportBucket = {
@@ -400,7 +417,5 @@ export type PersonalReport = {
   expenseMinor: string;
   netMinor: string;
   buckets: PersonalReportBucket[];
-  mode: 'OWED_SHARE' | 'CASH_OUT_OF_POCKET';
   bucket: 'DAY' | 'MONTH';
-  timezone: string;
 };

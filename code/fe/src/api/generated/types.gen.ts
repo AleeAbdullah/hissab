@@ -128,6 +128,8 @@ export type LedgerBalanceMemberDto = {
     userId: string;
     displayName: string;
     netMinor: string;
+    lastReminderAt: string | null;
+    reminderAvailableAt: string | null;
 };
 
 export type LedgerBalancesDto = {
@@ -173,17 +175,22 @@ export type PersonalTransactionDto = {
 export type PersonalTransactionPageDto = {
     items: Array<PersonalTransactionDto>;
     nextCursor: string | null;
+    maxAmountMinor: string | null;
 };
 
-export type ReplacePersonalTransactionDto = {
+export type PersonalHistoryItemDto = {
+    kind: 'PERSONAL' | 'SHARED';
+    id: string;
     type: 'INCOME' | 'EXPENSE';
     amountMinor: string;
-    categoryCode: 'FOOD_AND_DRINK' | 'GROCERIES' | 'TRANSPORT' | 'ACCOMMODATION' | 'UTILITIES' | 'ENTERTAINMENT' | 'SHOPPING' | 'HEALTHCARE' | 'OTHER' | 'SALARY' | 'FREELANCE' | 'BUSINESS' | 'GIFTS' | 'REFUNDS' | 'OTHER_INCOME';
+    totalMinor: string | null;
+    paidMinor: string | null;
+    owedMinor: string | null;
+    category: PersonalTransactionCategoryDto;
     description: string;
     occurredAt: string;
-    merchantOrSource?: string | null;
-    notes?: string | null;
-    expectedVersion: number;
+    ledgerId: string | null;
+    ledgerName: string | null;
 };
 
 export type PersonalReportBucketDto = {
@@ -198,23 +205,36 @@ export type PersonalReportResponseDto = {
     expenseMinor: string;
     netMinor: string;
     buckets: Array<PersonalReportBucketDto>;
-    mode: 'OWED_SHARE' | 'CASH_OUT_OF_POCKET';
     bucket: 'DAY' | 'MONTH';
-    timezone: string;
+};
+
+export type PersonalHistoryPageDto = {
+    items: Array<PersonalHistoryItemDto>;
+    nextCursor: string | null;
+    maxAmountMinor: string | null;
+    report: PersonalReportResponseDto;
+};
+
+export type ReplacePersonalTransactionDto = {
+    type: 'INCOME' | 'EXPENSE';
+    amountMinor: string;
+    categoryCode: 'FOOD_AND_DRINK' | 'GROCERIES' | 'TRANSPORT' | 'ACCOMMODATION' | 'UTILITIES' | 'ENTERTAINMENT' | 'SHOPPING' | 'HEALTHCARE' | 'OTHER' | 'SALARY' | 'FREELANCE' | 'BUSINESS' | 'GIFTS' | 'REFUNDS' | 'OTHER_INCOME';
+    description: string;
+    occurredAt: string;
+    merchantOrSource?: string | null;
+    notes?: string | null;
+    expectedVersion: number;
 };
 
 export type UpdateProfileDto = {
     displayCurrency?: 'PKR' | 'USD' | 'GBP' | 'EUR' | 'AED' | 'SAR';
     displayName?: string;
-    timezone?: string;
-    personalReportMode?: 'OWED_SHARE' | 'CASH_OUT_OF_POCKET';
 };
 
 export type RegisterDto = {
     email: string;
     password: string;
     displayName: string;
-    timezone: string;
     deviceName?: string;
 };
 
@@ -247,14 +267,12 @@ export type ExportProfileDto = {
     email: string;
     displayName: string;
     displayCurrency: 'PKR' | 'USD' | 'GBP' | 'EUR' | 'AED' | 'SAR';
-    timezone: string;
     status: 'ACTIVE';
     createdAt: string;
     updatedAt: string;
 };
 
 export type ExportPreferencesDto = {
-    personalReportMode: 'OWED_SHARE' | 'CASH_OUT_OF_POCKET';
     createdAt: string;
     updatedAt: string;
 };
@@ -481,7 +499,7 @@ export type ExportNotificationDto = {
 };
 
 export type AccountExportDto = {
-    schemaVersion: 1;
+    schemaVersion: 3;
     generatedAt: string;
     profile: ExportProfileDto;
     preferences: ExportPreferencesDto;
@@ -782,6 +800,9 @@ export type PersonalListTransactionsData = {
         to?: string;
         type?: 'INCOME' | 'EXPENSE';
         categoryCode?: 'FOOD_AND_DRINK' | 'GROCERIES' | 'TRANSPORT' | 'ACCOMMODATION' | 'UTILITIES' | 'ENTERTAINMENT' | 'SHOPPING' | 'HEALTHCARE' | 'OTHER' | 'SALARY' | 'FREELANCE' | 'BUSINESS' | 'GIFTS' | 'REFUNDS' | 'OTHER_INCOME';
+        minAmountMinor?: string;
+        maxAmountMinor?: string;
+        search?: string;
         cursor?: string;
         limit?: number;
     };
@@ -812,6 +833,37 @@ export type PersonalCreateTransactionResponses = {
 };
 
 export type PersonalCreateTransactionResponse = PersonalCreateTransactionResponses[keyof PersonalCreateTransactionResponses];
+
+export type PersonalListHistoryData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Inclusive occurrence-time boundary.
+         */
+        from?: string;
+        /**
+         * Exclusive occurrence-time boundary.
+         */
+        to?: string;
+        type?: 'INCOME' | 'EXPENSE';
+        categoryCode?: 'FOOD_AND_DRINK' | 'GROCERIES' | 'TRANSPORT' | 'ACCOMMODATION' | 'UTILITIES' | 'ENTERTAINMENT' | 'SHOPPING' | 'HEALTHCARE' | 'OTHER' | 'SALARY' | 'FREELANCE' | 'BUSINESS' | 'GIFTS' | 'REFUNDS' | 'OTHER_INCOME';
+        minAmountMinor?: string;
+        maxAmountMinor?: string;
+        search?: string;
+        cursor?: string;
+        limit?: number;
+        includeShared?: 'true' | 'false';
+        bucket?: 'DAY' | 'MONTH';
+    };
+    url: '/v1/personal/history';
+};
+
+export type PersonalListHistoryResponses = {
+    200: PersonalHistoryPageDto;
+};
+
+export type PersonalListHistoryResponse = PersonalListHistoryResponses[keyof PersonalListHistoryResponses];
 
 export type PersonalDeleteTransactionData = {
     body?: never;
@@ -887,9 +939,9 @@ export type PersonalGetReportData = {
         type?: 'INCOME' | 'EXPENSE';
         categoryCode?: 'FOOD_AND_DRINK' | 'GROCERIES' | 'TRANSPORT' | 'ACCOMMODATION' | 'UTILITIES' | 'ENTERTAINMENT' | 'SHOPPING' | 'HEALTHCARE' | 'OTHER' | 'SALARY' | 'FREELANCE' | 'BUSINESS' | 'GIFTS' | 'REFUNDS' | 'OTHER_INCOME';
         /**
-         * Defaults to the user profile preference.
+         * Includes the user's owed share of shared expenses.
          */
-        mode?: 'OWED_SHARE' | 'CASH_OUT_OF_POCKET';
+        includeShared?: 'true' | 'false';
         bucket?: 'DAY' | 'MONTH';
     };
     url: '/v1/personal/reports';

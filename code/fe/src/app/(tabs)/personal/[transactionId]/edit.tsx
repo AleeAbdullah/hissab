@@ -1,5 +1,6 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
+import { View } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
 import { ErrorMessage, Loading, Screen } from '@/components/ui';
@@ -48,11 +49,11 @@ export default function EditTransactionScreen() {
       </Screen>
     );
   return (
-    <Screen>
-      {replace.error ? <ErrorMessage error={replace.error} /> : null}
+    <View className="flex-1 bg-background">
       <PersonalTransactionEditor
         key={transaction.data.id}
         displayCurrency={profile.data.displayCurrency}
+        error={replace.error}
         transaction={transaction.data}
         saving={replace.isPending}
         onSave={(body) =>
@@ -62,6 +63,6 @@ export default function EditTransactionScreen() {
           })
         }
       />
-    </Screen>
+    </View>
   );
 }

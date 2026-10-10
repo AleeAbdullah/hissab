@@ -86,7 +86,7 @@ def build():
     {f("Email", email, "you@example.com", err_msg=(err if err == "That email is already registered. Sign in instead?" else None))}
     {f("Password", pw, "Create a password",
        err_msg=(err if err and "character" in err else None),
-       hint=(None if err else "At least 12 characters. No other restrictions."))}
+       hint=(None if err else "At least 12 characters."))}
   </div>
   <div class="card">{f("Timezone", "Asia/Karachi · GMT+5" if name else "", "Choose a timezone")}</div>
   <div class="auth-actions">{btn}</div>

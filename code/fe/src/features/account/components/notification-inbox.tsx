@@ -16,7 +16,7 @@ export function NotificationInbox({
   markingId,
   onLoadMore,
   onMarkAllRead,
-  onMarkRead
+  onOpen
 }: {
   error: unknown;
   hasNextPage: boolean;
@@ -27,7 +27,7 @@ export function NotificationInbox({
   markingId?: string;
   onLoadMore: () => void;
   onMarkAllRead: () => void;
-  onMarkRead: (notificationId: string) => void;
+  onOpen: (notification: InAppNotification) => void;
 }) {
   const unreadCount = items.filter((item) => !item.readAt).length;
   return (
@@ -61,7 +61,7 @@ export function NotificationInbox({
               key={item.id}
               item={item}
               loading={markingId === item.id || isMarkingAll}
-              onPress={onMarkRead}
+              onPress={onOpen}
             />
           ))}
         </Card>
@@ -93,9 +93,10 @@ function NotificationRow({
 }: {
   item: InAppNotification;
   loading: boolean;
-  onPress: (id: string) => void;
+  onPress: (notification: InAppNotification) => void;
 }) {
   const unread = !item.readAt;
+  const opensLedger = item.kind === 'REMINDER';
   const content = (
     <>
       <View className="flex-row items-baseline gap-2">
@@ -127,13 +128,13 @@ function NotificationRow({
     unread && 'bg-accent',
     loading && 'opacity-[0.55]'
   );
-  return unread ? (
+  return unread || opensLedger ? (
     <Button
       variant="ghost"
-      accessibilityLabel={`Unread. ${item.title}. ${item.body}. ${notificationTime(item.createdAt)}`}
+      accessibilityLabel={`${unread ? 'Unread. ' : ''}${item.title}. ${item.body}. ${notificationTime(item.createdAt)}${opensLedger ? '. Opens ledger' : ''}`}
       accessibilityState={{ disabled: loading }}
       disabled={loading}
-      onPress={() => onPress(item.id)}
+      onPress={() => onPress(item)}
       className={cn('w-full flex-col items-stretch rounded-none', className)}
     >
       {content}
@@ -166,8 +167,11 @@ function EmptyInbox() {
 }
 
 function notificationTime(value: string) {
-  return new Intl.DateTimeFormat(undefined, {
-    dateStyle: 'medium',
-    timeStyle: 'short'
-  }).format(new Date(value));
+  return (
+    new Intl.DateTimeFormat(undefined, {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+      timeZone: 'UTC'
+    }).format(new Date(value)) + ' UTC'
+  );
 }

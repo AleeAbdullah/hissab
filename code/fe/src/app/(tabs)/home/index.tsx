@@ -1,7 +1,8 @@
+import { useDialog } from '@/components/ui/dialog';
 import { useQuery } from '@tanstack/react-query';
 import type { Href } from 'expo-router';
-import { Link, router, Stack } from 'expo-router';
-import { Alert, RefreshControl, View } from 'react-native';
+import { Link, router } from 'expo-router';
+import { RefreshControl, useWindowDimensions, View } from 'react-native';
 
 import type { Home, HomeRecentItem } from '@/api/contracts';
 import { StackedCards } from '@/components/stacked-cards';
@@ -23,38 +24,15 @@ import { homeQuery } from '@/features/home/api';
 type AmountTone = 'positive' | 'negative' | 'neutral';
 
 export default function HomeScreen() {
-  const primary = useThemeVariable(THEME_VARIABLES.primary);
+  const dialog = useDialog();
+  const primary = useThemeVariable(THEME_VARIABLES.primaryText);
   const home = useQuery(homeQuery);
-  const header = (
-    <Stack.Screen
-      options={{
-        headerShown: true,
-        title: 'Home',
-        headerLargeTitle: true,
-        headerShadowVisible: false,
-        headerRight: () => (
-          <Text className="font-serif text-xl text-foreground">Hissab</Text>
-        )
-      }}
-    />
-  );
-  if (home.isLoading)
-    return (
-      <>
-        {header}
-        <Loading />
-      </>
-    );
+  if (home.isLoading) return <Loading />;
   if (home.error || !home.data)
     return (
-      <>
-        {header}
-        <Screen>
-          <ErrorMessage
-            error={home.error ?? new Error('Home is unavailable.')}
-          />
-        </Screen>
-      </>
+      <Screen>
+        <ErrorMessage error={home.error ?? new Error('Home is unavailable.')} />
+      </Screen>
     );
 
   const sharedNet = BigInt(home.data.shared.totalNetMinor);
@@ -73,74 +51,45 @@ export default function HomeScreen() {
   const sharedDirection =
     sharedNet > 0n ? 'You’re owed' : sharedNet < 0n ? 'You owe' : 'Settled';
   const settleUp = () =>
-    Alert.alert(
-      'Choose a balance to settle',
+    dialog(
+      'Settle a balance',
       'Open the friend or group where you need to record the payment.',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Friends', onPress: () => router.push('/groups/friends') },
-        { text: 'Groups', onPress: () => router.push('/groups') }
+        {
+          text: 'Open Friends',
+          style: 'choice',
+          onPress: () => router.push('/groups/friends')
+        },
+        {
+          text: 'Open Groups',
+          style: 'choice',
+          onPress: () => router.push('/groups')
+        }
       ]
     );
 
   return (
-    <>
-      {header}
-      <Screen
-        refreshControl={
-          <RefreshControl
-            refreshing={home.isRefetching}
-            onRefresh={() => home.refetch()}
-            tintColor={primary}
-            colors={[primary]}
-          />
-        }
-      >
-        <StackedCards
-          cards={[
-            {
-              id: 'personal',
-              frontContent: (
-                <View className="flex-1 p-4">
-                  <View className="flex-row items-start justify-between gap-3">
-                    <Text
-                      selectable
-                      className="flex-1 text-xl font-bold leading-[26px]"
-                    >
-                      Personal
-                    </Text>
-                    <Text
-                      selectable
-                      adjustsFontSizeToFit
-                      minimumFontScale={0.7}
-                      numberOfLines={1}
-                      className={cn(
-                        'max-w-[58%] text-right text-[28px] font-bold tabular-nums leading-[34px]',
-                        personalTone === 'positive'
-                          ? 'text-positive'
-                          : personalTone === 'negative'
-                            ? 'text-destructive'
-                            : 'text-foreground'
-                      )}
-                    >
-                      {personalAmount}
-                    </Text>
-                  </View>
-                  <View className="mt-auto flex-row flex-wrap gap-2 pr-[52px]">
-                    <CardAction
-                      href="/personal-transaction"
-                      title="Add entry"
-                    />
-                    <CardAction href="/personal" title="View personal" />
-                  </View>
-                </View>
-              ),
-              backContent: (
-                <View className="min-h-14 flex-row items-center justify-between gap-3 px-4">
+    <Screen
+      refreshControl={
+        <RefreshControl
+          refreshing={home.isRefetching}
+          onRefresh={() => home.refetch()}
+          tintColor={primary}
+          colors={[primary]}
+        />
+      }
+    >
+      <StackedCards
+        cards={[
+          {
+            id: 'personal',
+            frontContent: (
+              <View className="flex-1 p-4">
+                <View className="flex-row items-start justify-between gap-3">
                   <Text
                     selectable
-                    numberOfLines={1}
-                    className="flex-1 text-lg font-bold"
+                    className="flex-1 text-xl font-bold leading-[26px]"
                   >
                     Personal
                   </Text>
@@ -150,7 +99,7 @@ export default function HomeScreen() {
                     minimumFontScale={0.7}
                     numberOfLines={1}
                     className={cn(
-                      'max-w-[58%] flex-1 text-right text-xl font-bold tabular-nums',
+                      'max-w-[58%] text-right text-[28px] font-bold tabular-nums leading-[34px]',
                       personalTone === 'positive'
                         ? 'text-positive'
                         : personalTone === 'negative'
@@ -161,53 +110,50 @@ export default function HomeScreen() {
                     {personalAmount}
                   </Text>
                 </View>
-              ),
-              accessibilityLabel: 'Bring Personal card to front',
-              className: 'border border-border bg-card'
-            },
-            {
-              id: 'shared',
-              frontContent: (
-                <View className="flex-1 p-4">
-                  <View className="flex-row items-start justify-between gap-3">
-                    <Text
-                      selectable
-                      className="flex-1 text-xl font-bold leading-[26px]"
-                    >
-                      {sharedDirection}
-                    </Text>
-                    <Text
-                      selectable
-                      adjustsFontSizeToFit
-                      minimumFontScale={0.7}
-                      numberOfLines={1}
-                      className={cn(
-                        'max-w-[58%] text-right text-[28px] font-bold tabular-nums leading-[34px]',
-                        sharedTone === 'positive'
-                          ? 'text-positive'
-                          : sharedTone === 'negative'
-                            ? 'text-destructive'
-                            : 'text-foreground'
-                      )}
-                    >
-                      {sharedAmountLabel}
-                    </Text>
-                  </View>
-                  <View className="mt-auto flex-row flex-wrap gap-2 pr-[52px]">
-                    {sharedNet < 0n ? (
-                      <CardAction onPress={settleUp} title="Settle up" />
-                    ) : (
-                      <CardAction href="/activity" title="View" />
-                    )}
-                  </View>
+                <View className="mt-auto flex-row flex-wrap gap-2 pr-[52px]">
+                  <CardAction href="/personal-transaction" title="Add entry" />
+                  <CardAction href="/personal" title="View personal" />
                 </View>
-              ),
-              backContent: (
-                <View className="min-h-14 flex-row items-center justify-between gap-3 px-4">
+              </View>
+            ),
+            backContent: (
+              <View className="min-h-14 flex-row items-center justify-between gap-3 px-4">
+                <Text
+                  selectable
+                  numberOfLines={1}
+                  className="flex-1 text-lg font-bold"
+                >
+                  Personal
+                </Text>
+                <Text
+                  selectable
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.7}
+                  numberOfLines={1}
+                  className={cn(
+                    'max-w-[58%] flex-1 text-right text-xl font-bold tabular-nums',
+                    personalTone === 'positive'
+                      ? 'text-positive'
+                      : personalTone === 'negative'
+                        ? 'text-destructive'
+                        : 'text-foreground'
+                  )}
+                >
+                  {personalAmount}
+                </Text>
+              </View>
+            ),
+            accessibilityLabel: 'Bring Personal card to front',
+            className: 'border border-border bg-card'
+          },
+          {
+            id: 'shared',
+            frontContent: (
+              <View className="flex-1 p-4">
+                <View className="flex-row items-start justify-between gap-3">
                   <Text
                     selectable
-                    numberOfLines={1}
-                    className="flex-1 text-lg font-bold"
+                    className="flex-1 text-xl font-bold leading-[26px]"
                   >
                     {sharedDirection}
                   </Text>
@@ -217,7 +163,7 @@ export default function HomeScreen() {
                     minimumFontScale={0.7}
                     numberOfLines={1}
                     className={cn(
-                      'max-w-[58%] flex-1 text-right text-xl font-bold tabular-nums',
+                      'max-w-[58%] text-right text-[28px] font-bold tabular-nums leading-[34px]',
                       sharedTone === 'positive'
                         ? 'text-positive'
                         : sharedTone === 'negative'
@@ -228,39 +174,73 @@ export default function HomeScreen() {
                     {sharedAmountLabel}
                   </Text>
                 </View>
-              ),
-              accessibilityLabel: 'Bring balance card to front',
-              className: 'border border-border bg-card'
-            }
-          ]}
-        />
-        <View className="gap-2">
-          <View className="flex-row items-center justify-between gap-3">
-            <SectionLabel>RECENT ACTIVITY</SectionLabel>
-            <Link href="/activity" asChild>
-              <Button variant="link" size="sm" role="link" className="px-0">
-                <Text>View all</Text>
-              </Button>
-            </Link>
-          </View>
-          {home.data.recent.length ? (
-            <Card>
-              {home.data.recent.map((item) => (
-                <RecentRow
-                  key={`${item.kind}-${item.id}-${item.createdAt}`}
-                  item={item}
-                  currency={home.data.currency}
-                />
-              ))}
-            </Card>
-          ) : (
-            <Text selectable className="leading-6 text-muted-foreground">
-              No recent activity yet.
-            </Text>
-          )}
+                <View className="mt-auto flex-row flex-wrap gap-2 pr-[52px]">
+                  {sharedNet < 0n ? (
+                    <CardAction onPress={settleUp} title="Settle up" />
+                  ) : (
+                    <CardAction href="/activity" title="View" />
+                  )}
+                </View>
+              </View>
+            ),
+            backContent: (
+              <View className="min-h-14 flex-row items-center justify-between gap-3 px-4">
+                <Text
+                  selectable
+                  numberOfLines={1}
+                  className="flex-1 text-lg font-bold"
+                >
+                  {sharedDirection}
+                </Text>
+                <Text
+                  selectable
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.7}
+                  numberOfLines={1}
+                  className={cn(
+                    'max-w-[58%] flex-1 text-right text-xl font-bold tabular-nums',
+                    sharedTone === 'positive'
+                      ? 'text-positive'
+                      : sharedTone === 'negative'
+                        ? 'text-destructive'
+                        : 'text-foreground'
+                  )}
+                >
+                  {sharedAmountLabel}
+                </Text>
+              </View>
+            ),
+            accessibilityLabel: 'Bring balance card to front',
+            className: 'border border-border bg-card'
+          }
+        ]}
+      />
+      <View className="gap-2">
+        <View className="flex-row flex-wrap items-center justify-between gap-x-3">
+          <SectionLabel>RECENT ACTIVITY</SectionLabel>
+          <Link href="/activity" asChild>
+            <Button variant="link" size="sm" role="link" className="px-0">
+              <Text>View all</Text>
+            </Button>
+          </Link>
         </View>
-      </Screen>
-    </>
+        {home.data.recent.length ? (
+          <Card>
+            {home.data.recent.map((item) => (
+              <RecentRow
+                key={`${item.kind}-${item.id}-${item.createdAt}`}
+                item={item}
+                currency={home.data.currency}
+              />
+            ))}
+          </Card>
+        ) : (
+          <Text selectable className="leading-6 text-muted-foreground">
+            No recent activity yet.
+          </Text>
+        )}
+      </View>
+    </Screen>
   );
 }
 
@@ -305,61 +285,60 @@ function RecentRow({
   currency: Home['currency'];
 }) {
   const { content, href } = recentPresentation(item);
+  const { fontScale } = useWindowDimensions();
+  const stackedAmount = Math.round(fontScale * 100) >= 130;
+  const amountLabel = formatMinorAmount(item.amountMinor, currency).replace(
+    /\s*(?=\d)/,
+    '\u00a0'
+  );
   const tone: AmountTone =
     item.kind === 'PERSONAL_INCOME'
       ? 'positive'
       : item.kind === 'PERSONAL_EXPENSE'
         ? 'negative'
         : 'neutral';
-  const personal = item.kind.startsWith('PERSONAL');
+  const amount = (
+    <Text
+      selectable
+      className={cn(
+        'shrink-0 text-[15px] font-semibold tabular-nums leading-6',
+        tone === 'positive'
+          ? 'text-positive'
+          : tone === 'negative'
+            ? 'text-destructive'
+            : 'text-foreground'
+      )}
+    >
+      {amountLabel}
+    </Text>
+  );
   return (
     <Link href={href} asChild>
       <Button
         variant="ghost"
         role="link"
-        accessibilityLabel={`${content.tag}. ${content.title}. ${content.subtitle}. ${formatMinorAmount(item.amountMinor, currency)}`}
-        className="min-h-[68px] w-full flex-row items-center justify-start gap-3 rounded-none border-b border-border p-3"
+        accessibilityLabel={`${content.title}. ${content.tag}. ${content.subtitle}. ${amountLabel}`}
+        className="min-h-[68px] w-full flex-col items-stretch justify-start gap-0 rounded-none border-b border-border p-4"
       >
-        <View
-          className={cn(
-            'min-w-[62px] rounded-lg px-2 py-1',
-            personal ? 'bg-accent' : 'bg-muted'
-          )}
-        >
+        <View className="flex-row items-start gap-3">
           <Text
             selectable
-            className={cn(
-              'text-[11px] font-bold leading-[14px]',
-              personal ? 'text-primary' : 'text-muted-foreground'
-            )}
+            numberOfLines={3}
+            className="flex-1 text-base font-semibold leading-6"
           >
-            {content.tag}
-          </Text>
-        </View>
-        <View className="flex-1 gap-px">
-          <Text selectable className="text-base font-semibold leading-[22px]">
             {content.title}
           </Text>
-          <Text
-            selectable
-            className="text-[13px] leading-[18px] text-muted-foreground"
-          >
-            {content.subtitle}
-          </Text>
+          {stackedAmount ? null : amount}
         </View>
         <Text
           selectable
-          className={cn(
-            'max-w-[30%] text-right text-[15px] font-semibold tabular-nums leading-5',
-            tone === 'positive'
-              ? 'text-positive'
-              : tone === 'negative'
-                ? 'text-destructive'
-                : 'text-foreground'
-          )}
+          className="mt-1 text-[15px] font-normal leading-[22px] text-muted-foreground"
         >
-          {formatMinorAmount(item.amountMinor, currency)}
+          {content.tag} · {content.subtitle}
         </Text>
+        {stackedAmount ? (
+          <View className="mt-1 items-start">{amount}</View>
+        ) : null}
       </Button>
     </Link>
   );

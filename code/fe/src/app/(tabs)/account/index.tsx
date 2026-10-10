@@ -1,6 +1,7 @@
+import { useDialog } from '@/components/ui/dialog';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import Constants from 'expo-constants';
-import { ActivityIndicator, Alert, View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 
 import {
   notificationPreferencesQuery,
@@ -8,6 +9,7 @@ import {
   sessionsQuery
 } from '@/features/account/api';
 import { signOut } from '@/features/auth/api';
+import { ExportAccountRow } from '@/features/account/components/export-account-row';
 import {
   Avatar,
   Card,
@@ -21,6 +23,7 @@ import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 
 export default function AccountScreen() {
+  const dialog = useDialog();
   const profile = useQuery(profileQuery);
   const sessions = useQuery(sessionsQuery);
   const notifications = useQuery(notificationPreferencesQuery);
@@ -49,24 +52,11 @@ export default function AccountScreen() {
           detail={profile.data?.displayCurrency}
           href="/account/profile"
         />
-        <Row
-          title="Timezone"
-          detail={profile.data?.timezone}
-          href="/account/profile"
-        />
-        <Row
-          title="Report mode"
-          detail={
-            profile.data?.personalReportMode === 'CASH_OUT_OF_POCKET'
-              ? 'Cash out of pocket'
-              : 'Your share'
-          }
-          href="/account/profile"
-        />
       </Card>
       <SectionLabel>SECURITY</SectionLabel>
       <Card>
         <Row title="Change password" href="/account/change-password" />
+        <Row title="Blocked people" href="/account/blocked-people" />
         <Row
           title="Devices and sessions"
           detail={sessions.data ? `${sessions.data.length} active` : undefined}
@@ -86,7 +76,7 @@ export default function AccountScreen() {
       </Card>
       <SectionLabel>YOUR DATA</SectionLabel>
       <Card>
-        <Row title="Export your data" href="/account/export" />
+        <ExportAccountRow />
         <Row
           title="Delete account"
           href="/account/delete-account"
@@ -113,7 +103,7 @@ export default function AccountScreen() {
             busy: mutation.isPending
           }}
           onPress={() =>
-            Alert.alert('Sign out?', 'This signs out only this device.', [
+            dialog('Sign out?', 'This signs out only this device.', [
               { text: 'Cancel', style: 'cancel' },
               { text: 'Sign out', onPress: () => mutation.mutate() }
             ])

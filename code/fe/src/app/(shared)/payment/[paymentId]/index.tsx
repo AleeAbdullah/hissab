@@ -1,6 +1,7 @@
+import { useDialog } from '@/components/ui/dialog';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link, router, useLocalSearchParams } from 'expo-router';
-import { ActivityIndicator, Alert } from 'react-native';
+import { ActivityIndicator } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
 import {
@@ -24,6 +25,7 @@ import { homeQuery } from '@/features/home/api';
 import { deleteSettlement, settlementQuery } from '@/features/settlements/api';
 
 export default function PaymentDetailScreen() {
+  const dialog = useDialog();
   const { paymentId } = useLocalSearchParams<{ paymentId: string }>();
   const settlement = useQuery(settlementQuery(paymentId));
   const profile = useQuery(profileQuery);
@@ -107,7 +109,7 @@ export default function PaymentDetailScreen() {
               busy: remove.isPending
             }}
             onPress={() =>
-              Alert.alert(
+              dialog(
                 'Delete payment?',
                 'This reverses its balance effect. It does not reverse any money paid outside Hissab.',
                 [

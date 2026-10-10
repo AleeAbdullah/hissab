@@ -1,9 +1,14 @@
+import { useDialog } from '@/components/ui/dialog';
 import { useInfiniteQuery, useMutation, useQuery } from '@tanstack/react-query';
+import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Switch, View } from 'react-native';
+import { ActivityIndicator, Switch, View } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
-import type { NotificationPreferences } from '@/api/contracts';
+import type {
+  InAppNotification,
+  NotificationPreferences
+} from '@/api/contracts';
 import { Card, ErrorMessage, Loading, Notice, Screen } from '@/components/ui';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
@@ -22,6 +27,7 @@ import {
   registerForPushNotifications,
   revokePushNotifications
 } from '@/features/account/push';
+import { reminderLedgerHref } from '@/features/reminders/navigation';
 import { THEME_VARIABLES, useThemeVariable } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 
@@ -56,6 +62,7 @@ const options: { key: PreferenceKey; title: string; description: string }[] = [
 ];
 
 export default function NotificationsScreen() {
+  const dialog = useDialog();
   const control = useThemeVariable(THEME_VARIABLES.input);
   const primary = useThemeVariable(THEME_VARIABLES.primary);
   const session = useSession();
@@ -77,6 +84,16 @@ export default function NotificationsScreen() {
   });
   const [setupError, setSetupError] = useState<string>();
   const [deviceRegistered, setDeviceRegistered] = useState(false);
+  const openNotification = (notification: InAppNotification) => {
+    if (!notification.readAt) markRead.mutate(notification.id);
+    const href = reminderLedgerHref({
+      actorUserId: notification.actorUserId,
+      eventType: notification.eventType,
+      ledgerId: notification.ledgerId,
+      ledgerType: notification.details.ledgerType
+    });
+    if (href) router.push(href);
+  };
 
   useEffect(() => {
     let active = true;
@@ -115,9 +132,9 @@ export default function NotificationsScreen() {
     <Screen>
       {preferences.error ? <ErrorMessage error={preferences.error} /> : null}
       {!canRegisterPushNotifications() ? (
-        <Notice title="Physical device required">
-          Push registration is available in your Hissab development build on a
-          physical iOS or Android device.
+        <Notice title="Push notifications paused">
+          Push notifications are disabled for now. Your in-app inbox is still
+          available.
         </Notice>
       ) : null}
       {setupError ? (
@@ -161,7 +178,7 @@ export default function NotificationsScreen() {
             busy: revokePush.isPending
           }}
           onPress={() =>
-            Alert.alert(
+            dialog(
               'Disable push on this device?',
               'This stops push alerts on this installation. Other devices remain unchanged.',
               [
@@ -201,7 +218,7 @@ export default function NotificationsScreen() {
         markingId={markRead.isPending ? markRead.variables : undefined}
         onLoadMore={() => inbox.fetchNextPage()}
         onMarkAllRead={() => markAllRead.mutate()}
-        onMarkRead={(notificationId) => markRead.mutate(notificationId)}
+        onOpen={openNotification}
       />
     </Screen>
   );

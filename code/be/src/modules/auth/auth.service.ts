@@ -90,7 +90,6 @@ export class AuthService {
             email: dto.email,
             passwordHash,
             displayName: dto.displayName,
-            timezone: dto.timezone,
           });
         } catch (error) {
           if (isUniqueViolation(error)) {

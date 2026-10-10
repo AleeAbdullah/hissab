@@ -1,3 +1,5 @@
+import Constants from 'expo-constants';
+
 import { client } from './generated/client.gen';
 import { authRefresh } from './generated/sdk.gen';
 import { errorMessage } from './error-message';
@@ -11,10 +13,10 @@ type Result = {
   response?: Response;
 };
 
-const localApiUrl =
-  process.env.EXPO_OS === 'android'
-    ? 'http://10.0.2.2:3000'
-    : 'http://127.0.0.1:3000';
+const localApiUrl = `http://${
+  Constants.expoConfig?.hostUri?.replace(/:\d+$/, '') ??
+  (process.env.EXPO_OS === 'android' ? '10.0.2.2' : '127.0.0.1')
+}:3000`;
 export const apiBaseUrl =
   process.env.EXPO_PUBLIC_API_URL ?? (__DEV__ ? localApiUrl : '');
 

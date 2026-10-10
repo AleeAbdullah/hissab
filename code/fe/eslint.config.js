@@ -7,7 +7,12 @@ const themeBoundaryFiles = [
   'src/app/(tabs)/_layout.tsx',
   'src/app/(tabs)/account/notifications.tsx',
   'src/app/(tabs)/activity/index.tsx',
-  'src/app/(tabs)/home/index.tsx'
+  'src/app/(tabs)/home/index.tsx',
+  'src/features/personal/components/include-shared-switch.tsx',
+  'src/features/personal/components/spending-chart.tsx',
+  'src/features/personal/components/spending-donut.tsx',
+  'src/features/personal/components/transaction-date-field.tsx',
+  'src/features/personal/components/transaction-filter-sheet.tsx'
 ];
 
 module.exports = defineConfig([

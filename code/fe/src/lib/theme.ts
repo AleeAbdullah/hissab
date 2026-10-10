@@ -13,8 +13,10 @@ export const THEME_VARIABLES = {
   card: '--card',
   popover: '--popover',
   primary: '--primary',
+  primaryText: '--primary-text',
   secondary: '--secondary',
   muted: '--muted',
+  mutedForeground: '--muted-foreground',
   accent: '--accent',
   destructive: '--destructive',
   border: '--border',
@@ -26,9 +28,9 @@ export const THEME_VARIABLES = {
 export const NAV_THEME_VARIABLES = {
   background: THEME_VARIABLES.background,
   border: THEME_VARIABLES.border,
-  card: THEME_VARIABLES.card,
+  card: THEME_VARIABLES.background,
   notification: THEME_VARIABLES.destructive,
-  primary: THEME_VARIABLES.primary,
+  primary: THEME_VARIABLES.primaryText,
   text: THEME_VARIABLES.foreground
 } as const;
 

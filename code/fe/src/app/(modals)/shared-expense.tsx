@@ -1,6 +1,6 @@
+import { useDialog } from '@/components/ui/dialog';
 import { useMutation } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { Alert } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
 import { ErrorMessage, Loading, Notice, Screen } from '@/components/ui';
@@ -15,6 +15,7 @@ import { useLedgerDraft } from '@/features/ledger/draft';
 import { usePersistentDraft } from '@/features/local-data/draft';
 
 export default function SharedExpenseScreen() {
+  const dialog = useDialog();
   const { clearDraft, draft, ready: ledgerReady } = useLedgerDraft();
   const persistedDraft = usePersistentDraft<ExpenseFormDraft>(
     draft ? `shared-expense:${draft.ledgerId}` : null
@@ -28,6 +29,7 @@ export default function SharedExpenseScreen() {
           queryKey: ['ledgers', draft!.ledgerId]
         }),
         queryClient.invalidateQueries({ queryKey: userBalancesQuery.queryKey }),
+        queryClient.invalidateQueries({ queryKey: ['personal'] }),
         queryClient.invalidateQueries({ queryKey: homeQuery.queryKey })
       ]);
       persistedDraft.clear();
@@ -45,13 +47,13 @@ export default function SharedExpenseScreen() {
       </Screen>
     );
   const discard = () =>
-    Alert.alert(
+    dialog(
       'Discard draft?',
       'This removes the saved expense details from this device.',
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'Keep editing', style: 'cancel' },
         {
-          text: 'Discard draft',
+          text: 'Discard',
           style: 'destructive',
           onPress: () => {
             persistedDraft.clear();

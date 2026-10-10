@@ -9,6 +9,7 @@ module.exports = {
       colors: {
         background: 'var(--background)',
         foreground: 'var(--foreground)',
+        scrim: 'var(--scrim)',
         card: {
           DEFAULT: 'var(--card)',
           foreground: 'var(--card-foreground)'
@@ -52,6 +53,12 @@ module.exports = {
           3: 'var(--chart-3)',
           4: 'var(--chart-4)',
           5: 'var(--chart-5)'
+        }
+      },
+      textColor: {
+        primary: {
+          DEFAULT: 'var(--primary-text)',
+          foreground: 'var(--primary-foreground)'
         }
       },
       borderWidth: {

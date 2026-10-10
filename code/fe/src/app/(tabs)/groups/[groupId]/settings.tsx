@@ -1,7 +1,8 @@
+import { useDialog } from '@/components/ui/dialog';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Stack } from 'expo-router/stack';
-import { ActivityIndicator, Alert } from 'react-native';
+import { ActivityIndicator } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
 import { ErrorMessage, Loading, Notice, Screen } from '@/components/ui';
@@ -16,6 +17,7 @@ import {
 import { homeQuery } from '@/features/home/api';
 
 export default function GroupSettingsScreen() {
+  const dialog = useDialog();
   const { groupId } = useLocalSearchParams<{ groupId: string }>();
   const group = useQuery(groupQuery(groupId));
   const leave = useMutation({
@@ -72,7 +74,7 @@ export default function GroupSettingsScreen() {
           disabled={pending}
           accessibilityState={{ disabled: pending, busy: leave.isPending }}
           onPress={() =>
-            Alert.alert(
+            dialog(
               'Leave group?',
               `You will lose access to ${group.data.name}'s active ledger. This cannot be undone.`,
               [
@@ -99,7 +101,7 @@ export default function GroupSettingsScreen() {
           disabled={pending}
           accessibilityState={{ disabled: pending, busy: archive.isPending }}
           onPress={() =>
-            Alert.alert(
+            dialog(
               'Archive group?',
               `Archive ${group.data.name} for everyone once all group balances are settled.`,
               [

@@ -14,12 +14,14 @@ import {
 interface NotificationRow {
   id: string;
   recipient_user_id: string;
+  actor_user_id: string | null;
   kind: 'EXPENSE' | 'SETTLEMENT' | 'SOCIAL' | 'REMINDER';
   event_type: string;
   aggregate_id: string;
   ledger_id: string | null;
   title: string;
   body: string;
+  payload: Record<string, unknown>;
   push_enabled: boolean;
   kind_enabled: boolean;
 }
@@ -128,7 +130,7 @@ export class ExpoPushHandler implements OutboxHandler, OnModuleInit {
         this.config.getOrThrow('EXPO_PUSH_SEND_URL'),
         deliveries.map((delivery) => ({
           to: delivery.token,
-          sound: 'default',
+          ...(notification.kind === 'REMINDER' ? {} : { sound: 'default' }),
           title: notification.title,
           body: notification.body,
           collapseId: notification.id,
@@ -136,10 +138,18 @@ export class ExpoPushHandler implements OutboxHandler, OnModuleInit {
           data: {
             notificationId: notification.id,
             deduplicationId: notification.id,
+            recipientUserId: notification.recipient_user_id,
             eventType: notification.event_type,
             aggregateId: notification.aggregate_id,
+            ...(notification.actor_user_id
+              ? { actorUserId: notification.actor_user_id }
+              : {}),
             ...(notification.ledger_id
               ? { ledgerId: notification.ledger_id }
+              : {}),
+            ...(notification.payload.ledgerType === 'DIRECT' ||
+            notification.payload.ledgerType === 'GROUP'
+              ? { ledgerType: notification.payload.ledgerType }
               : {}),
           },
         })),
@@ -246,9 +256,10 @@ export class ExpoPushHandler implements OutboxHandler, OnModuleInit {
   private async findNotification(id: string): Promise<NotificationRow | null> {
     const result = await this.database.pool.query<NotificationRow>(
       `select notification.id, notification.recipient_user_id,
+              notification.actor_user_id,
               notification.kind, notification.event_type,
               notification.aggregate_id, notification.ledger_id,
-              notification.title, notification.body,
+              notification.title, notification.body, notification.payload,
               coalesce(preference.push_enabled, true) as push_enabled,
               case notification.kind
                 when 'EXPENSE' then coalesce(preference.expense_activity_enabled, true)

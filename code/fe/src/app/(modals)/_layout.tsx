@@ -11,34 +11,12 @@ export default function ModalLayout() {
           sheetGrabberVisible: true
         }}
       />
-      <Stack.Screen
-        name="group-new"
-        options={{
-          title: 'Create group',
-          presentation: 'formSheet',
-          sheetGrabberVisible: true
-        }}
-      />
-      <Stack.Screen
-        name="members-select"
-        options={{
-          title: 'Invite members',
-          presentation: 'formSheet',
-          sheetGrabberVisible: true
-        }}
-      />
       <Stack.Screen name="shared-expense" options={{ title: 'Add expense' }} />
       <Stack.Screen name="receipt" options={{ title: 'Receipt' }} />
       <Stack.Screen
         name="settlement"
         options={{ title: 'Record settlement' }}
       />
-      <Stack.Screen name="reminder" options={{ title: 'Send reminder' }} />
-      <Stack.Screen
-        name="personal-transaction"
-        options={{ title: 'Add transaction' }}
-      />
-      <Stack.Screen name="report-mode" options={{ title: 'Report mode' }} />
     </Stack>
   );
 }

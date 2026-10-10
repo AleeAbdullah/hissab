@@ -1,6 +1,7 @@
+import { useDialog } from '@/components/ui/dialog';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link, router, useLocalSearchParams } from 'expo-router';
-import { ActivityIndicator, Alert, View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
 import {
@@ -24,6 +25,7 @@ import { homeQuery } from '@/features/home/api';
 import { deleteExpense, expenseQuery } from '@/features/expenses/api';
 
 export default function ExpenseDetailScreen() {
+  const dialog = useDialog();
   const { expenseId } = useLocalSearchParams<{ expenseId: string }>();
   const expense = useQuery(expenseQuery(expenseId));
   const profile = useQuery(profileQuery);
@@ -39,6 +41,7 @@ export default function ExpenseDetailScreen() {
           queryKey: ['ledgers', expense.data!.ledgerId]
         }),
         queryClient.invalidateQueries({ queryKey: userBalancesQuery.queryKey }),
+        queryClient.invalidateQueries({ queryKey: ['personal'] }),
         queryClient.invalidateQueries({ queryKey: homeQuery.queryKey })
       ]);
       router.back();
@@ -120,9 +123,9 @@ export default function ExpenseDetailScreen() {
               busy: remove.isPending
             }}
             onPress={() =>
-              Alert.alert(
+              dialog(
                 'Delete expense?',
-                'This reverses its balance effect while keeping an auditable record.',
+                'It stops counting in balances; its history stays visible.',
                 [
                   { text: 'Keep expense', style: 'cancel' },
                   {

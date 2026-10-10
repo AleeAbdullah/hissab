@@ -82,10 +82,6 @@ export const categoryKindEnum = pgEnum('category_kind', [
   'EXPENSE',
   'BOTH',
 ]);
-export const personalReportModeEnum = pgEnum('personal_report_mode', [
-  'OWED_SHARE',
-  'CASH_OUT_OF_POCKET',
-]);
 export const idempotencyStatusEnum = pgEnum('idempotency_status', [
   'PROCESSING',
   'COMPLETED',
@@ -113,7 +109,6 @@ export const users = pgTable(
     displayCurrency: char('display_currency', { length: 3 })
       .notNull()
       .default('PKR'),
-    timezone: text('timezone').notNull().default('UTC'),
     status: userStatusEnum('status').notNull().default('ACTIVE'),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
@@ -253,9 +248,6 @@ export const userPreferences = pgTable('user_preferences', {
   userId: uuid('user_id')
     .primaryKey()
     .references(() => users.id, { onDelete: 'restrict' }),
-  personalReportMode: personalReportModeEnum('personal_report_mode')
-    .notNull()
-    .default('OWED_SHARE'),
   createdAt: timestamp('created_at', { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -929,10 +921,7 @@ export const attachments = pgTable(
       'attachments_filename_length_check',
       sql`char_length(${table.originalFileName}) BETWEEN 1 AND 255`,
     ),
-    check(
-      'attachments_sha256_check',
-      sql`${table.sha256} ~ '^[0-9a-f]{64}$'`,
-    ),
+    check('attachments_sha256_check', sql`${table.sha256} ~ '^[0-9a-f]{64}$'`),
     uniqueIndex('attachments_object_key_uq').on(table.objectKey),
     index('attachments_expense_idx')
       .on(table.expenseId)
@@ -1208,7 +1197,6 @@ export const reminderRequests = pgTable(
     check('reminder_requests_positive_owed_check', sql`${table.owedMinor} > 0`),
     index('reminder_requests_cooldown_idx').on(
       table.ledgerId,
-      table.requesterUserId,
       table.recipientUserId,
       table.createdAt.desc(),
     ),

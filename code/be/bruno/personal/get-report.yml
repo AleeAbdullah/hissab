@@ -5,9 +5,9 @@ info:
 
 http:
   method: GET
-  url: "{{baseUrl}}/v1/personal/reports?mode=OWED_SHARE&bucket=MONTH"
+  url: "{{baseUrl}}/v1/personal/reports?includeShared=true&bucket=MONTH"
   auth:
     type: bearer
     token: "{{accessToken}}"
 
-docs: Returns manual and shared-allocation totals grouped in the user's timezone; settlements are excluded.
+docs: Returns manual and shared-allocation totals grouped by UTC day or month; settlements are excluded.

@@ -21,4 +21,4 @@ http:
     type: bearer
     token: "{{accessToken}}"
 
-docs: Sends a manual reminder only when the sender is owed and the recipient owes in this ledger; the tuple has a rolling 24-hour cooldown.
+docs: Sends a manual reminder only when the sender is owed and the recipient owes in this ledger; the recipient and ledger have a rolling 24-hour cooldown regardless of sender.

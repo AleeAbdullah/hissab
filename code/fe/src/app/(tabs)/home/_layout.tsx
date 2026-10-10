@@ -1,4 +1,5 @@
 import { Stack } from 'expo-router/stack';
+import { Platform } from 'react-native';
 
 export default function HomeLayout() {
   return (
@@ -10,7 +11,21 @@ export default function HomeLayout() {
     >
       <Stack.Screen
         name="index"
-        options={{ title: 'Home', headerLargeTitle: true }}
+        options={{
+          title: 'Hissab',
+          headerLargeTitle: Platform.OS === 'ios',
+          headerTitleAlign: 'left',
+          headerTitleStyle: {
+            fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
+            fontWeight: '400',
+            fontSize: Platform.OS === 'ios' ? 20 : 24
+          },
+          headerLargeTitleStyle: {
+            fontFamily: 'Georgia',
+            fontWeight: '400',
+            fontSize: 32
+          }
+        }}
       />
     </Stack>
   );

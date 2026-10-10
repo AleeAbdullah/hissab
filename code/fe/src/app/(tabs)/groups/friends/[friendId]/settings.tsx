@@ -1,7 +1,8 @@
+import { useDialog } from '@/components/ui/dialog';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link, router, useLocalSearchParams } from 'expo-router';
 import { Stack } from 'expo-router/stack';
-import { ActivityIndicator, Alert, View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
 import { Avatar, Card, ErrorMessage, Notice, Screen } from '@/components/ui';
@@ -19,6 +20,7 @@ import {
 import { homeQuery } from '@/features/home/api';
 
 export default function FriendSettingsScreen() {
+  const dialog = useDialog();
   const { friendId } = useLocalSearchParams<{ friendId: string }>();
   const { data } = useQuery(connectionsQuery);
   const friend = data?.find((item) => item.userId === friendId);
@@ -104,7 +106,7 @@ export default function FriendSettingsScreen() {
           busy: blockFriend.isPending
         }}
         onPress={() =>
-          Alert.alert(
+          dialog(
             `Block ${friend?.displayName ?? 'person'}?`,
             'This archives the settled direct ledger. It does not delete its audit history.',
             [
@@ -124,7 +126,7 @@ export default function FriendSettingsScreen() {
           <Text>Block person</Text>
         )}
       </Button>
-      <Link href="/groups/friends/blocked" asChild>
+      <Link href="/account/blocked-people" asChild>
         <Button variant="outline" role="link">
           <Text>View blocked people</Text>
         </Button>

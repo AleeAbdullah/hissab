@@ -1,6 +1,7 @@
+import { useDialog } from '@/components/ui/dialog';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link, router, useLocalSearchParams } from 'expo-router';
-import { ActivityIndicator, Alert, View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
 import {
@@ -23,6 +24,7 @@ import {
 } from '@/features/personal/api';
 
 export default function TransactionDetailScreen() {
+  const dialog = useDialog();
   const { transactionId } = useLocalSearchParams<{ transactionId: string }>();
   const transaction = useQuery(personalTransactionQuery(transactionId));
   const profile = useQuery(profileQuery);
@@ -106,7 +108,7 @@ export default function TransactionDetailScreen() {
               busy: remove.isPending
             }}
             onPress={() =>
-              Alert.alert(
+              dialog(
                 'Delete transaction?',
                 'This removes its current effect from your reports and keeps an auditable revision.',
                 [

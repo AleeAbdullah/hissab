@@ -1,5 +1,5 @@
-import * as Device from 'expo-device';
-import * as Notifications from 'expo-notifications';
+// TODO: Restore physical-device detection when using a Hissab development build.
+// import * as Device from 'expo-device';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
@@ -9,18 +9,20 @@ const installationKey = 'hissab.push.installation';
 const deviceKey = (userId: string) => `hissab.push.device.${userId}`;
 
 export function canRegisterPushNotifications() {
-  return (
-    Device.isDevice && (Platform.OS === 'ios' || Platform.OS === 'android')
-  );
+  // TODO: Enable push registration when switching from Expo Go to a development build.
+  // return Device.isDevice && (Platform.OS === 'ios' || Platform.OS === 'android');
+  return false;
 }
 
 export async function registerForPushNotifications(userId: string) {
   if (!canRegisterPushNotifications()) {
     throw new Error(
-      'Push registration requires a physical iOS or Android device.'
+      'Push notifications are disabled until the Hissab development build is ready.'
     );
   }
 
+  // Load only after push is enabled; importing this at startup crashes Expo Go.
+  const Notifications = await import('expo-notifications');
   const current = await Notifications.getPermissionsAsync();
   const permission = current.granted
     ? current

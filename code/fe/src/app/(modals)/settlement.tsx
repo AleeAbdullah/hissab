@@ -1,6 +1,6 @@
+import { useDialog } from '@/components/ui/dialog';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { Alert } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
 import { ErrorMessage, Loading, Notice, Screen } from '@/components/ui';
@@ -18,6 +18,7 @@ import { useLedgerDraft } from '@/features/ledger/draft';
 import { usePersistentDraft } from '@/features/local-data/draft';
 
 export default function SettlementScreen() {
+  const dialog = useDialog();
   const { clearDraft, draft, ready: ledgerReady } = useLedgerDraft();
   const persistedDraft = usePersistentDraft<SettlementFormDraft>(
     draft ? `settlement:${draft.ledgerId}` : null
@@ -56,26 +57,27 @@ export default function SettlementScreen() {
     createsCredit: boolean
   ) => {
     if (!createsCredit) return create.mutate(body);
-    Alert.alert(
+    dialog(
       'This creates a credit',
-      'This payment is more than the current amount payable, or does not match the current balance direction. Hissab will record the credit.',
+      "Anything beyond the current balance becomes credit. Hissab doesn't send money.",
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'Edit amount', style: 'cancel' },
         {
-          text: 'Record payment and create a credit',
+          text: 'Record with credit',
           onPress: () => create.mutate(body)
         }
-      ]
+      ],
+      { tone: 'warning' }
     );
   };
   const discard = () =>
-    Alert.alert(
+    dialog(
       'Discard draft?',
       'This removes the saved payment details from this device.',
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'Keep editing', style: 'cancel' },
         {
-          text: 'Discard draft',
+          text: 'Discard',
           style: 'destructive',
           onPress: () => {
             persistedDraft.clear();

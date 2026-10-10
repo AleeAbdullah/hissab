@@ -29,6 +29,7 @@ export default function EditExpenseScreen() {
           queryKey: ['ledgers', expense.data!.ledgerId]
         }),
         queryClient.invalidateQueries({ queryKey: userBalancesQuery.queryKey }),
+        queryClient.invalidateQueries({ queryKey: ['personal'] }),
         queryClient.invalidateQueries({
           queryKey: expenseQuery(expenseId).queryKey
         }),

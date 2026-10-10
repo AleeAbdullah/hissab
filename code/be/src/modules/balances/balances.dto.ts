@@ -31,6 +31,12 @@ export class LedgerBalanceMemberDto {
 
   @ApiProperty({ pattern: '^-?[0-9]+$' })
   netMinor!: string;
+
+  @ApiProperty({ type: String, format: 'date-time', nullable: true })
+  lastReminderAt!: Date | null;
+
+  @ApiProperty({ type: String, format: 'date-time', nullable: true })
+  reminderAvailableAt!: Date | null;
 }
 
 export class LedgerBalancesDto {

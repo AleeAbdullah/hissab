@@ -1,48 +1,103 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { Stack } from 'expo-router/stack';
+import { ListFilter, Search, X } from 'lucide-react-native';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  ActivityIndicator,
+  Keyboard,
+  ScrollView,
+  TextInput,
+  View
+} from 'react-native';
 
 import type {
   PersonalCategoryCode,
-  PersonalTransaction,
+  PersonalHistoryItem,
+  PersonalReport,
   PersonalTransactionType
 } from '@/api/contracts';
 import {
   Card,
   ErrorMessage,
   Loading,
+  Row,
   Screen,
   SectionLabel
 } from '@/components/ui';
 import { Button } from '@/components/ui/button';
+import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
-import { profileQuery } from '@/features/account/api';
 import { ChoiceChips } from '@/components/choice-chips';
-import { PersonalTransactionRow } from '@/features/personal/components/personal-transaction-row';
+import { profileQuery } from '@/features/account/api';
+import { IncludeSharedSwitch } from '@/features/personal/components/include-shared-switch';
+import { PersonalSummary } from '@/features/personal/components/personal-summary';
+import { PersonalHistoryRow } from '@/features/personal/components/personal-history-row';
+import {
+  TransactionFilterSheet,
+  type TransactionFilters
+} from '@/features/personal/components/transaction-filter-sheet';
 import {
   personalCategoriesQuery,
-  personalTransactionsInfiniteQuery
+  personalHistoryInfiniteQuery
 } from '@/features/personal/api';
-import { periodLabel } from '@/features/personal/form';
+import { dateToIso } from '@/features/expenses/form';
+import { dateToExclusiveIso, periodLabel } from '@/features/personal/form';
+import { formatMinorAmount } from '@/lib/utils';
 
 export default function TransactionsScreen() {
+  const [includeShared, setIncludeShared] = useState(true);
+  const [bucket, setBucket] = useState<PersonalReport['bucket']>('MONTH');
+  const [totalsOpen, setTotalsOpen] = useState(false);
   const [type, setType] = useState<PersonalTransactionType | undefined>();
   const [categoryCode, setCategoryCode] = useState<
     PersonalCategoryCode | undefined
   >();
+  const [fromDate, setFromDate] = useState<string | undefined>();
+  const [toDate, setToDate] = useState<string | undefined>();
+  const [minAmountMinor, setMinAmountMinor] = useState<string | undefined>();
+  const [maxAmountMinor, setMaxAmountMinor] = useState<string | undefined>();
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchText, setSearchText] = useState('');
+  const [search, setSearch] = useState('');
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [filterSheetVersion, setFilterSheetVersion] = useState(0);
+  useEffect(() => {
+    const timeout = setTimeout(() => setSearch(searchText.trim()), 300);
+    return () => clearTimeout(timeout);
+  }, [searchText]);
   const profile = useQuery(profileQuery);
   const categories = useQuery(personalCategoriesQuery);
-  const transactions = useInfiniteQuery(
-    personalTransactionsInfiniteQuery({ type, categoryCode })
+  const history = useInfiniteQuery(
+    personalHistoryInfiniteQuery({
+      type,
+      categoryCode,
+      from: fromDate ? (dateToIso(fromDate) ?? undefined) : undefined,
+      to: toDate ? (dateToExclusiveIso(toDate) ?? undefined) : undefined,
+      minAmountMinor,
+      maxAmountMinor,
+      search: search || undefined,
+      includeShared: includeShared ? 'true' : 'false',
+      bucket
+    })
   );
   const items = useMemo(
-    () => transactions.data?.pages.flatMap((page) => page.items) ?? [],
-    [transactions.data]
+    () => history.data?.pages.flatMap((page) => page.items) ?? [],
+    [history.data]
   );
   const groups = useMemo(() => groupByMonth(items), [items]);
   const availableCategories = (categories.data ?? []).filter(
     (category) => !type || category.kind === type
   );
+  const selectedCategory = availableCategories.find(
+    (category) => category.code === categoryCode
+  );
+  const amountLimitMinor = history.data?.pages[0]?.maxAmountMinor;
+  const report = history.data?.pages[0]?.report;
+  const sheetFilterCount =
+    Number(Boolean(categoryCode)) +
+    Number(Boolean(fromDate || toDate)) +
+    Number(Boolean(minAmountMinor || maxAmountMinor));
+  const activeFilterCount = Number(Boolean(type)) + sheetFilterCount;
   const changeType = (value: string) => {
     const next =
       value === 'ALL' ? undefined : (value as PersonalTransactionType);
@@ -56,96 +111,320 @@ export default function TransactionsScreen() {
     )
       setCategoryCode(undefined);
   };
-  if (profile.isLoading || transactions.isLoading) return <Loading />;
-  if (profile.error || transactions.error || !profile.data)
+  const closeSearch = () => {
+    setSearchOpen(false);
+    setSearchText('');
+    setSearch('');
+    Keyboard.dismiss();
+  };
+  if (profile.isLoading) return <Loading />;
+  if (profile.error || !profile.data)
     return (
       <Screen>
         <ErrorMessage
-          error={
-            profile.error ??
-            transactions.error ??
-            new Error('Transactions are unavailable.')
-          }
+          error={profile.error ?? new Error('Profile is unavailable.')}
         />
       </Screen>
     );
 
   return (
-    <Screen>
-      {categories.error ? <ErrorMessage error={categories.error} /> : null}
-      <View className="gap-2">
-        <SectionLabel>TYPE</SectionLabel>
-        <ChoiceChips
-          choices={[
+    <>
+      <Stack.Screen
+        options={{
+          headerTitle: searchOpen
+            ? () => (
+                <TextInput
+                  autoFocus
+                  accessibilityLabel="Search personal history"
+                  placeholder="Search history"
+                  returnKeyType="search"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  maxLength={100}
+                  value={searchText}
+                  onChangeText={setSearchText}
+                  className="h-10 w-[190px] rounded-xl bg-muted px-3 text-base text-foreground placeholder:text-muted-foreground"
+                />
+              )
+            : 'History',
+          headerRight: () => (
+            <View className="flex-row">
+              <Button
+                variant="ghost"
+                size="icon"
+                accessibilityLabel={
+                  searchOpen ? 'Close search' : 'Search history'
+                }
+                onPress={searchOpen ? closeSearch : () => setSearchOpen(true)}
+              >
+                <Icon
+                  as={searchOpen ? X : Search}
+                  size={22}
+                  className="text-primary"
+                />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                accessibilityLabel={
+                  sheetFilterCount
+                    ? `Filter history, ${sheetFilterCount} selected`
+                    : 'Filter history'
+                }
+                disabled={categories.isLoading || Boolean(categories.error)}
+                onPress={() => {
+                  Keyboard.dismiss();
+                  setFilterSheetVersion((version) => version + 1);
+                  setFiltersOpen(true);
+                }}
+              >
+                <Icon as={ListFilter} size={22} className="text-primary" />
+              </Button>
+            </View>
+          )
+        }}
+      />
+      <Screen>
+        <IncludeSharedSwitch
+          value={includeShared}
+          onValueChange={setIncludeShared}
+        />
+        {history.isLoading ? (
+          <ActivityIndicator className="mt-8 text-primary" />
+        ) : history.error || !report ? (
+          <ErrorMessage
+            error={history.error ?? new Error('History is unavailable.')}
+          />
+        ) : (
+          <>
+            <PersonalSummary
+              displayCurrency={profile.data.displayCurrency}
+              report={report}
+              title={fromDate || toDate ? 'Selected period' : 'All time'}
+            />
+            <Button
+              variant="outline"
+              accessibilityState={{ expanded: totalsOpen }}
+              onPress={() => setTotalsOpen(!totalsOpen)}
+            >
+              <Text>
+                {totalsOpen ? 'Hide' : 'View'}{' '}
+                {bucket === 'MONTH' ? 'monthly' : 'daily'} totals
+              </Text>
+            </Button>
+            {totalsOpen ? (
+              <View className="gap-2">
+                <ChoiceChips
+                  choices={[
+                    { label: 'Month', value: 'MONTH' },
+                    { label: 'Day', value: 'DAY' }
+                  ]}
+                  value={bucket}
+                  onChange={(value) =>
+                    setBucket(value as PersonalReport['bucket'])
+                  }
+                />
+                {report.buckets.length ? (
+                  <Card>
+                    {report.buckets
+                      .slice()
+                      .reverse()
+                      .map((total) => (
+                        <Row
+                          key={total.period}
+                          title={periodLabel(total.period, bucket)}
+                          subtitle={`Income ${formatMinorAmount(total.incomeMinor, profile.data.displayCurrency)} · Spending ${formatMinorAmount(total.expenseMinor, profile.data.displayCurrency)}`}
+                          detail={
+                            BigInt(total.netMinor) >= 0n
+                              ? `Left ${formatMinorAmount(total.netMinor, profile.data.displayCurrency)}`
+                              : `Over ${formatMinorAmount((-BigInt(total.netMinor)).toString(), profile.data.displayCurrency)}`
+                          }
+                        />
+                      ))}
+                  </Card>
+                ) : (
+                  <Text selectable>No totals for this period.</Text>
+                )}
+              </View>
+            ) : null}
+          </>
+        )}
+        <ScrollView
+          horizontal
+          className="h-12 flex-grow-0"
+          showsHorizontalScrollIndicator={false}
+          contentContainerClassName="items-center gap-2"
+        >
+          {[
             { label: 'All', value: 'ALL' },
             { label: 'Expenses', value: 'EXPENSE' },
             { label: 'Income', value: 'INCOME' }
-          ]}
-          value={type ?? 'ALL'}
-          onChange={changeType}
-        />
-      </View>
-      <View className="gap-2">
-        <SectionLabel>CATEGORY</SectionLabel>
-        <ChoiceChips
-          choices={[
-            { label: 'All categories', value: 'ALL' },
-            ...availableCategories.map((category) => ({
-              label: category.name,
-              value: category.code
-            }))
-          ]}
-          value={categoryCode ?? 'ALL'}
-          onChange={(value) =>
-            setCategoryCode(
-              value === 'ALL' ? undefined : (value as PersonalCategoryCode)
-            )
-          }
-        />
-      </View>
-      {groups.length ? (
-        groups.map((group) => (
-          <View key={group.period} className="gap-2">
-            <SectionLabel>
-              {periodLabel(group.period, 'MONTH').toUpperCase()}
-            </SectionLabel>
-            <Card>
-              {group.items.map((transaction) => (
-                <PersonalTransactionRow
-                  key={transaction.id}
-                  displayCurrency={profile.data.displayCurrency}
-                  transaction={transaction}
-                />
-              ))}
-            </Card>
-          </View>
-        ))
-      ) : (
-        <Text selectable>No entries match these filters.</Text>
-      )}
-      {transactions.hasNextPage ? (
-        <Button
-          variant="outline"
-          disabled={transactions.isFetchingNextPage}
-          accessibilityState={{
-            disabled: transactions.isFetchingNextPage,
-            busy: transactions.isFetchingNextPage
-          }}
-          onPress={() => transactions.fetchNextPage()}
-        >
-          {transactions.isFetchingNextPage ? (
-            <ActivityIndicator className="text-primary" />
-          ) : (
-            <Text>Load more transactions</Text>
-          )}
-        </Button>
-      ) : null}
-    </Screen>
+          ].map((choice) => {
+            const selected = (type ?? 'ALL') === choice.value;
+            return (
+              <Button
+                key={choice.value}
+                variant="ghost"
+                className="px-0 py-0"
+                accessibilityState={{ selected }}
+                onPress={() => changeType(choice.value)}
+              >
+                <View
+                  className={
+                    selected
+                      ? 'min-h-8 justify-center rounded-full bg-primary px-3 py-1'
+                      : 'min-h-8 justify-center rounded-full bg-secondary px-3 py-1'
+                  }
+                >
+                  <Text
+                    className={
+                      selected
+                        ? 'text-[15px] font-medium text-primary-foreground'
+                        : 'text-[15px] font-medium text-secondary-foreground'
+                    }
+                  >
+                    {choice.label}
+                  </Text>
+                </View>
+              </Button>
+            );
+          })}
+          {categoryCode ? (
+            <Button
+              variant="ghost"
+              className="px-0 py-0"
+              accessibilityLabel={`Remove ${selectedCategory?.name ?? 'category'} filter`}
+              onPress={() => setCategoryCode(undefined)}
+            >
+              <View className="min-h-8 flex-row items-center gap-1 rounded-full border border-primary px-3 py-1">
+                <Text className="text-[15px] font-medium text-primary">
+                  {selectedCategory?.name ?? 'Category'}
+                </Text>
+                <Icon as={X} size={14} className="text-primary" />
+              </View>
+            </Button>
+          ) : null}
+          {fromDate || toDate ? (
+            <Button
+              variant="ghost"
+              className="px-0 py-0"
+              accessibilityLabel="Remove date filter"
+              onPress={() => {
+                setFromDate(undefined);
+                setToDate(undefined);
+              }}
+            >
+              <View className="min-h-8 flex-row items-center gap-1 rounded-full border border-primary px-3 py-1">
+                <Text className="text-[15px] font-medium text-primary">
+                  {filterDateRangeLabel(fromDate, toDate)}
+                </Text>
+                <Icon as={X} size={14} className="text-primary" />
+              </View>
+            </Button>
+          ) : null}
+          {minAmountMinor || maxAmountMinor ? (
+            <Button
+              variant="ghost"
+              className="px-0 py-0"
+              accessibilityLabel="Remove amount filter"
+              onPress={() => {
+                setMinAmountMinor(undefined);
+                setMaxAmountMinor(undefined);
+              }}
+            >
+              <View className="min-h-8 flex-row items-center gap-1 rounded-full border border-primary px-3 py-1">
+                <Text className="text-[15px] font-medium text-primary">
+                  {formatMinorAmount(
+                    minAmountMinor ?? '0',
+                    profile.data.displayCurrency
+                  )}{' '}
+                  –{' '}
+                  {maxAmountMinor
+                    ? formatMinorAmount(
+                        maxAmountMinor,
+                        profile.data.displayCurrency
+                      )
+                    : 'Any'}
+                </Text>
+                <Icon as={X} size={14} className="text-primary" />
+              </View>
+            </Button>
+          ) : null}
+        </ScrollView>
+        {categories.error ? <ErrorMessage error={categories.error} /> : null}
+        {history.isLoading || history.error ? null : groups.length ? (
+          groups.map((group) => (
+            <View key={group.period} className="gap-2">
+              <SectionLabel>
+                {periodLabel(group.period, 'MONTH').toUpperCase()}
+              </SectionLabel>
+              <Card>
+                {group.items.map((item) => (
+                  <PersonalHistoryRow
+                    key={`${item.kind}-${item.id}`}
+                    displayCurrency={profile.data.displayCurrency}
+                    item={item}
+                  />
+                ))}
+              </Card>
+            </View>
+          ))
+        ) : (
+          <Text selectable>
+            {search || activeFilterCount
+              ? 'No history matches your search or filters.'
+              : 'No history yet.'}
+          </Text>
+        )}
+        {history.hasNextPage ? (
+          <Button
+            variant="outline"
+            disabled={history.isFetchingNextPage}
+            accessibilityState={{
+              disabled: history.isFetchingNextPage,
+              busy: history.isFetchingNextPage
+            }}
+            onPress={() => history.fetchNextPage()}
+          >
+            {history.isFetchingNextPage ? (
+              <ActivityIndicator className="text-primary" />
+            ) : (
+              <Text>Load more history</Text>
+            )}
+          </Button>
+        ) : null}
+      </Screen>
+      <TransactionFilterSheet
+        key={filterSheetVersion}
+        amountLimitMinor={amountLimitMinor}
+        categories={categories.data ?? []}
+        displayCurrency={profile.data.displayCurrency}
+        filters={{
+          type,
+          categoryCode,
+          fromDate,
+          toDate,
+          minAmountMinor,
+          maxAmountMinor
+        }}
+        visible={filtersOpen}
+        onClose={() => setFiltersOpen(false)}
+        onApply={(filters: TransactionFilters) => {
+          setType(filters.type);
+          setCategoryCode(filters.categoryCode);
+          setFromDate(filters.fromDate);
+          setToDate(filters.toDate);
+          setMinAmountMinor(filters.minAmountMinor);
+          setMaxAmountMinor(filters.maxAmountMinor);
+          setFiltersOpen(false);
+        }}
+      />
+    </>
   );
 }
 
-function groupByMonth(items: PersonalTransaction[]) {
-  const groups: { period: string; items: PersonalTransaction[] }[] = [];
+function groupByMonth(items: PersonalHistoryItem[]) {
+  const groups: { period: string; items: PersonalHistoryItem[] }[] = [];
   for (const item of items) {
     const period = item.occurredAt.slice(0, 7);
     const previous = groups.at(-1);
@@ -153,4 +432,18 @@ function groupByMonth(items: PersonalTransaction[]) {
     else groups.push({ period, items: [item] });
   }
   return groups;
+}
+
+function filterDateRangeLabel(from?: string, to?: string) {
+  const format = (value: string, year: boolean) =>
+    new Intl.DateTimeFormat(undefined, {
+      day: 'numeric',
+      month: 'short',
+      year: year ? 'numeric' : undefined,
+      timeZone: 'UTC'
+    }).format(new Date(`${value}T12:00:00.000Z`));
+  if (from && to)
+    return `${format(from, from.slice(0, 4) !== to.slice(0, 4))} – ${format(to, true)}`;
+  if (from) return `From ${format(from, true)}`;
+  return to ? `To ${format(to, true)}` : 'Any date';
 }

@@ -7,38 +7,40 @@ import {
   Card,
   ErrorMessage,
   Loading,
-  Notice,
-  Row,
   Screen,
   SectionLabel
 } from '@/components/ui';
+import { Icons } from '@/components/icons';
 import { Button } from '@/components/ui/button';
+import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { profileQuery } from '@/features/account/api';
 import { PersonalSummary } from '@/features/personal/components/personal-summary';
-import { PersonalTransactionRow } from '@/features/personal/components/personal-transaction-row';
+import { SpendingChart } from '@/features/personal/components/spending-chart';
+import { PersonalHistoryRow } from '@/features/personal/components/personal-history-row';
 import {
-  personalReportQuery,
-  personalTransactionsInfiniteQuery
+  personalHistoryInfiniteQuery,
+  personalReportQuery
 } from '@/features/personal/api';
 import { periodLabel } from '@/features/personal/form';
+import { spendingRange } from '@/features/personal/spending';
+import { formatMinorAmount } from '@/lib/utils';
 
 export default function PersonalScreen() {
   const profile = useQuery(profileQuery);
-  const report = useQuery(personalReportQuery({ bucket: 'MONTH' }));
-  const transactions = useInfiniteQuery(
-    personalTransactionsInfiniteQuery({}, 5)
-  );
+  const range = spendingRange('1M');
+  const report = useQuery(personalReportQuery({ ...range, bucket: 'DAY' }));
+  const history = useInfiniteQuery(personalHistoryInfiniteQuery({}, 5));
   const recent = useMemo(
-    () => transactions.data?.pages.flatMap((page) => page.items) ?? [],
-    [transactions.data]
+    () => history.data?.pages.flatMap((page) => page.items) ?? [],
+    [history.data]
   );
-  if (profile.isLoading || report.isLoading || transactions.isLoading)
+  if (profile.isLoading || report.isLoading || history.isLoading)
     return <Loading />;
   if (
     profile.error ||
     report.error ||
-    transactions.error ||
+    history.error ||
     !profile.data ||
     !report.data
   )
@@ -48,66 +50,79 @@ export default function PersonalScreen() {
           error={
             profile.error ??
             report.error ??
-            transactions.error ??
+            history.error ??
             new Error('Personal data is unavailable.')
           }
         />
       </Screen>
     );
-  const current = report.data.buckets.at(-1) ?? {
-    incomeMinor: '0',
-    expenseMinor: '0',
-    netMinor: '0',
-    period: ''
-  };
-
   return (
     <>
       <Stack.Screen options={{ headerRight: () => <AddTransactionButton /> }} />
       <Screen>
-        <Notice title="Personal">
-          Only you can see these entries. Shared expenses are included in
-          reports according to your selected report mode.
-        </Notice>
+        <Link href="/personal/spending" asChild>
+          <Button
+            variant="ghost"
+            role="link"
+            className="flex-col items-stretch gap-4 rounded-2xl border border-border bg-card p-4"
+            accessibilityLabel={`Spent this month, ${formatMinorAmount(report.data.expenseMinor, profile.data.displayCurrency)}. View spending report.`}
+          >
+            <View className="flex-row items-start justify-between gap-3">
+              <View className="min-w-0 flex-1 gap-1">
+                <Text className="text-base font-normal text-muted-foreground">
+                  Spent this month
+                </Text>
+                <Text className="text-[32px] font-semibold leading-[38px]">
+                  {formatMinorAmount(
+                    report.data.expenseMinor,
+                    profile.data.displayCurrency
+                  )}
+                </Text>
+              </View>
+              <Icon
+                as={Icons.chevronRight}
+                size={20}
+                className="mt-0.5 text-primary"
+                accessibilityElementsHidden
+                importantForAccessibility="no"
+              />
+            </View>
+            <SpendingChart
+              compact
+              buckets={report.data.buckets}
+              range={range}
+              displayCurrency={profile.data.displayCurrency}
+              emptyLabel="No spending yet this month"
+            />
+          </Button>
+        </Link>
         <PersonalSummary
           displayCurrency={profile.data.displayCurrency}
-          report={current}
-          title={
-            current.period ? periodLabel(current.period, 'MONTH') : 'This month'
-          }
+          report={report.data}
+          title={periodLabel(range.from.slice(0, 7), 'MONTH')}
         />
-        <Card>
-          <Row
-            title="Report mode"
-            subtitle={
-              report.data.mode === 'OWED_SHARE'
-                ? 'Your share of shared expenses'
-                : 'Cash you paid toward shared expenses'
-            }
-            href="/report-mode"
-          />
-          <Row title="View reports" href="/personal/reports" />
-        </Card>
         <View className="gap-2">
-          <SectionLabel>RECENT ENTRIES</SectionLabel>
+          <View className="flex-row items-center justify-between gap-4">
+            <SectionLabel>HISTORY</SectionLabel>
+            <Link href="/personal/transactions" asChild>
+              <Button variant="link" role="link" className="px-0">
+                <Text>View all</Text>
+              </Button>
+            </Link>
+          </View>
           {recent.length ? (
             <Card>
-              {recent.map((transaction) => (
-                <PersonalTransactionRow
-                  key={transaction.id}
+              {recent.map((item) => (
+                <PersonalHistoryRow
+                  key={`${item.kind}-${item.id}`}
                   displayCurrency={profile.data.displayCurrency}
-                  transaction={transaction}
+                  item={item}
                 />
               ))}
             </Card>
           ) : (
-            <Text selectable>No personal transactions yet.</Text>
+            <Text selectable>No history yet.</Text>
           )}
-          <Link href="/personal/transactions" asChild>
-            <Button variant="link" role="link" className="self-start px-0">
-              <Text>View all transactions</Text>
-            </Button>
-          </Link>
         </View>
       </Screen>
     </>

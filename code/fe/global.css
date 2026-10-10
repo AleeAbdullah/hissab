@@ -10,7 +10,9 @@
     --card-foreground: #1d1d1b;
     --popover: #fffefa;
     --popover-foreground: #1d1d1b;
+    --scrim: #1d1d1b;
     --primary: #a83a1b;
+    --primary-text: #a83a1b;
     --primary-foreground: #ffffff;
     --secondary: #efe8dd;
     --secondary-foreground: #1d1d1b;
@@ -43,6 +45,7 @@
     --popover: #272522;
     --popover-foreground: #f7f3ec;
     --primary: #a83a1b;
+    --primary-text: #e0805c;
     --primary-foreground: #ffffff;
     --secondary: #332f2b;
     --secondary-foreground: #f7f3ec;

@@ -70,12 +70,7 @@ export class RemindersService {
           this.requireActiveRequester(transaction, ledgerId, requesterUserId),
       },
       async (transaction) => {
-        await this.lockCooldown(
-          transaction,
-          ledgerId,
-          requesterUserId,
-          recipientUserId,
-        );
+        await this.lockCooldown(transaction, ledgerId, recipientUserId);
         await this.requireActiveLedgerMembers(
           transaction,
           ledgerId,
@@ -85,7 +80,6 @@ export class RemindersService {
         await this.requireCooldownElapsed(
           transaction,
           ledgerId,
-          requesterUserId,
           recipientUserId,
         );
         const balances = await this.findBalances(
@@ -139,10 +133,9 @@ export class RemindersService {
   private async lockCooldown(
     transaction: DatabaseTransaction,
     ledgerId: string,
-    requesterUserId: string,
     recipientUserId: string,
   ): Promise<void> {
-    const key = `${ledgerId}:${requesterUserId}:${recipientUserId}`;
+    const key = `${ledgerId}:${recipientUserId}`;
     await transaction.execute(
       sql`select pg_advisory_xact_lock(hashtextextended(${key}, 0))`,
     );
@@ -212,7 +205,6 @@ export class RemindersService {
   private async requireCooldownElapsed(
     transaction: DatabaseTransaction,
     ledgerId: string,
-    requesterUserId: string,
     recipientUserId: string,
   ): Promise<void> {
     const [latest] = await transaction
@@ -221,7 +213,6 @@ export class RemindersService {
       .where(
         and(
           eq(reminderRequests.ledgerId, ledgerId),
-          eq(reminderRequests.requesterUserId, requesterUserId),
           eq(reminderRequests.recipientUserId, recipientUserId),
         ),
       )

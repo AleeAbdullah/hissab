@@ -22,7 +22,10 @@ export default function AccountLayout() {
         options={{ title: 'Devices and sessions' }}
       />
       <Stack.Screen name="notifications" options={{ title: 'Notifications' }} />
-      <Stack.Screen name="export" options={{ title: 'Export your data' }} />
+      <Stack.Screen
+        name="blocked-people"
+        options={{ title: 'Blocked people' }}
+      />
       <Stack.Screen
         name="delete-account"
         options={{ title: 'Delete account' }}

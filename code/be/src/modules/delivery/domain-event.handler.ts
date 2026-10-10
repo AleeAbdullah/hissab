@@ -42,6 +42,7 @@ interface NotificationSpec {
   kind: NotificationKind;
   title: string;
   body: string;
+  ledgerType?: 'DIRECT' | 'GROUP';
 }
 
 interface ConnectionPartiesRow {
@@ -53,8 +54,9 @@ interface UserNameRow {
   display_name: string;
 }
 
-interface LedgerNameRow {
+interface LedgerContextRow {
   name: string;
+  type: 'DIRECT' | 'GROUP';
 }
 
 @Injectable()
@@ -118,6 +120,9 @@ export class DomainEventHandler implements OutboxHandler, OnModuleInit {
                 eventType: event.eventType,
                 aggregateId: event.aggregateId,
                 ...(ledgerId ? { ledgerId } : {}),
+                ...(notification.ledgerType
+                  ? { ledgerType: notification.ledgerType }
+                  : {}),
               },
             })
             .onConflictDoNothing()
@@ -208,7 +213,8 @@ export class DomainEventHandler implements OutboxHandler, OnModuleInit {
     const actorName = actorUserId
       ? await this.userName(actorUserId)
       : 'Someone';
-    const ledgerName = ledgerId ? await this.ledgerName(ledgerId) : null;
+    const ledger = ledgerId ? await this.ledgerContext(ledgerId) : null;
+    const ledgerName = ledger?.name ?? null;
 
     if (event.eventType.startsWith('expense.') && ledgerId) {
       return {
@@ -216,6 +222,7 @@ export class DomainEventHandler implements OutboxHandler, OnModuleInit {
         kind: 'EXPENSE',
         title: this.actionTitle(event.eventType, 'Expense'),
         body: `${actorName} ${this.actionVerb(event.eventType)} an expense${ledgerName ? ` in ${ledgerName}` : ''}.`,
+        ledgerType: ledger?.type,
       };
     }
     if (event.eventType.startsWith('settlement.') && ledgerId) {
@@ -224,6 +231,7 @@ export class DomainEventHandler implements OutboxHandler, OnModuleInit {
         kind: 'SETTLEMENT',
         title: this.actionTitle(event.eventType, 'Settlement'),
         body: `${actorName} ${this.actionVerb(event.eventType)} a settlement${ledgerName ? ` in ${ledgerName}` : ''}.`,
+        ledgerType: ledger?.type,
       };
     }
     if (event.eventType === 'group.invitation_sent') {
@@ -234,6 +242,7 @@ export class DomainEventHandler implements OutboxHandler, OnModuleInit {
             kind: 'SOCIAL',
             title: 'Group invitation',
             body: `${actorName} invited you to ${ledgerName ?? 'a group'}.`,
+            ledgerType: ledger?.type,
           }
         : null;
     }
@@ -273,6 +282,7 @@ export class DomainEventHandler implements OutboxHandler, OnModuleInit {
             kind: 'REMINDER',
             title: `Balance reminder from ${actorName}`,
             body: `You have an unsettled balance in ${ledgerName ?? 'this ledger'}.`,
+            ledgerType: ledger?.type,
           }
         : null;
     }
@@ -314,18 +324,21 @@ export class DomainEventHandler implements OutboxHandler, OnModuleInit {
     return result.rows[0]?.display_name ?? 'Someone';
   }
 
-  private async ledgerName(ledgerId: string): Promise<string> {
-    const result = await this.database.pool.query<LedgerNameRow>(
+  private async ledgerContext(
+    ledgerId: string,
+  ): Promise<LedgerContextRow | null> {
+    const result = await this.database.pool.query<LedgerContextRow>(
       `select case
          when ledger.type = 'GROUP' then profile.name
          else 'your shared balance'
-       end as name
+       end as name,
+       ledger.type
        from ledgers as ledger
        left join group_profiles as profile on profile.ledger_id = ledger.id
        where ledger.id = $1::uuid`,
       [ledgerId],
     );
-    return result.rows[0]?.name ?? 'this ledger';
+    return result.rows[0] ?? null;
   }
 
   private resolveLedgerId(event: ClaimedOutboxEvent): string | null {

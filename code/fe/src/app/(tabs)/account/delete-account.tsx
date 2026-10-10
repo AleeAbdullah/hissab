@@ -1,7 +1,8 @@
+import { useDialog } from '@/components/ui/dialog';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Alert } from 'react-native';
+import { ActivityIndicator } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
 import { clearTokens } from '@/api/session-store';
@@ -11,6 +12,7 @@ import { Text } from '@/components/ui/text';
 import { deleteAccount } from '@/features/account/api';
 
 export default function DeleteAccountScreen() {
+  const dialog = useDialog();
   const router = useRouter();
   const [password, setPassword] = useState('');
   const [confirmation, setConfirmation] = useState('');
@@ -25,7 +27,7 @@ export default function DeleteAccountScreen() {
   });
   const valid = password.length > 0 && confirmation === 'DELETE';
   const confirmDeletion = () => {
-    Alert.alert(
+    dialog(
       'Delete Hissab account?',
       'This is permanent. Your profile is anonymized and every device is signed out. Financial history remains for audit.',
       [

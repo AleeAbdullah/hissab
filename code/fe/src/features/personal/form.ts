@@ -10,6 +10,9 @@ import {
   parseMinorAmount
 } from '@/features/expenses/form';
 
+export type PersonalTransactionField =
+  'amount' | 'category' | 'description' | 'date';
+
 export function buildPersonalTransactionBody(input: {
   amount: string;
   categoryCode: PersonalCategoryCode | null;
@@ -18,14 +21,18 @@ export function buildPersonalTransactionBody(input: {
   notes: string;
   occurredDate: string;
   type: PersonalTransactionType;
-}): { body: CreatePersonalTransactionDto } | { error: string } {
+}):
+  | { body: CreatePersonalTransactionDto }
+  | { error: string; field: PersonalTransactionField } {
   const amountMinor = parseMinorAmount(input.amount);
   if (!amountMinor || BigInt(amountMinor) <= 0n)
-    return { error: 'Enter an amount greater than zero.' };
-  if (!input.categoryCode) return { error: 'Choose a category.' };
-  if (!input.description.trim()) return { error: 'Enter a description.' };
+    return { error: 'Enter an amount greater than zero.', field: 'amount' };
+  if (!input.categoryCode)
+    return { error: 'Choose a category.', field: 'category' };
+  if (!input.description.trim())
+    return { error: 'Enter a description.', field: 'description' };
   const occurredAt = dateToIso(input.occurredDate);
-  if (!occurredAt) return { error: 'Enter a valid date as YYYY-MM-DD.' };
+  if (!occurredAt) return { error: 'Choose a valid date.', field: 'date' };
   return {
     body: {
       type: input.type,
@@ -58,14 +65,30 @@ export function periodLabel(value: string, bucket: 'DAY' | 'MONTH') {
     const [year, month] = value.split('-').map(Number);
     return new Intl.DateTimeFormat(undefined, {
       month: 'long',
-      year: 'numeric'
+      year: 'numeric',
+      timeZone: 'UTC'
     }).format(new Date(Date.UTC(year, (month ?? 1) - 1, 1)));
   }
   return new Intl.DateTimeFormat(undefined, {
     day: 'numeric',
     month: 'short',
-    year: 'numeric'
-  }).format(new Date(`${value}T12:00:00.000Z`));
+    year: 'numeric',
+    timeZone: 'UTC'
+  }).format(new Date(`${value}T00:00:00.000Z`));
+}
+
+export function shiftDate(value: string, days: number) {
+  const iso = dateToIso(value);
+  if (!iso) return value;
+  const date = new Date(iso);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+export function dateLabel(value: string, today: string) {
+  if (value === today) return 'Today';
+  if (value === shiftDate(today, -1)) return 'Yesterday';
+  return dateToIso(value) ? periodLabel(value, 'DAY') : value;
 }
 
 export function dateToExclusiveIso(value: string) {

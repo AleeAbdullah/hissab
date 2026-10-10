@@ -1,0 +1,2 @@
+DROP INDEX "reminder_requests_cooldown_idx";--> statement-breakpoint
+CREATE INDEX "reminder_requests_cooldown_idx" ON "reminder_requests" USING btree ("ledger_id","recipient_user_id","created_at" DESC NULLS LAST);

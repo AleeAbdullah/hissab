@@ -71,6 +71,27 @@
       "when": 1786014786251,
       "tag": "0009_currency_neutral_model",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1788733250442,
+      "tag": "0010_violet_chameleon",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1790805614501,
+      "tag": "0011_neat_ironclad",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1790891560390,
+      "tag": "0012_remove_personal_report_mode",
+      "breakpoints": true
     }
   ]
 }

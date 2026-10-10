@@ -11,8 +11,6 @@ import {
   categories,
   personalLedgers,
   personalTransactions,
-  userPreferences,
-  users,
 } from '../../database/schema';
 import {
   PERSONAL_CATEGORY_CODES,
@@ -52,17 +50,44 @@ export interface PersonalTransactionFilters {
   to: Date | null;
   type?: PersonalTransactionType;
   categoryCode?: string;
-}
-
-export interface ReportProfile {
-  timezone: string;
-  defaultMode: 'OWED_SHARE' | 'CASH_OUT_OF_POCKET';
+  search?: string;
+  minAmountMinor?: bigint;
+  maxAmountMinor?: bigint;
 }
 
 export interface ReportBucketRow {
   type: PersonalTransactionType;
   period: string;
   amountMinor: string;
+}
+
+export interface PersonalHistoryItemView {
+  kind: 'PERSONAL' | 'SHARED';
+  id: string;
+  type: PersonalTransactionType;
+  amountMinor: string;
+  totalMinor: string | null;
+  paidMinor: string | null;
+  owedMinor: string | null;
+  category: { code: string; name: string };
+  description: string;
+  occurredAt: string;
+  ledgerId: string | null;
+  ledgerName: string | null;
+}
+
+export interface PersonalHistoryRead {
+  items: PersonalHistoryItemView[];
+  buckets: Array<{
+    period: string;
+    incomeMinor: string;
+    expenseMinor: string;
+    netMinor: string;
+  }>;
+  incomeMinor: string;
+  expenseMinor: string;
+  netMinor: string;
+  maxAmountMinor: string | null;
 }
 
 interface PersonalTransactionReadRow {
@@ -327,13 +352,24 @@ export class PersonalRepository {
           AND ($4::text IS NULL OR personal_transaction.type::text = $4::text)
           AND ($5::text IS NULL OR category.code = $5::text)
           AND (
-            $6::timestamptz IS NULL
+            $6::text IS NULL
+            OR position(lower($6::text) in lower(concat_ws(' ',
+              personal_transaction.description,
+              personal_transaction.merchant_or_source,
+              personal_transaction.notes,
+              category.name
+            ))) > 0
+          )
+          AND ($7::bigint IS NULL OR personal_transaction.amount_minor >= $7::bigint)
+          AND ($8::bigint IS NULL OR personal_transaction.amount_minor <= $8::bigint)
+          AND (
+            $9::timestamptz IS NULL
             OR (personal_transaction.occurred_at, personal_transaction.root_personal_transaction_id)
-               < ($6::timestamptz, $7::uuid)
+               < ($9::timestamptz, $10::uuid)
           )
         ORDER BY personal_transaction.occurred_at DESC,
                  personal_transaction.root_personal_transaction_id DESC
-        LIMIT $8
+        LIMIT $11
       `,
       [
         userId,
@@ -341,12 +377,196 @@ export class PersonalRepository {
         filters.to,
         filters.type ?? null,
         filters.categoryCode ?? null,
+        filters.search ?? null,
+        filters.minAmountMinor?.toString() ?? null,
+        filters.maxAmountMinor?.toString() ?? null,
         cursor?.occurredAt ?? null,
         cursor?.rootId ?? null,
         limit,
       ],
     );
     return result.rows.map((row) => this.toView(row));
+  }
+
+  async maxTransactionAmountMinor(userId: string): Promise<string | null> {
+    const result = await this.database.pool.query<{
+      maxAmountMinor: string | null;
+    }>(
+      `
+        WITH ranked AS (
+          SELECT personal_transaction.amount_minor,
+                 personal_transaction.status,
+                 row_number() OVER (
+                   PARTITION BY personal_transaction.root_personal_transaction_id
+                   ORDER BY personal_transaction.version DESC
+                 ) AS revision_order
+          FROM personal_transactions personal_transaction
+          JOIN personal_ledgers personal_ledger
+            ON personal_ledger.id = personal_transaction.personal_ledger_id
+           AND personal_ledger.user_id = $1::uuid
+        )
+        SELECT max(amount_minor)::text AS "maxAmountMinor"
+        FROM ranked
+        WHERE revision_order = 1 AND status = 'ACTIVE'
+      `,
+      [userId],
+    );
+    return result.rows[0]?.maxAmountMinor ?? null;
+  }
+
+  async listHistory(
+    userId: string,
+    filters: PersonalTransactionFilters,
+    includeShared: boolean,
+    bucket: 'DAY' | 'MONTH',
+    cursor: PersonalTransactionCursor | null,
+    limit: number,
+  ): Promise<PersonalHistoryRead> {
+    const result = await this.database.pool.query<PersonalHistoryRead>(
+      `
+        WITH ranked_personal AS (
+          SELECT personal_transaction.*,
+                 row_number() OVER (
+                   PARTITION BY personal_transaction.root_personal_transaction_id
+                   ORDER BY personal_transaction.version DESC
+                 ) AS revision_order
+          FROM personal_transactions personal_transaction
+          JOIN personal_ledgers personal_ledger
+            ON personal_ledger.id = personal_transaction.personal_ledger_id
+           AND personal_ledger.user_id = $1::uuid
+        ), ranked_expenses AS (
+          SELECT expense.*,
+                 row_number() OVER (
+                   PARTITION BY expense.root_expense_id
+                   ORDER BY expense.version DESC
+                 ) AS revision_order
+          FROM expenses expense
+          JOIN ledger_members member
+            ON member.ledger_id = expense.ledger_id
+           AND member.user_id = $1::uuid
+           AND member.joined_at IS NOT NULL
+          WHERE $2::boolean
+        ), entries AS (
+          SELECT 'PERSONAL'::text AS kind,
+                 personal_transaction.root_personal_transaction_id AS id,
+                 personal_transaction.type::text AS type,
+                 personal_transaction.amount_minor AS amount_minor,
+                 NULL::bigint AS total_minor,
+                 NULL::bigint AS paid_minor,
+                 NULL::bigint AS owed_minor,
+                 category.code AS category_code,
+                 category.name AS category_name,
+                 personal_transaction.description,
+                 personal_transaction.occurred_at,
+                 NULL::uuid AS ledger_id,
+                 NULL::text AS ledger_name,
+                 concat_ws(' ', personal_transaction.description,
+                   personal_transaction.merchant_or_source,
+                   personal_transaction.notes, category.name) AS search_text
+          FROM ranked_personal personal_transaction
+          JOIN categories category ON category.id = personal_transaction.category_id
+          WHERE personal_transaction.revision_order = 1
+            AND personal_transaction.status = 'ACTIVE'
+
+          UNION ALL
+
+          SELECT 'SHARED'::text,
+                 expense.root_expense_id,
+                 'EXPENSE'::text,
+                 COALESCE(split.owed_minor, 0),
+                 expense.total_minor,
+                 payer.amount_minor,
+                 split.owed_minor,
+                 category.code,
+                 category.name,
+                 expense.description,
+                 expense.occurred_at,
+                 expense.ledger_id,
+                 COALESCE(group_profile.name, friend.display_name, 'Shared ledger'),
+                 concat_ws(' ', expense.description, category.name,
+                   group_profile.name, friend.display_name)
+          FROM ranked_expenses expense
+          LEFT JOIN expense_payers payer
+            ON payer.expense_id = expense.id AND payer.user_id = $1::uuid
+          LEFT JOIN expense_splits split
+            ON split.expense_id = expense.id AND split.user_id = $1::uuid
+          JOIN categories category ON category.id = expense.category_id
+          JOIN ledgers ledger ON ledger.id = expense.ledger_id
+          LEFT JOIN group_profiles group_profile ON group_profile.ledger_id = ledger.id
+          LEFT JOIN users friend ON friend.id = CASE
+            WHEN ledger.direct_low_user_id = $1::uuid THEN ledger.direct_high_user_id
+            ELSE ledger.direct_low_user_id END
+          WHERE expense.revision_order = 1
+            AND expense.status = 'ACTIVE'
+            AND (payer.user_id IS NOT NULL OR split.user_id IS NOT NULL)
+        ), filtered AS (
+          SELECT * FROM entries entry
+          WHERE ($3::timestamptz IS NULL OR entry.occurred_at >= $3::timestamptz)
+            AND ($4::timestamptz IS NULL OR entry.occurred_at < $4::timestamptz)
+            AND ($5::text IS NULL OR entry.type = $5::text)
+            AND ($6::text IS NULL OR entry.category_code = $6::text)
+            AND ($7::text IS NULL OR position(lower($7::text) in lower(entry.search_text)) > 0)
+            AND ($8::bigint IS NULL OR entry.amount_minor >= $8::bigint)
+            AND ($9::bigint IS NULL OR entry.amount_minor <= $9::bigint)
+        ), page AS (
+          SELECT * FROM filtered
+          WHERE $10::timestamptz IS NULL
+             OR (occurred_at, id) < ($10::timestamptz, $11::uuid)
+          ORDER BY occurred_at DESC, id DESC
+          LIMIT $12
+        ), bucket_totals AS (
+          SELECT CASE WHEN $13::text = 'DAY'
+                   THEN to_char(occurred_at AT TIME ZONE 'UTC', 'YYYY-MM-DD')
+                   ELSE to_char(occurred_at AT TIME ZONE 'UTC', 'YYYY-MM')
+                 END AS period,
+                 COALESCE(sum(amount_minor) FILTER (WHERE type = 'INCOME'), 0) AS income_minor,
+                 COALESCE(sum(amount_minor) FILTER (WHERE type = 'EXPENSE'), 0) AS expense_minor
+          FROM filtered
+          GROUP BY 1
+        )
+        SELECT COALESCE((
+          SELECT json_agg(json_build_object(
+            'kind', kind, 'id', id, 'type', type,
+            'amountMinor', amount_minor::text,
+            'totalMinor', total_minor::text,
+            'paidMinor', paid_minor::text,
+            'owedMinor', owed_minor::text,
+            'category', json_build_object('code', category_code, 'name', category_name),
+            'description', description, 'occurredAt', occurred_at,
+            'ledgerId', ledger_id, 'ledgerName', ledger_name
+          ) ORDER BY occurred_at DESC, id DESC) FROM page
+        ), '[]'::json) AS items,
+        COALESCE((
+          SELECT json_agg(json_build_object(
+            'period', period, 'incomeMinor', income_minor::text,
+            'expenseMinor', expense_minor::text,
+            'netMinor', (income_minor - expense_minor)::text
+          ) ORDER BY period) FROM bucket_totals
+        ), '[]'::json) AS buckets,
+        COALESCE((SELECT sum(amount_minor) FILTER (WHERE type = 'INCOME') FROM filtered), 0)::text AS "incomeMinor",
+        COALESCE((SELECT sum(amount_minor) FILTER (WHERE type = 'EXPENSE') FROM filtered), 0)::text AS "expenseMinor",
+        COALESCE((SELECT sum(CASE WHEN type = 'INCOME' THEN amount_minor ELSE -amount_minor END) FROM filtered), 0)::text AS "netMinor",
+        (SELECT max(amount_minor)::text FROM entries WHERE amount_minor > 0) AS "maxAmountMinor"
+      `,
+      [
+        userId,
+        includeShared,
+        filters.from,
+        filters.to,
+        filters.type ?? null,
+        filters.categoryCode ?? null,
+        filters.search ?? null,
+        filters.minAmountMinor?.toString() ?? null,
+        filters.maxAmountMinor?.toString() ?? null,
+        cursor?.occurredAt ?? null,
+        cursor?.rootId ?? null,
+        limit,
+        bucket,
+      ],
+    );
+    if (!result.rows[0])
+      throw new Error('Personal history query returned no row.');
+    return result.rows[0];
   }
 
   async findTransaction(
@@ -381,30 +601,12 @@ export class PersonalRepository {
     return result.rows[0] ? this.toView(result.rows[0]) : null;
   }
 
-  async findReportProfile(userId: string): Promise<ReportProfile | null> {
-    const [profile] = await this.database.db
-      .select({
-        timezone: users.timezone,
-        defaultMode: userPreferences.personalReportMode,
-      })
-      .from(users)
-      .innerJoin(userPreferences, eq(userPreferences.userId, users.id))
-      .where(eq(users.id, userId))
-      .limit(1);
-    return profile ?? null;
-  }
-
   async listReportBuckets(
     userId: string,
     filters: PersonalTransactionFilters,
-    mode: 'OWED_SHARE' | 'CASH_OUT_OF_POCKET',
+    includeShared: boolean,
     bucket: 'DAY' | 'MONTH',
-    timezone: string,
   ): Promise<ReportBucketRow[]> {
-    const allocation =
-      mode === 'OWED_SHARE'
-        ? { table: 'expense_splits', amount: 'owed_minor' }
-        : { table: 'expense_payers', amount: 'amount_minor' };
     const result = await this.database.pool.query<ReportBucketRow>(
       `
         WITH ranked_personal AS (
@@ -420,9 +622,10 @@ export class PersonalRepository {
         ), candidate_expense_roots AS (
           SELECT DISTINCT expense.root_expense_id
           FROM expenses expense
-          JOIN ${allocation.table} allocation
-            ON allocation.expense_id = expense.id
-           AND allocation.user_id = $1::uuid
+          JOIN expense_splits split
+            ON split.expense_id = expense.id
+           AND split.user_id = $1::uuid
+          WHERE $7::boolean
         ), ranked_expenses AS (
           SELECT expense.*,
                  row_number() OVER (
@@ -445,21 +648,21 @@ export class PersonalRepository {
           UNION ALL
 
           SELECT 'EXPENSE'::text AS type,
-                 allocation.${allocation.amount} AS amount_minor,
+                 split.owed_minor AS amount_minor,
                  category.code AS category_code,
                  expense.occurred_at
           FROM ranked_expenses expense
-          JOIN ${allocation.table} allocation
-            ON allocation.expense_id = expense.id
-           AND allocation.user_id = $1::uuid
+          JOIN expense_splits split
+            ON split.expense_id = expense.id
+           AND split.user_id = $1::uuid
           JOIN categories category ON category.id = expense.category_id
           WHERE expense.revision_order = 1
             AND expense.status = 'ACTIVE'
         )
         SELECT entry.type,
                CASE WHEN $6::text = 'DAY'
-                 THEN to_char(entry.occurred_at AT TIME ZONE $7::text, 'YYYY-MM-DD')
-                 ELSE to_char(entry.occurred_at AT TIME ZONE $7::text, 'YYYY-MM')
+                 THEN to_char(entry.occurred_at AT TIME ZONE 'UTC', 'YYYY-MM-DD')
+                 ELSE to_char(entry.occurred_at AT TIME ZONE 'UTC', 'YYYY-MM')
                END AS period,
                sum(entry.amount_minor)::text AS "amountMinor"
         FROM entries entry
@@ -477,7 +680,7 @@ export class PersonalRepository {
         filters.type ?? null,
         filters.categoryCode ?? null,
         bucket,
-        timezone,
+        includeShared,
       ],
     );
     return result.rows;

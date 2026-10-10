@@ -69,20 +69,24 @@ export function activityDayLabel(value: string) {
   const date = new Date(value);
   const today = new Date();
   const yesterday = new Date(today);
-  yesterday.setDate(today.getDate() - 1);
+  yesterday.setUTCDate(today.getUTCDate() - 1);
   if (sameDay(date, today)) return 'Today';
   if (sameDay(date, yesterday)) return 'Yesterday';
   return new Intl.DateTimeFormat(undefined, {
     day: 'numeric',
     month: 'short',
-    year: date.getFullYear() === today.getFullYear() ? undefined : 'numeric'
+    year:
+      date.getUTCFullYear() === today.getUTCFullYear() ? undefined : 'numeric',
+    timeZone: 'UTC'
   }).format(date);
 }
 
 export function activityTimeLabel(value: string) {
   return new Intl.DateTimeFormat(undefined, {
     hour: 'numeric',
-    minute: '2-digit'
+    minute: '2-digit',
+    timeZone: 'UTC',
+    timeZoneName: 'short'
   }).format(new Date(value));
 }
 
@@ -102,8 +106,8 @@ function groupContext(item: ActivityItem, fallback: string) {
 
 function sameDay(left: Date, right: Date) {
   return (
-    left.getFullYear() === right.getFullYear() &&
-    left.getMonth() === right.getMonth() &&
-    left.getDate() === right.getDate()
+    left.getUTCFullYear() === right.getUTCFullYear() &&
+    left.getUTCMonth() === right.getUTCMonth() &&
+    left.getUTCDate() === right.getUTCDate()
   );
 }

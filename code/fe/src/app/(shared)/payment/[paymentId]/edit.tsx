@@ -1,6 +1,6 @@
+import { useDialog } from '@/components/ui/dialog';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Alert } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
 import type { ReplaceSettlementDto } from '@/api/generated/types.gen';
@@ -15,6 +15,7 @@ import { homeQuery } from '@/features/home/api';
 import { replaceSettlement, settlementQuery } from '@/features/settlements/api';
 
 export default function EditPaymentScreen() {
+  const dialog = useDialog();
   const { paymentId } = useLocalSearchParams<{ paymentId: string }>();
   const settlement = useQuery(settlementQuery(paymentId));
   const profile = useQuery(profileQuery);
@@ -87,13 +88,14 @@ export default function EditPaymentScreen() {
     const record = () =>
       replace.mutate({ ...body, expectedVersion: settlement.data!.version });
     if (!createsCredit) return record();
-    Alert.alert(
+    dialog(
       'This creates a credit',
-      'This payment is more than the current amount payable, or does not match the current balance direction. Hissab will record the credit.',
+      "Anything beyond the current balance becomes credit. Hissab doesn't send money.",
       [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Save payment and create a credit', onPress: record }
-      ]
+        { text: 'Edit amount', style: 'cancel' },
+        { text: 'Save with credit', onPress: record }
+      ],
+      { tone: 'warning' }
     );
   };
   return (
