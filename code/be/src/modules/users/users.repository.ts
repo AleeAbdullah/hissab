@@ -1,21 +1,26 @@
 import { Injectable } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { and, eq, or } from 'drizzle-orm';
 
+import type { DisplayCurrency } from '../../common/display-currency';
 import {
   type AppDatabase,
   DatabaseService,
   type DatabaseTransaction,
 } from '../../database/database.service';
-import { userPreferences, users } from '../../database/schema';
-import type { UpdateProfileDto } from './dto/update-profile.dto';
+import { userBlocks, users } from '../../database/schema';
 
 export interface UserProfile {
   id: string;
   email: string;
   displayName: string;
-  displayCurrency: string;
+  displayCurrency: DisplayCurrency;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface ProfileChanges {
+  displayName?: string;
+  displayCurrency?: DisplayCurrency;
 }
 
 @Injectable()
@@ -23,11 +28,9 @@ export class UsersRepository {
   constructor(private readonly database: DatabaseService) {}
 
   async findProfile(
+    executor: AppDatabase | DatabaseTransaction,
     userId: string,
-    transaction?: DatabaseTransaction,
   ): Promise<UserProfile | undefined> {
-    const executor: AppDatabase | DatabaseTransaction =
-      transaction ?? this.database.db;
     const [profile] = await executor
       .select({
         id: users.id,
@@ -38,32 +41,62 @@ export class UsersRepository {
         updatedAt: users.updatedAt,
       })
       .from(users)
-      .innerJoin(userPreferences, eq(userPreferences.userId, users.id))
       .where(eq(users.id, userId))
       .limit(1);
 
-    return profile?.email ? { ...profile, email: profile.email } : undefined;
+    return profile?.email
+      ? {
+          ...profile,
+          email: profile.email,
+          displayCurrency: profile.displayCurrency as DisplayCurrency,
+        }
+      : undefined;
   }
 
   async updateProfile(
     transaction: DatabaseTransaction,
     userId: string,
-    dto: UpdateProfileDto,
+    changes: ProfileChanges,
   ): Promise<void> {
-    const userChanges = {
-      ...(dto.displayName === undefined
-        ? {}
-        : { displayName: dto.displayName }),
-      ...(dto.displayCurrency === undefined
-        ? {}
-        : { displayCurrency: dto.displayCurrency }),
-    };
+    await transaction
+      .update(users)
+      .set({ ...changes, updatedAt: new Date() })
+      .where(eq(users.id, userId));
+  }
 
-    if (Object.keys(userChanges).length > 0) {
-      await transaction
-        .update(users)
-        .set({ ...userChanges, updatedAt: new Date() })
-        .where(eq(users.id, userId));
-    }
+  async isActiveUser(
+    executor: AppDatabase | DatabaseTransaction,
+    userId: string,
+  ): Promise<boolean> {
+    const [user] = await executor
+      .select({ id: users.id })
+      .from(users)
+      .where(and(eq(users.id, userId), eq(users.status, 'ACTIVE')))
+      .limit(1);
+    return Boolean(user);
+  }
+
+  async isEitherUserBlocked(
+    executor: AppDatabase | DatabaseTransaction,
+    firstUserId: string,
+    secondUserId: string,
+  ): Promise<boolean> {
+    const [block] = await executor
+      .select({ blockerUserId: userBlocks.blockerUserId })
+      .from(userBlocks)
+      .where(
+        or(
+          and(
+            eq(userBlocks.blockerUserId, firstUserId),
+            eq(userBlocks.blockedUserId, secondUserId),
+          ),
+          and(
+            eq(userBlocks.blockerUserId, secondUserId),
+            eq(userBlocks.blockedUserId, firstUserId),
+          ),
+        ),
+      )
+      .limit(1);
+    return Boolean(block);
   }
 }

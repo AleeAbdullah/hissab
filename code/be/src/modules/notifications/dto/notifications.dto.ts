@@ -1,33 +1,18 @@
-import { Transform, Type } from 'class-transformer';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsBoolean,
   IsIn,
-  IsInt,
   IsOptional,
   IsString,
   Matches,
-  Max,
   MaxLength,
-  Min,
   MinLength,
 } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-export class ListNotificationsDto {
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  @MaxLength(512)
-  cursor?: string;
+import { CursorPageQueryDto } from '../../../common/dto/cursor-page-query.dto';
+import { Trim } from '../../../common/dto/transforms';
 
-  @ApiPropertyOptional({ maximum: 100, minimum: 1 })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(100)
-  limit?: number;
-}
+export class ListNotificationsDto extends CursorPageQueryDto {}
 
 export class UpdateNotificationPreferencesDto {
   @ApiPropertyOptional()
@@ -61,9 +46,7 @@ export class RegisterNotificationDeviceDto {
     example: 'ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]',
     maxLength: 512,
   })
-  @Transform(({ value }: { value: unknown }) =>
-    typeof value === 'string' ? value.trim() : value,
-  )
+  @Trim()
   @IsString()
   @MaxLength(512)
   @Matches(/^(?:ExponentPushToken|ExpoPushToken)\[[A-Za-z0-9_-]+\]$/)
@@ -77,9 +60,7 @@ export class RegisterNotificationDeviceDto {
     description: 'Stable app-install identifier, not a hardware identifier.',
     maxLength: 255,
   })
-  @Transform(({ value }: { value: unknown }) =>
-    typeof value === 'string' ? value.trim() : value,
-  )
+  @Trim()
   @IsOptional()
   @IsString()
   @MinLength(1)
@@ -131,6 +112,11 @@ export class NotificationPageDto {
 
   @ApiProperty({ nullable: true })
   nextCursor!: string | null;
+}
+
+export class NotificationUnreadCountDto {
+  @ApiProperty({ type: 'integer', minimum: 0 })
+  unreadCount!: number;
 }
 
 export class NotificationPreferencesDto {

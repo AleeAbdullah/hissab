@@ -28,6 +28,7 @@ import {
   NotificationDto,
   NotificationPageDto,
   NotificationPreferencesDto,
+  NotificationUnreadCountDto,
   RegisterNotificationDeviceDto,
   UpdateNotificationPreferencesDto,
 } from './dto/notifications.dto';
@@ -38,6 +39,14 @@ import { NotificationsService } from './notifications.service';
 @Controller()
 export class NotificationsController {
   constructor(private readonly notifications: NotificationsService) {}
+
+  @Get('notifications/unread-count')
+  @ApiOkResponse({ type: NotificationUnreadCountDto })
+  getUnreadCount(
+    @CurrentUser() user: AuthPrincipal,
+  ): Promise<NotificationUnreadCountDto> {
+    return this.notifications.getUnreadCount(user.userId);
+  }
 
   @Get('notifications')
   @ApiOkResponse({ type: NotificationPageDto })

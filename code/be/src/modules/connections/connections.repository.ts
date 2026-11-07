@@ -9,12 +9,9 @@ import {
 } from '../../database/database.service';
 import {
   connectionRequests,
-  financialEvents,
   ledgerMembers,
-  ledgerPostings,
   ledgers,
   userBlocks,
-  users,
 } from '../../database/schema';
 
 export type ConnectionRequestRow = typeof connectionRequests.$inferSelect;
@@ -75,42 +72,6 @@ export class ConnectionsRepository {
     await transaction.execute(
       sql`select pg_advisory_xact_lock(hashtextextended(${`${low}:${high}`}, 0))`,
     );
-  }
-
-  async isEitherUserBlocked(
-    transaction: DatabaseTransaction,
-    firstUserId: string,
-    secondUserId: string,
-  ): Promise<boolean> {
-    const [block] = await transaction
-      .select({ blockerUserId: userBlocks.blockerUserId })
-      .from(userBlocks)
-      .where(
-        or(
-          and(
-            eq(userBlocks.blockerUserId, firstUserId),
-            eq(userBlocks.blockedUserId, secondUserId),
-          ),
-          and(
-            eq(userBlocks.blockerUserId, secondUserId),
-            eq(userBlocks.blockedUserId, firstUserId),
-          ),
-        ),
-      )
-      .limit(1);
-    return Boolean(block);
-  }
-
-  async isActiveUser(
-    transaction: DatabaseTransaction,
-    userId: string,
-  ): Promise<boolean> {
-    const [user] = await transaction
-      .select({ id: users.id })
-      .from(users)
-      .where(and(eq(users.id, userId), eq(users.status, 'ACTIVE')))
-      .limit(1);
-    return Boolean(user);
   }
 
   async hasPendingRequest(
@@ -335,11 +296,11 @@ export class ConnectionsRepository {
       );
   }
 
-  async hasUnsettledDirectBalance(
+  async lockDirectLedger(
     transaction: DatabaseTransaction,
     firstUserId: string,
     secondUserId: string,
-  ): Promise<boolean> {
+  ): Promise<string | undefined> {
     const [low, high] = this.canonicalPair(firstUserId, secondUserId);
     const [ledger] = await transaction
       .select({ id: ledgers.id })
@@ -353,21 +314,7 @@ export class ConnectionsRepository {
       )
       .limit(1)
       .for('update');
-    if (!ledger) {
-      return false;
-    }
-    const [balance] = await transaction
-      .select({ userId: ledgerPostings.userId })
-      .from(ledgerPostings)
-      .innerJoin(
-        financialEvents,
-        eq(financialEvents.id, ledgerPostings.financialEventId),
-      )
-      .where(eq(financialEvents.ledgerId, ledger.id))
-      .groupBy(ledgerPostings.userId)
-      .having(sql`sum(${ledgerPostings.amountMinor}) <> 0`)
-      .limit(1);
-    return Boolean(balance);
+    return ledger?.id;
   }
 
   async findCandidate(

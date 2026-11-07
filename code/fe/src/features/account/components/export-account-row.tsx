@@ -1,8 +1,8 @@
-import { useDialog } from '@/components/ui/dialog';
 import { useMutation } from '@tanstack/react-query';
 import * as FileSystem from 'expo-file-system/legacy';
 
 import { Row } from '@/components/ui';
+import { useDialog } from '@/components/ui/dialog';
 import { exportAccount } from '@/features/account/api';
 
 async function saveExport() {
@@ -11,7 +11,7 @@ async function saveExport() {
   if (!folder.granted) return false;
 
   const snapshot = await exportAccount();
-  const fileName = `hissab-export-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}`;
+  const fileName = `tally-stick-export-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}`;
   const file = await FileSystem.StorageAccessFramework.createFileAsync(
     folder.directoryUri,
     fileName,

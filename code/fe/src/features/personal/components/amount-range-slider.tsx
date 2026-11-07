@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { View } from 'react-native';
 
 import type { DisplayCurrency } from '@/api/contracts';
-import { formatMinorAmount } from '@/lib/utils';
+import { formatMinorAmount } from '@/lib/money';
 
 const THUMB_REGION = 48;
 
@@ -26,7 +26,7 @@ export function AmountRangeSlider({
   const limit = BigInt(maximumMinor);
   const minimum = BigInt(minimumMinor);
   const maximum = BigInt(upperMinor);
-  const travel = Math.max(1, width - THUMB_REGION);
+  const travel = Math.max(1, Math.round(width) - THUMB_REGION);
   const position = (value: bigint) =>
     THUMB_REGION / 2 + Number((value * BigInt(travel)) / limit);
   const minimumX = limit > 0n ? position(minimum) : THUMB_REGION / 2;

@@ -1,8 +1,9 @@
+import { ActivityIndicator, View } from 'react-native';
+
 import type { ConnectionRequest } from '@/api/contracts';
 import { Avatar, Card } from '@/components/ui';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
-import { ActivityIndicator, View } from 'react-native';
 
 export function ConnectionRequestCard({
   request,
@@ -10,7 +11,8 @@ export function ConnectionRequestCard({
   loading,
   onAccept,
   onDecline,
-  onCancel
+  onCancel,
+  onReport
 }: {
   request: ConnectionRequest;
   disabled: boolean;
@@ -18,6 +20,7 @@ export function ConnectionRequestCard({
   onAccept: () => void;
   onDecline: () => void;
   onCancel: () => void;
+  onReport?: () => void;
 }) {
   const incoming = request.direction === 'incoming';
   return (
@@ -38,6 +41,18 @@ export function ConnectionRequestCard({
                 : 'Connection request sent'}
             </Text>
           </View>
+          {incoming && onReport ? (
+            <View className="shrink-0">
+              <Button
+                size="compact"
+                variant="outline"
+                accessibilityLabel={`Report ${request.personDisplayName}`}
+                onPress={onReport}
+              >
+                <Text>Report</Text>
+              </Button>
+            </View>
+          ) : null}
         </View>
         {incoming ? (
           <View className="flex-row gap-2">

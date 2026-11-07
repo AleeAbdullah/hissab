@@ -1,4 +1,3 @@
-import { useDialog } from '@/components/ui/dialog';
 import { useQuery } from '@tanstack/react-query';
 import type { Href } from 'expo-router';
 import { Link, router } from 'expo-router';
@@ -14,24 +13,33 @@ import {
   SectionLabel
 } from '@/components/ui';
 import { Button } from '@/components/ui/button';
+import { useDialog } from '@/components/ui/dialog';
 import { Text } from '@/components/ui/text';
-import { activityDayLabel } from '@/features/activity/presentation';
-import { THEME_VARIABLES, useThemeVariable } from '@/lib/theme';
-import { cn, formatMinorAmount } from '@/lib/utils';
-
 import { homeQuery } from '@/features/home/api';
+import { formatDate } from '@/lib/dates';
+import { formatMinorAmount } from '@/lib/money';
+import { THEME_VARIABLES, useThemeVariable } from '@/lib/theme';
+import { cn } from '@/lib/utils';
 
 type AmountTone = 'positive' | 'negative' | 'neutral';
 
 export default function HomeScreen() {
   const dialog = useDialog();
+  const { fontScale } = useWindowDimensions();
   const primary = useThemeVariable(THEME_VARIABLES.primaryText);
   const home = useQuery(homeQuery);
   if (home.isLoading) return <Loading />;
-  if (home.error || !home.data)
+  if (!home.data)
     return (
       <Screen>
         <ErrorMessage error={home.error ?? new Error('Home is unavailable.')} />
+        <Button
+          variant="outline"
+          disabled={home.isFetching}
+          onPress={() => home.refetch()}
+        >
+          <Text>Try again</Text>
+        </Button>
       </Screen>
     );
 
@@ -80,26 +88,31 @@ export default function HomeScreen() {
         />
       }
     >
+      {home.error ? <ErrorMessage error={home.error} /> : null}
       <StackedCards
         cards={[
           {
             id: 'personal',
             frontContent: (
               <View className="flex-1 p-4">
-                <View className="flex-row items-start justify-between gap-3">
+                <View
+                  className={
+                    fontScale >= 1.3
+                      ? 'gap-2'
+                      : 'flex-row items-start justify-between gap-3'
+                  }
+                >
                   <Text
                     selectable
                     className="flex-1 text-xl font-bold leading-[26px]"
                   >
-                    Personal
+                    Personal · this month
                   </Text>
                   <Text
                     selectable
-                    adjustsFontSizeToFit
-                    minimumFontScale={0.7}
-                    numberOfLines={1}
                     className={cn(
-                      'max-w-[58%] text-right text-[28px] font-bold tabular-nums leading-[34px]',
+                      'text-[28px] font-bold tabular-nums leading-[34px]',
+                      fontScale >= 1.3 ? 'w-full' : 'max-w-[58%] text-right',
                       personalTone === 'positive'
                         ? 'text-positive'
                         : personalTone === 'negative'
@@ -117,21 +130,20 @@ export default function HomeScreen() {
               </View>
             ),
             backContent: (
-              <View className="min-h-14 flex-row items-center justify-between gap-3 px-4">
-                <Text
-                  selectable
-                  numberOfLines={1}
-                  className="flex-1 text-lg font-bold"
-                >
-                  Personal
+              <View
+                className={
+                  fontScale >= 1.3
+                    ? 'gap-2 px-4 py-3'
+                    : 'min-h-14 flex-row items-center justify-between gap-3 px-4'
+                }
+              >
+                <Text selectable className="flex-1 text-lg font-bold">
+                  Personal · this month
                 </Text>
                 <Text
                   selectable
-                  adjustsFontSizeToFit
-                  minimumFontScale={0.7}
-                  numberOfLines={1}
                   className={cn(
-                    'max-w-[58%] flex-1 text-right text-xl font-bold tabular-nums',
+                    'flex-1 text-right text-xl font-bold tabular-nums',
                     personalTone === 'positive'
                       ? 'text-positive'
                       : personalTone === 'negative'
@@ -150,7 +162,13 @@ export default function HomeScreen() {
             id: 'shared',
             frontContent: (
               <View className="flex-1 p-4">
-                <View className="flex-row items-start justify-between gap-3">
+                <View
+                  className={
+                    fontScale >= 1.3
+                      ? 'gap-2'
+                      : 'flex-row items-start justify-between gap-3'
+                  }
+                >
                   <Text
                     selectable
                     className="flex-1 text-xl font-bold leading-[26px]"
@@ -159,11 +177,9 @@ export default function HomeScreen() {
                   </Text>
                   <Text
                     selectable
-                    adjustsFontSizeToFit
-                    minimumFontScale={0.7}
-                    numberOfLines={1}
                     className={cn(
-                      'max-w-[58%] text-right text-[28px] font-bold tabular-nums leading-[34px]',
+                      'text-[28px] font-bold tabular-nums leading-[34px]',
+                      fontScale >= 1.3 ? 'w-full' : 'max-w-[58%] text-right',
                       sharedTone === 'positive'
                         ? 'text-positive'
                         : sharedTone === 'negative'
@@ -184,21 +200,20 @@ export default function HomeScreen() {
               </View>
             ),
             backContent: (
-              <View className="min-h-14 flex-row items-center justify-between gap-3 px-4">
-                <Text
-                  selectable
-                  numberOfLines={1}
-                  className="flex-1 text-lg font-bold"
-                >
+              <View
+                className={
+                  fontScale >= 1.3
+                    ? 'gap-2 px-4 py-3'
+                    : 'min-h-14 flex-row items-center justify-between gap-3 px-4'
+                }
+              >
+                <Text selectable className="flex-1 text-lg font-bold">
                   {sharedDirection}
                 </Text>
                 <Text
                   selectable
-                  adjustsFontSizeToFit
-                  minimumFontScale={0.7}
-                  numberOfLines={1}
                   className={cn(
-                    'max-w-[58%] flex-1 text-right text-xl font-bold tabular-nums',
+                    'flex-1 text-right text-xl font-bold tabular-nums',
                     sharedTone === 'positive'
                       ? 'text-positive'
                       : sharedTone === 'negative'
@@ -219,7 +234,7 @@ export default function HomeScreen() {
         <View className="flex-row flex-wrap items-center justify-between gap-x-3">
           <SectionLabel>RECENT ACTIVITY</SectionLabel>
           <Link href="/activity" asChild>
-            <Button variant="link" size="sm" role="link" className="px-0">
+            <Button variant="link" size="compact" role="link" className="px-0">
               <Text>View all</Text>
             </Button>
           </Link>
@@ -255,17 +270,12 @@ function CardAction({
 }) {
   const action = (
     <Button
-      variant="ghost"
-      size="sm"
+      variant="secondary"
+      size="compact"
       role={href ? 'link' : 'button'}
       onPress={onPress}
-      className="px-0 py-2 active:bg-transparent dark:active:bg-transparent"
     >
-      <View className="group-active:bg-secondary/80 h-8 items-center justify-center rounded-xl bg-secondary px-3">
-        <Text className="text-[15px] text-primary group-active:text-primary">
-          {title}
-        </Text>
-      </View>
+      <Text className="text-primary">{title}</Text>
     </Button>
   );
   return href ? (
@@ -291,23 +301,10 @@ function RecentRow({
     /\s*(?=\d)/,
     '\u00a0'
   );
-  const tone: AmountTone =
-    item.kind === 'PERSONAL_INCOME'
-      ? 'positive'
-      : item.kind === 'PERSONAL_EXPENSE'
-        ? 'negative'
-        : 'neutral';
   const amount = (
     <Text
       selectable
-      className={cn(
-        'shrink-0 text-[15px] font-semibold tabular-nums leading-6',
-        tone === 'positive'
-          ? 'text-positive'
-          : tone === 'negative'
-            ? 'text-destructive'
-            : 'text-foreground'
-      )}
+      className="shrink-0 text-[15px] font-semibold tabular-nums leading-6 text-foreground"
     >
       {amountLabel}
     </Text>
@@ -348,7 +345,7 @@ function recentPresentation(item: HomeRecentItem): {
   content: { tag: string; title: string; subtitle: string };
   href: Href;
 } {
-  const date = activityDayLabel(item.occurredAt);
+  const date = formatDate(item.occurredAt);
   if (item.kind === 'PERSONAL_INCOME')
     return {
       content: {

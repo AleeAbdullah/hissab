@@ -1,4 +1,3 @@
-import { useDialog } from '@/components/ui/dialog';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link, router, useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator } from 'react-native';
@@ -14,15 +13,17 @@ import {
   SectionLabel
 } from '@/components/ui';
 import { Button } from '@/components/ui/button';
+import { useDialog } from '@/components/ui/dialog';
 import { Text } from '@/components/ui/text';
 import { profileQuery } from '@/features/account/api';
 import {
   ledgerBalancesQuery,
   userBalancesQuery
 } from '@/features/balances/api';
-import { formatMinorAmount } from '@/lib/utils';
 import { homeQuery } from '@/features/home/api';
 import { deleteSettlement, settlementQuery } from '@/features/settlements/api';
+import { formatDate } from '@/lib/dates';
+import { formatMinorAmount } from '@/lib/money';
 
 export default function PaymentDetailScreen() {
   const dialog = useDialog();
@@ -72,7 +73,7 @@ export default function PaymentDetailScreen() {
       <Card>
         <Row
           title={`${names.get(settlement.data.fromUserId) ?? 'Member'} paid ${names.get(settlement.data.toUserId) ?? 'member'}`}
-          subtitle={settlement.data.occurredAt.slice(0, 10)}
+          subtitle={formatDate(settlement.data.occurredAt)}
           detail={formatMinorAmount(
             settlement.data.amountMinor,
             profile.data.displayCurrency
@@ -80,12 +81,12 @@ export default function PaymentDetailScreen() {
         />
       </Card>
       <Notice title="Recorded only">
-        This documents money paid elsewhere. Hissab did not move money.
+        This documents money paid elsewhere. Tally Stick did not move money.
       </Notice>
       {settlement.data.status === 'DELETED' ? (
         <Notice title="Deleted payment">
-          This record remains in Hissab’s audit history and no longer affects
-          balances.
+          This record remains in Tally Stick’s audit history and no longer
+          affects balances.
         </Notice>
       ) : null}
       {editable ? (
@@ -111,7 +112,7 @@ export default function PaymentDetailScreen() {
             onPress={() =>
               dialog(
                 'Delete payment?',
-                'This reverses its balance effect. It does not reverse any money paid outside Hissab.',
+                'This reverses its balance effect. It does not reverse any money paid outside Tally Stick.',
                 [
                   { text: 'Keep payment', style: 'cancel' },
                   {

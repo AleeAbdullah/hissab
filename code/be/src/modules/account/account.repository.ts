@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { and, eq, inArray, or, type SQL, sql } from 'drizzle-orm';
 
+import type { DisplayCurrency } from '../../common/display-currency';
 import {
   DatabaseService,
   type DatabaseTransaction,
@@ -146,8 +147,8 @@ export class AccountRepository {
   constructor(private readonly database: DatabaseService) {}
 
   exportAccount(userId: string): Promise<AccountExportDto> {
-    // ponytail: the v1 snapshot is held in memory; move to chunked snapshot
-    // storage only when measured export sizes threaten process memory.
+    // The snapshot is held in memory. Move to chunked storage only when
+    // measured export sizes threaten process memory.
     return this.database.db.transaction(
       async (transaction) => {
         const generatedAtRows = await this.rows<{ generatedAt: Date }>(
@@ -219,7 +220,7 @@ export class AccountRepository {
             id: account.id,
             email: account.email,
             displayName: account.displayName,
-            displayCurrency: account.displayCurrency,
+            displayCurrency: account.displayCurrency as DisplayCurrency,
             status: 'ACTIVE',
             createdAt: account.createdAt,
             updatedAt: account.updatedAt,
@@ -448,6 +449,10 @@ export class AccountRepository {
       where event_type = 'auth.password_reset_requested'
         and aggregate_type = 'user'
         and aggregate_id = ${userId}::uuid
+    `);
+    await transaction.execute(sql`
+      update user_reports set details = null
+      where reporter_user_id = ${userId}::uuid
     `);
     await transaction.execute(sql`
       delete from notification_push_deliveries delivery

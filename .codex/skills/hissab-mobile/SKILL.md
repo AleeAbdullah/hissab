@@ -1,9 +1,9 @@
 ---
 name: hissab-mobile
-description: Use when changing or reviewing the Hissab Expo frontend, especially Expo Router screens, native tabs or modals, generated API contracts, TanStack Query, authentication, local drafts or cache, realtime, notifications, financial forms, theming, or accessibility.
+description: Use when changing or reviewing the Tally Stick Expo frontend, especially Expo Router screens, native tabs or modals, generated API contracts, TanStack Query, authentication, local drafts or cache, realtime, notifications, financial forms, theming, or accessibility.
 ---
 
-# Hissab Mobile
+# Tally Stick Mobile
 
 ## Overview
 
@@ -20,7 +20,7 @@ Use the versions, dependencies, and commands in `code/fe/package.json`. Use `pnp
 - Keep server state in TanStack Query, ephemeral interaction state local, secrets in Expo SecureStore, and recoverable cache/drafts user-scoped and versioned.
 - Preserve currency-neutral integer minor units. Parse and calculate exact values with strings and `BigInt`, never floating point.
 - Every mutation must carry an idempotency key. Financial edits must preserve optimistic versions and immutable ledger/revision behavior.
-- Prefer native navigation chrome and platform-owned controls. Use the approved shared Hissab dialog for app-owned prompts (KAN-4). Keep controls truthful, accessible, theme-aware, keyboard-safe, and usable at 200% text scaling.
+- Prefer native navigation chrome and platform-owned controls. Use the approved shared app dialog for app-owned prompts (KAN-4). Keep controls truthful, accessible, theme-aware, keyboard-safe, and usable at 200% text scaling.
 - Make the smallest coherent change. Fix shared root causes at their owning boundary and avoid speculative abstractions.
 - Automated test suites are intentionally absent. Use the repository checks and proportionate manual iOS/Android verification.
 

@@ -1,4 +1,5 @@
 import { type PropsWithChildren, useEffect } from 'react';
+import { AppState } from 'react-native';
 import { io } from 'socket.io-client';
 
 import { queryClient } from '@/api/query-client';
@@ -20,7 +21,11 @@ export function RealtimeProvider({ children }: PropsWithChildren) {
     socket.on('connect', refetchAuthoritativeState);
     socket.on('invalidate', refetchAuthoritativeState);
     socket.on('resync', refetchAuthoritativeState);
+    const foreground = AppState.addEventListener('change', (state) => {
+      if (state === 'active') refetchAuthoritativeState();
+    });
     return () => {
+      foreground.remove();
       socket.disconnect();
     };
   }, [accessToken]);

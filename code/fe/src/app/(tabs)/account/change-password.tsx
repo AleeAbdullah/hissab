@@ -5,7 +5,7 @@ import { ActivityIndicator } from 'react-native';
 
 import { ErrorMessage, Field, Notice, Screen } from '@/components/ui';
 import { Button } from '@/components/ui/button';
-import { Text as ButtonText } from '@/components/ui/text';
+import { Text } from '@/components/ui/text';
 import { changePassword } from '@/features/auth/api';
 
 export default function ChangePasswordScreen() {
@@ -60,9 +60,9 @@ export default function ChangePasswordScreen() {
         onPress={() => mutation.mutate()}
       >
         {mutation.isPending ? (
-          <ActivityIndicator color="white" />
+          <ActivityIndicator className="text-primary-foreground" />
         ) : (
-          <ButtonText>Change password</ButtonText>
+          <Text>Change password</Text>
         )}
       </Button>
     </Screen>

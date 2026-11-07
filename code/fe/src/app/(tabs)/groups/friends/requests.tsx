@@ -1,9 +1,10 @@
-import { useDialog } from '@/components/ui/dialog';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { router } from 'expo-router';
 
-import { queryClient } from '@/api/query-client';
 import type { ConnectionRequest } from '@/api/contracts';
+import { queryClient } from '@/api/query-client';
 import { ErrorMessage, Loading, Screen, SectionLabel } from '@/components/ui';
+import { useDialog } from '@/components/ui/dialog';
 import { Text } from '@/components/ui/text';
 import {
   acceptRequest,
@@ -52,7 +53,7 @@ export default function RequestsScreen() {
       action === 'decline' ? 'Decline request?' : 'Cancel request?',
       `${request.personDisplayName} will no longer see this pending request.`,
       [
-        { text: 'Keep', style: 'cancel' },
+        { text: 'Keep request', style: 'cancel' },
         {
           text: action === 'decline' ? 'Decline' : 'Cancel request',
           style: 'destructive',
@@ -86,6 +87,16 @@ export default function RequestsScreen() {
           onAccept={() => mutation.mutate({ action: 'accept', id: item.id })}
           onDecline={() => confirm(item, 'decline')}
           onCancel={() => confirm(item, 'cancel')}
+          onReport={() =>
+            router.push({
+              pathname: '/report',
+              params: {
+                targetType: 'USER',
+                targetId: item.personUserId,
+                name: item.personDisplayName
+              }
+            })
+          }
         />
       ))}
       {outgoing.length ? (

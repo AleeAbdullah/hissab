@@ -5,15 +5,19 @@ export default function GroupsLayout() {
     <Stack
       screenOptions={{
         headerBackButtonDisplayMode: 'minimal',
+        headerTitleAlign: 'center',
         headerShadowVisible: false
       }}
     >
       <Stack.Screen
         name="index"
-        options={{ title: 'Groups', headerLargeTitle: true }}
+        options={{
+          title: 'Groups',
+          headerLargeTitle: true,
+          headerTitleAlign: 'left'
+        }}
       />
       <Stack.Screen name="[groupId]/index" options={{ title: 'Group' }} />
-      <Stack.Screen name="[groupId]/edit" options={{ title: 'Edit group' }} />
       <Stack.Screen
         name="[groupId]/balances"
         options={{ title: 'Group balances' }}
@@ -40,7 +44,11 @@ export default function GroupsLayout() {
       />
       <Stack.Screen
         name="friends/index"
-        options={{ title: 'Friends', headerLargeTitle: true }}
+        options={{
+          title: 'Friends',
+          headerLargeTitle: true,
+          headerTitleAlign: 'left'
+        }}
       />
       <Stack.Screen
         name="friends/requests"

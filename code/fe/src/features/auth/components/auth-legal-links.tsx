@@ -17,10 +17,10 @@ export function AuthLegalLinks({ agreement = false }: { agreement?: boolean }) {
       <View className="flex-row flex-wrap items-center justify-center">
         <Button
           variant="link"
-          size="sm"
+          size="compact"
           role="link"
           onPress={() =>
-            void Linking.openURL('https://hisab-weld-psi.vercel.app/terms/')
+            void Linking.openURL('https://hissabapp.vercel.app/terms/')
           }
         >
           <Text className="text-xs leading-4 underline">
@@ -32,10 +32,10 @@ export function AuthLegalLinks({ agreement = false }: { agreement?: boolean }) {
         </Text>
         <Button
           variant="link"
-          size="sm"
+          size="compact"
           role="link"
           onPress={() =>
-            void Linking.openURL('https://hisab-weld-psi.vercel.app/privacy/')
+            void Linking.openURL('https://hissabapp.vercel.app/privacy/')
           }
         >
           <Text className="text-xs leading-4 underline">Privacy Policy</Text>

@@ -1,10 +1,10 @@
 import { useState, type PropsWithChildren } from 'react';
 import { TextInput, type TextInputProps, View } from 'react-native';
 
+import { Icons } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
-import { Icons } from '@/components/icons';
 import { cn } from '@/lib/utils';
 
 type AuthFieldProps = PropsWithChildren<{
@@ -96,8 +96,8 @@ function PasswordVisibilityButton({
 }) {
   return (
     <Button
+      className="w-12 px-0"
       variant="ghost"
-      size="icon"
       accessibilityLabel={visible ? 'Hide password' : 'Show password'}
       onPress={onPress}
     >

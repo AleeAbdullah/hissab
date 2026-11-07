@@ -1,5 +1,6 @@
 import { View } from 'react-native';
 
+import { AuthField } from './components/auth-field';
 import type { DisplayCurrency } from '@/api/contracts';
 import {
   Select,
@@ -10,8 +11,6 @@ import {
   SelectValue,
   type Option
 } from '@/components/ui/select';
-
-import { AuthField } from './components/auth-field';
 
 const displayCurrencies: DisplayCurrency[] = [
   'PKR',

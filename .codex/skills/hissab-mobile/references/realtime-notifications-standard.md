@@ -21,7 +21,7 @@ Use this standard for Socket.IO events, query invalidation, reconnect behavior, 
 
 - Durable in-app notifications remain query-backed server state. Realtime/push wakes the client; it does not replace the inbox.
 - Respect master and category notification preferences. Keep preference mutations pending-safe and refetch the authoritative result.
-- Lock-screen copy must avoid unnecessarily sensitive financial data. Hissab reminder push copy contains sender and ledger, never an amount.
+- Lock-screen copy must avoid unnecessarily sensitive financial data. Tally Stick reminder push copy contains sender and ledger, never an amount.
 - Manual reminders require an owed relationship in the same active ledger and are rate-limited by the backend. Surface cooldown errors; do not bypass or duplicate server enforcement.
 
 ## Change Checklist

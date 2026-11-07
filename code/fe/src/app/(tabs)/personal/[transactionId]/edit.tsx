@@ -6,11 +6,11 @@ import { queryClient } from '@/api/query-client';
 import { ErrorMessage, Loading, Screen } from '@/components/ui';
 import { profileQuery } from '@/features/account/api';
 import { homeQuery } from '@/features/home/api';
-import { PersonalTransactionEditor } from '@/features/personal/components/personal-transaction-editor';
 import {
   personalTransactionQuery,
   replacePersonalTransaction
 } from '@/features/personal/api';
+import { PersonalTransactionEditor } from '@/features/personal/components/personal-transaction-editor';
 
 export default function EditTransactionScreen() {
   const { transactionId } = useLocalSearchParams<{ transactionId: string }>();

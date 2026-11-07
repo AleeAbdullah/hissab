@@ -14,8 +14,15 @@ const newsreader = localFont({
 });
 
 export const metadata: Metadata = {
-  title: { default: 'Hissab · Clear records, clear relationships', template: '%s · Hissab' },
-  description: 'Hissab records shared expenses, personal transactions, and exactly who owes whom.',
+  metadataBase: new URL('https://hissabapp.vercel.app'),
+  title: { default: 'Tally Stick · Clear records, clear relationships', template: '%s · Tally Stick' },
+  description: 'Tally Stick records shared expenses, personal transactions, and exactly who owes whom.',
+  icons: {
+    icon: [
+      { url: '/brand/icon-dark.svg', type: 'image/svg+xml', media: '(prefers-color-scheme: light)' },
+      { url: '/brand/icon-light.svg', type: 'image/svg+xml', media: '(prefers-color-scheme: dark)' }
+    ]
+  },
   robots: { index: true, follow: true }
 };
 
@@ -27,7 +34,7 @@ export const viewport: Viewport = {
   ]
 };
 
-const themeScript = `(()=>{document.documentElement.classList.add('js-enabled');try{const p=localStorage.getItem('hissab-theme')||'system';const t=p==='system'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):p;document.documentElement.dataset.theme=t;document.documentElement.style.colorScheme=t}catch{}})()`;
+const themeScript = `(()=>{document.documentElement.classList.add('js-enabled');try{const p=localStorage.getItem('hissab-theme');const t=p==='light'||p==='dark'?p:(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.dataset.theme=t;document.documentElement.style.colorScheme=t}catch{}})()`;
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (

@@ -19,7 +19,7 @@ assert.deepEqual(
   }),
   {
     pathname: '/groups/friends/[friendId]',
-    params: { friendId: 'friend-id' }
+    params: { friendId: 'friend-id', ledgerId: 'ledger-id' }
   }
 );
 assert.equal(

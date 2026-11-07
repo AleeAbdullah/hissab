@@ -1,11 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
+import type { TimestampCursor } from '../../common/cursor';
 import { DatabaseService } from '../../database/database.service';
-
-export interface ActivityCursor {
-  createdAt: string;
-  id: string;
-}
 
 export interface ActivityRow {
   id: string;
@@ -62,7 +58,7 @@ export class ActivityRepository {
     userId: string,
     eventTypes: readonly string[],
     ledgerId: string | null,
-    cursor: ActivityCursor | null,
+    cursor: TimestampCursor | null,
     limit: number,
   ): Promise<ActivityRow[]> {
     const result = await this.database.pool.query<ActivityRow>(

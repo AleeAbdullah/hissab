@@ -1,3 +1,8 @@
+import type {
+  SharedExpense,
+  SharedExpenseCategory,
+  SharedExpensePage
+} from '@/api/contracts';
 import {
   expensesCreateExpense,
   expensesDeleteExpense,
@@ -10,11 +15,6 @@ import type {
   CreateExpenseDto,
   ReplaceExpenseDto
 } from '@/api/generated/types.gen';
-import type {
-  SharedExpense,
-  SharedExpenseCategory,
-  SharedExpensePage
-} from '@/api/contracts';
 import { idempotencyKey, request } from '@/api/transport';
 
 export const expenseCategoriesQuery = {

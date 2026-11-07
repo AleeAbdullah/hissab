@@ -1,13 +1,14 @@
-import { Icon } from '@/components/ui/icon';
-import { NativeOnlyAnimatedView } from '@/components/ui/native-only-animated-view';
-import { TextClassContext } from '@/components/ui/text';
-import { Icons } from '@/components/icons';
-import { cn } from '@/lib/utils';
 import * as SelectPrimitive from '@rn-primitives/select';
 import * as React from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import { FadeIn, FadeOut, ReduceMotion } from 'react-native-reanimated';
 import { FullWindowOverlay as RNFullWindowOverlay } from 'react-native-screens';
+
+import { Icons } from '@/components/icons';
+import { Icon } from '@/components/ui/icon';
+import { NativeOnlyAnimatedView } from '@/components/ui/native-only-animated-view';
+import { TextClassContext } from '@/components/ui/text';
+import { cn } from '@/lib/utils';
 
 type Option = SelectPrimitive.Option;
 
@@ -120,7 +121,6 @@ function SelectContent({
                 position={position}
                 {...props}
               >
-                <SelectScrollUpButton />
                 <SelectPrimitive.Viewport
                   className={cn(
                     'p-1',
@@ -135,28 +135,12 @@ function SelectContent({
                 >
                   {children}
                 </SelectPrimitive.Viewport>
-                <SelectScrollDownButton />
               </SelectPrimitive.Content>
             </TextClassContext.Provider>
           </NativeOnlyAnimatedView>
         </SelectPrimitive.Overlay>
       </FullWindowOverlay>
     </SelectPrimitive.Portal>
-  );
-}
-
-function SelectLabel({
-  className,
-  ...props
-}: React.ComponentProps<typeof SelectPrimitive.Label>) {
-  return (
-    <SelectPrimitive.Label
-      className={cn(
-        'px-2 py-2 text-xs text-muted-foreground sm:py-1.5',
-        className
-      )}
-      {...props}
-    />
   );
 }
 
@@ -190,79 +174,11 @@ function SelectItem({
   );
 }
 
-function SelectSeparator({
-  className,
-  ...props
-}: React.ComponentProps<typeof SelectPrimitive.Separator>) {
-  return (
-    <SelectPrimitive.Separator
-      className={cn(
-        '-mx-1 my-1 h-px bg-border',
-        Platform.select({ web: 'pointer-events-none' }),
-        className
-      )}
-      {...props}
-    />
-  );
-}
-
-/**
- * @platform Web only
- * Returns null on native platforms
- */
-function SelectScrollUpButton({
-  className,
-  ...props
-}: React.ComponentProps<typeof SelectPrimitive.ScrollUpButton>) {
-  if (Platform.OS !== 'web') {
-    return null;
-  }
-  return (
-    <SelectPrimitive.ScrollUpButton
-      className={cn(
-        'flex cursor-default items-center justify-center py-1',
-        className
-      )}
-      {...props}
-    >
-      <Icon as={Icons.chevronUp} className="size-4" />
-    </SelectPrimitive.ScrollUpButton>
-  );
-}
-
-/**
- * @platform Web only
- * Returns null on native platforms
- */
-function SelectScrollDownButton({
-  className,
-  ...props
-}: React.ComponentProps<typeof SelectPrimitive.ScrollDownButton>) {
-  if (Platform.OS !== 'web') {
-    return null;
-  }
-  return (
-    <SelectPrimitive.ScrollDownButton
-      className={cn(
-        'flex cursor-default items-center justify-center py-1',
-        className
-      )}
-      {...props}
-    >
-      <Icon as={Icons.chevronDown} className="size-4" />
-    </SelectPrimitive.ScrollDownButton>
-  );
-}
-
 export {
   Select,
   SelectContent,
   SelectGroup,
   SelectItem,
-  SelectLabel,
-  SelectScrollDownButton,
-  SelectScrollUpButton,
-  SelectSeparator,
   SelectTrigger,
   SelectValue,
   type Option

@@ -2,7 +2,12 @@ import { Stack } from 'expo-router/stack';
 
 export default function ModalLayout() {
   return (
-    <Stack screenOptions={{ headerBackButtonDisplayMode: 'minimal' }}>
+    <Stack
+      screenOptions={{
+        headerBackButtonDisplayMode: 'minimal',
+        headerTitleAlign: 'center'
+      }}
+    >
       <Stack.Screen
         name="connection-new"
         options={{
@@ -13,6 +18,7 @@ export default function ModalLayout() {
       />
       <Stack.Screen name="shared-expense" options={{ title: 'Add expense' }} />
       <Stack.Screen name="receipt" options={{ title: 'Receipt' }} />
+      <Stack.Screen name="report" options={{ title: 'Report' }} />
       <Stack.Screen
         name="settlement"
         options={{ title: 'Record settlement' }}

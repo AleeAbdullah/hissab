@@ -1,4 +1,3 @@
-import { useDialog } from '@/components/ui/dialog';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link, router, useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, View } from 'react-native';
@@ -14,14 +13,16 @@ import {
   SectionLabel
 } from '@/components/ui';
 import { Button } from '@/components/ui/button';
+import { useDialog } from '@/components/ui/dialog';
 import { Text } from '@/components/ui/text';
 import { profileQuery } from '@/features/account/api';
-import { formatMinorAmount } from '@/lib/utils';
 import { homeQuery } from '@/features/home/api';
 import {
   deletePersonalTransaction,
   personalTransactionQuery
 } from '@/features/personal/api';
+import { formatDate } from '@/lib/dates';
+import { formatMinorAmount } from '@/lib/money';
 
 export default function TransactionDetailScreen() {
   const dialog = useDialog();
@@ -62,7 +63,7 @@ export default function TransactionDetailScreen() {
       <Card>
         <Row
           title={item.description}
-          subtitle={`${item.category.name} · ${item.occurredAt.slice(0, 10)}`}
+          subtitle={`${item.category.name} · ${formatDate(item.occurredAt)}`}
           detail={formatMinorAmount(
             item.amountMinor,
             profile.data.displayCurrency
@@ -83,7 +84,7 @@ export default function TransactionDetailScreen() {
             title={item.type === 'INCOME' ? 'Source' : 'Merchant'}
             detail={item.merchantOrSource ?? 'Not recorded'}
           />
-          <Row title="Date" detail={item.occurredAt.slice(0, 10)} />
+          <Row title="Date" detail={formatDate(item.occurredAt)} />
           {item.notes ? <Row title="Notes" subtitle={item.notes} /> : null}
         </Card>
       </View>

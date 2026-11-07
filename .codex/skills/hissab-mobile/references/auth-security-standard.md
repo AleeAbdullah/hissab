@@ -24,7 +24,7 @@ Use this standard for registration, sign-in, password flows, sessions, protected
 - Use HTTPS outside local development. Do not weaken iOS or Android transport security for production convenience.
 - Validate deep links and external URLs before navigation. Keep sensitive data out of URLs and lock-screen notifications.
 - Request permissions at the user-triggered point of need and explain denial without blocking unrelated app use.
-- Preserve password and account-deletion requirements from `AGENTS.md`; native destructive confirmation must match backend requirements exactly.
+- Preserve password and account-deletion requirements from `AGENTS.md`; destructive confirmation through the shared app dialog must match backend requirements exactly.
 - Avoid logging personal, financial, token, device-token, or security data.
 
 ## Change Checklist

@@ -51,8 +51,8 @@ export function ListSearchButton({
 }) {
   return (
     <Button
+      className="w-12 px-0"
       variant="ghost"
-      size="icon"
       disabled={disabled}
       accessibilityLabel={
         isOpen ? `Close ${subject} search` : `Search ${subject}`
@@ -88,8 +88,8 @@ export function ListSearchField({
       trailing={
         value ? (
           <Button
+            className="w-12 px-0"
             variant="ghost"
-            size="icon"
             accessibilityLabel={`Clear ${label.toLowerCase()}`}
             onPress={() => onChangeText('')}
           >

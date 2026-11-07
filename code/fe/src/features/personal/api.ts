@@ -1,3 +1,11 @@
+import type {
+  PersonalCategory,
+  PersonalCategoryCode,
+  PersonalHistoryPage,
+  PersonalReport,
+  PersonalTransaction,
+  PersonalTransactionType
+} from '@/api/contracts';
 import {
   personalCreateTransaction,
   personalDeleteTransaction,
@@ -11,14 +19,6 @@ import type {
   CreatePersonalTransactionDto,
   ReplacePersonalTransactionDto
 } from '@/api/generated/types.gen';
-import type {
-  PersonalCategory,
-  PersonalCategoryCode,
-  PersonalHistoryPage,
-  PersonalReport,
-  PersonalTransaction,
-  PersonalTransactionType
-} from '@/api/contracts';
 import { idempotencyKey, request } from '@/api/transport';
 
 export type PersonalFilters = {

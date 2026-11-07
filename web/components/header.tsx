@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
 
 import { BrandLockup } from '@/components/brand';
 
@@ -14,6 +14,25 @@ const links = [
 ] as const;
 
 type Theme = 'system' | 'light' | 'dark';
+let currentTheme: Theme = 'system';
+
+function readTheme(): Theme {
+  try {
+    const saved = localStorage.getItem('hissab-theme');
+    return saved === 'light' || saved === 'dark' ? saved : 'system';
+  } catch {
+    return currentTheme;
+  }
+}
+
+function subscribeTheme(update: () => void) {
+  window.addEventListener('hissab-theme-change', update);
+  window.addEventListener('storage', update);
+  return () => {
+    window.removeEventListener('hissab-theme-change', update);
+    window.removeEventListener('storage', update);
+  };
+}
 
 function applyTheme(theme: Theme) {
   const resolved = theme === 'system'
@@ -21,35 +40,41 @@ function applyTheme(theme: Theme) {
     : theme;
   document.documentElement.dataset.theme = resolved;
   document.documentElement.style.colorScheme = resolved;
-  localStorage.setItem('hissab-theme', theme);
+  currentTheme = theme;
+  try {
+    localStorage.setItem('hissab-theme', theme);
+  } catch {
+    // Appearance still works when browser storage is unavailable.
+  }
+  window.dispatchEvent(new Event('hissab-theme-change'));
 }
 
 function ThemeToggle() {
-  const fieldset = useRef<HTMLFieldSetElement>(null);
+  const name = useId();
+  const theme = useSyncExternalStore(subscribeTheme, readTheme, () => 'system');
 
   useEffect(() => {
-    const saved = localStorage.getItem('hissab-theme');
-    const theme = saved === 'light' || saved === 'dark' ? saved : 'system';
-    const input = fieldset.current?.querySelector<HTMLInputElement>(`input[value="${theme}"]`);
-    if (input) input.checked = true;
     const query = matchMedia('(prefers-color-scheme: dark)');
     const update = () => {
-      if ((localStorage.getItem('hissab-theme') ?? 'system') === 'system') applyTheme('system');
+      const resolved = theme === 'system' ? (query.matches ? 'dark' : 'light') : theme;
+      document.documentElement.dataset.theme = resolved;
+      document.documentElement.style.colorScheme = resolved;
     };
+    update();
     query.addEventListener('change', update);
     return () => query.removeEventListener('change', update);
-  }, []);
+  }, [theme]);
 
   return (
-    <fieldset ref={fieldset} className="theme-toggle">
+    <fieldset className="theme-toggle">
       <legend className="sr-only">Appearance</legend>
       {(['system', 'light', 'dark'] as const).map((value) => (
         <label key={value}>
           <input
             type="radio"
-            name="theme"
+            name={name}
             value={value}
-            defaultChecked={value === 'system'}
+            checked={theme === value}
             onChange={() => applyTheme(value)}
           />
           <span>{value[0].toUpperCase() + value.slice(1)}</span>
@@ -70,6 +95,8 @@ export function Header() {
     if (!open) return;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
+    const background = document.querySelectorAll<HTMLElement>('main, .site-footer, .header-inner, .skip-link');
+    background.forEach((element) => { element.inert = true; });
     closeButton.current?.focus();
 
     const onKeyDown = (event: KeyboardEvent) => {
@@ -94,6 +121,8 @@ export function Header() {
     addEventListener('keydown', onKeyDown);
     return () => {
       document.body.style.overflow = previousOverflow;
+      background.forEach((element) => { element.inert = false; });
+      menuButton.current?.focus();
       removeEventListener('keydown', onKeyDown);
     };
   }, [open]);
@@ -134,7 +163,7 @@ export function Header() {
           {links.map(([href, label]) => <Link key={href} href={href}>{label}</Link>)}
         </nav>
       </noscript>
-      <div ref={sheet} id="mobile-menu" className="mobile-menu" data-open={open || undefined} aria-hidden={!open}>
+      <div ref={sheet} id="mobile-menu" className="mobile-menu" data-open={open || undefined} aria-hidden={!open} role="dialog" aria-modal={open || undefined} aria-label="Navigation menu">
         <div className="mobile-menu-top">
           <BrandLockup />
           <button ref={closeButton} className="menu-button" type="button" onClick={() => { setOpen(false); menuButton.current?.focus(); }}>Close</button>

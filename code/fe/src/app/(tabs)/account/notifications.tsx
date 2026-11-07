@@ -1,35 +1,25 @@
-import { useDialog } from '@/components/ui/dialog';
-import { useInfiniteQuery, useMutation, useQuery } from '@tanstack/react-query';
-import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, Switch, View } from 'react-native';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, View } from 'react-native';
 
+import type { NotificationPreferences } from '@/api/contracts';
 import { queryClient } from '@/api/query-client';
-import type {
-  InAppNotification,
-  NotificationPreferences
-} from '@/api/contracts';
 import { Card, ErrorMessage, Loading, Notice, Screen } from '@/components/ui';
 import { Button } from '@/components/ui/button';
+import { useDialog } from '@/components/ui/dialog';
+import { ThemedSwitch } from '@/components/ui/switch';
 import { Text } from '@/components/ui/text';
 import {
   notificationPreferencesQuery,
-  notificationInboxInfiniteQuery,
-  markAllNotificationsRead,
-  markNotificationRead,
   updateNotificationPreferences
 } from '@/features/account/api';
-import { NotificationInbox } from '@/features/account/components/notification-inbox';
-import { useSession } from '@/features/auth/session';
 import {
   canRegisterPushNotifications,
   hasRegisteredPushDevice,
   registerForPushNotifications,
   revokePushNotifications
 } from '@/features/account/push';
-import { reminderLedgerHref } from '@/features/reminders/navigation';
-import { THEME_VARIABLES, useThemeVariable } from '@/lib/theme';
-import { cn } from '@/lib/utils';
+import { useSession } from '@/features/auth/session';
 
 type PreferenceKey = Exclude<keyof NotificationPreferences, 'updatedAt'>;
 
@@ -37,7 +27,7 @@ const options: { key: PreferenceKey; title: string; description: string }[] = [
   {
     key: 'pushEnabled',
     title: 'Push notifications',
-    description: 'Receive Hissab alerts on this device.'
+    description: 'Receive Tally Stick alerts on this device.'
   },
   {
     key: 'expenseActivityEnabled',
@@ -63,37 +53,16 @@ const options: { key: PreferenceKey; title: string; description: string }[] = [
 
 export default function NotificationsScreen() {
   const dialog = useDialog();
-  const control = useThemeVariable(THEME_VARIABLES.input);
-  const primary = useThemeVariable(THEME_VARIABLES.primary);
   const session = useSession();
   const preferences = useQuery(notificationPreferencesQuery);
-  const inbox = useInfiniteQuery(notificationInboxInfiniteQuery());
   const mutation = useMutation({ mutationFn: updateNotificationPreferences });
-  const markRead = useMutation({
-    mutationFn: markNotificationRead,
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ['notifications'] })
-  });
-  const markAllRead = useMutation({
-    mutationFn: markAllNotificationsRead,
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ['notifications'] })
-  });
   const revokePush = useMutation({
     mutationFn: () => revokePushNotifications(session?.user.id ?? '')
   });
   const [setupError, setSetupError] = useState<string>();
   const [deviceRegistered, setDeviceRegistered] = useState(false);
-  const openNotification = (notification: InAppNotification) => {
-    if (!notification.readAt) markRead.mutate(notification.id);
-    const href = reminderLedgerHref({
-      actorUserId: notification.actorUserId,
-      eventType: notification.eventType,
-      ledgerId: notification.ledgerId,
-      ledgerType: notification.details.ledgerType
-    });
-    if (href) router.push(href);
-  };
+  const updating = useRef(false);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -109,8 +78,10 @@ export default function NotificationsScreen() {
   }, [session?.user.id]);
 
   if (preferences.isLoading) return <Loading />;
-  const notifications = inbox.data?.pages.flatMap((page) => page.items) ?? [];
   const update = async (key: PreferenceKey, value: boolean) => {
+    if (updating.current || revokePush.isPending) return;
+    updating.current = true;
+    setIsUpdating(true);
     setSetupError(undefined);
     try {
       if (key === 'pushEnabled' && value && session?.user.id) {
@@ -125,20 +96,28 @@ export default function NotificationsScreen() {
           ? error.message
           : 'Could not update notification settings.'
       );
+    } finally {
+      updating.current = false;
+      setIsUpdating(false);
     }
   };
 
   return (
     <Screen>
-      {preferences.error ? <ErrorMessage error={preferences.error} /> : null}
-      {!canRegisterPushNotifications() ? (
-        <Notice title="Push notifications paused">
-          Push notifications are disabled for now. Your in-app inbox is still
-          available.
-        </Notice>
+      {preferences.error ? (
+        <View className="gap-3">
+          <ErrorMessage error={preferences.error} />
+          <Button
+            variant="outline"
+            disabled={preferences.isFetching}
+            onPress={() => preferences.refetch()}
+          >
+            <Text>Try again</Text>
+          </Button>
+        </View>
       ) : null}
       {setupError ? (
-        <Notice title="Could not enable push notifications" error>
+        <Notice title="Could not update notifications" error>
           {setupError}
         </Notice>
       ) : null}
@@ -149,15 +128,21 @@ export default function NotificationsScreen() {
               key={option.key}
               title={option.title}
               description={option.description}
-              value={preferences.data[option.key]}
+              value={
+                option.key === 'pushEnabled' && !canRegisterPushNotifications()
+                  ? false
+                  : preferences.data[option.key]
+              }
               disabled={
-                mutation.isPending ||
+                isUpdating ||
+                revokePush.isPending ||
                 (option.key === 'pushEnabled' &&
                   !canRegisterPushNotifications())
               }
               onChange={(value) => update(option.key, value)}
-              controlColor={control}
-              primaryColor={primary}
+              unavailable={
+                option.key === 'pushEnabled' && !canRegisterPushNotifications()
+              }
             />
           ))}
         </Card>
@@ -166,15 +151,14 @@ export default function NotificationsScreen() {
         selectable
         className="text-[13px] leading-[18px] text-muted-foreground"
       >
-        Turning push notifications on asks your device for permission and
-        securely registers this app installation with Hissab.
+        These choose which alerts push sends. The inbox shows everything.
       </Text>
       {deviceRegistered ? (
         <Button
           variant="destructiveOutline"
-          disabled={revokePush.isPending}
+          disabled={revokePush.isPending || isUpdating}
           accessibilityState={{
-            disabled: revokePush.isPending,
+            disabled: revokePush.isPending || isUpdating,
             busy: revokePush.isPending
           }}
           onPress={() =>
@@ -208,18 +192,6 @@ export default function NotificationsScreen() {
           )}
         </Button>
       ) : null}
-      <NotificationInbox
-        error={inbox.error ?? markRead.error ?? markAllRead.error}
-        hasNextPage={inbox.hasNextPage}
-        isLoading={inbox.isLoading}
-        isLoadingMore={inbox.isFetchingNextPage}
-        isMarkingAll={markAllRead.isPending}
-        items={notifications}
-        markingId={markRead.isPending ? markRead.variables : undefined}
-        onLoadMore={() => inbox.fetchNextPage()}
-        onMarkAllRead={() => markAllRead.mutate()}
-        onOpen={openNotification}
-      />
     </Screen>
   );
 }
@@ -230,43 +202,43 @@ function PreferenceRow({
   value,
   disabled,
   onChange,
-  controlColor,
-  primaryColor
+  unavailable
 }: {
   title: string;
   description: string;
   value: boolean;
   disabled: boolean;
   onChange: (value: boolean) => void;
-  controlColor: string;
-  primaryColor: string;
+  unavailable: boolean;
 }) {
   return (
-    <View
-      className={cn(
-        'min-h-16 flex-row items-center gap-3 border-b border-border p-3',
-        disabled && 'opacity-[0.55]'
-      )}
-    >
-      <View className="flex-1 gap-0.5">
-        <Text selectable className="text-[17px] leading-[23px]">
-          {title}
-        </Text>
-        <Text
-          selectable
-          className="text-[13px] leading-[18px] text-muted-foreground"
-        >
-          {description}
-        </Text>
+    <View className="gap-2 border-b border-border p-4">
+      <View className="min-h-12 flex-row items-center gap-3">
+        <View className="flex-1 gap-1">
+          <Text className="text-base leading-6">{title}</Text>
+          <Text className="text-[13px] leading-[18px] text-muted-foreground">
+            {description}
+          </Text>
+        </View>
+        <ThemedSwitch
+          accessibilityLabel={title}
+          accessibilityHint={
+            unavailable
+              ? "Push isn't available in this version of Tally Stick. Your inbox still gets every update."
+              : description
+          }
+          value={value}
+          disabled={disabled}
+          onValueChange={onChange}
+        />
       </View>
-      <Switch
-        accessibilityLabel={title}
-        accessibilityHint={description}
-        value={value}
-        disabled={disabled}
-        onValueChange={onChange}
-        trackColor={{ false: controlColor, true: primaryColor }}
-      />
+      {unavailable ? (
+        <Text className="text-[13px] leading-[18px] text-muted-foreground">
+          {
+            "Push isn't available in this version of Tally Stick. Your inbox still gets every update."
+          }
+        </Text>
+      ) : null}
     </View>
   );
 }

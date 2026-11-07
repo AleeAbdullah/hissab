@@ -1,4 +1,3 @@
-import { useDialog } from '@/components/ui/dialog';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { ActivityIndicator, View } from 'react-native';
 
@@ -11,21 +10,17 @@ import {
   SectionLabel
 } from '@/components/ui';
 import { Button } from '@/components/ui/button';
+import { useDialog } from '@/components/ui/dialog';
 import { Text } from '@/components/ui/text';
 import {
   revokeOtherSessions,
   revokeSession,
   sessionsQuery
 } from '@/features/account/api';
+import { formatDateTime } from '@/lib/dates';
 
 const date = (value: string | null) =>
-  value
-    ? new Intl.DateTimeFormat(undefined, {
-        dateStyle: 'medium',
-        timeStyle: 'short',
-        timeZone: 'UTC'
-      }).format(new Date(value)) + ' UTC'
-    : 'Not yet';
+  value ? formatDateTime(value) : 'Not yet';
 
 export default function SessionsScreen() {
   const dialog = useDialog();

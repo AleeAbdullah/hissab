@@ -12,10 +12,10 @@ import { AccountModule } from './modules/account';
 import { ActivityModule } from './modules/activity';
 import { AuthModule } from './modules/auth';
 import { BalancesModule } from './modules/balances';
-import { ConnectionsModule } from './modules/connections/connections.module';
+import { ConnectionsModule } from './modules/connections';
 import { ExpensesModule } from './modules/expenses';
 import { GroupsModule } from './modules/groups';
-import { HealthModule } from './modules/health/health.module';
+import { HealthModule } from './modules/health';
 import { HomeModule } from './modules/home';
 import { IdempotencyModule } from './modules/idempotency';
 import { NotificationsModule } from './modules/notifications';
@@ -23,6 +23,7 @@ import { OutboxModule } from './modules/outbox';
 import { PersonalModule } from './modules/personal';
 import { RealtimeModule } from './modules/realtime';
 import { RemindersModule } from './modules/reminders';
+import { ReportsModule } from './modules/reports';
 import { SettlementsModule } from './modules/settlements';
 import { UsersModule } from './modules/users';
 
@@ -53,6 +54,7 @@ import { UsersModule } from './modules/users';
     PersonalModule,
     NotificationsModule,
     RemindersModule,
+    ReportsModule,
     RealtimeModule,
   ],
   providers: [

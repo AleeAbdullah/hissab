@@ -5,15 +5,16 @@ import type {
   ActivitySettlementDetails,
   DisplayCurrency
 } from '@/api/contracts';
-import { formatMinorAmount } from '@/lib/utils';
+import { formatDate, formatTime } from '@/lib/dates';
+import { formatMinorAmount } from '@/lib/money';
 
 const actions: Record<string, string> = {
-  EXPENSE_CREATED: 'added an expense',
-  EXPENSE_REPLACED: 'edited an expense',
-  EXPENSE_DELETED: 'deleted an expense',
-  SETTLEMENT_CREATED: 'recorded a payment',
-  SETTLEMENT_REPLACED: 'edited a payment',
-  SETTLEMENT_DELETED: 'deleted a payment',
+  EXPENSE_CREATED: 'recorded',
+  EXPENSE_REPLACED: 'edited',
+  EXPENSE_DELETED: 'deleted',
+  SETTLEMENT_CREATED: 'recorded',
+  SETTLEMENT_REPLACED: 'edited',
+  SETTLEMENT_DELETED: 'deleted',
   GROUP_CREATED: 'created a group',
   GROUP_UPDATED: 'updated a group',
   GROUP_INVITATION_SENT: 'sent a group invitation',
@@ -21,7 +22,7 @@ const actions: Record<string, string> = {
   GROUP_INVITATION_ACCEPTED: 'accepted a group invitation',
   GROUP_INVITATION_DECLINED: 'declined a group invitation',
   GROUP_MEMBER_LEFT: 'left a group',
-  GROUP_ARCHIVED: 'archived a group',
+  GROUP_ARCHIVED: 'archived',
   CONNECTION_CREATED: 'sent a connection request',
   CONNECTION_ACCEPTED: 'accepted a connection request',
   CONNECTION_DECLINED: 'declined a connection request',
@@ -32,9 +33,13 @@ const actions: Record<string, string> = {
 
 export function describeActivity(
   item: ActivityItem,
-  displayCurrency: DisplayCurrency
+  displayCurrency: DisplayCurrency,
+  currentUserId?: string
 ) {
-  const actor = item.actor?.displayName ?? 'Hissab';
+  const actor =
+    item.actor?.userId === currentUserId && currentUserId
+      ? 'You'
+      : (item.actor?.displayName ?? 'Someone');
   const action =
     actions[item.eventType] ??
     item.eventType.replaceAll('_', ' ').toLowerCase();
@@ -42,14 +47,17 @@ export function describeActivity(
     item.ledger?.name ??
     groupName(item) ??
     item.counterparty?.displayName ??
-    'Hissab';
+    'Tally Stick';
 
   if (item.area === 'EXPENSE') {
     const details = item.details as ActivityExpenseDetails;
     return {
       actor,
       action,
-      context: `${context} · ${details.description}`,
+      subject: details.description,
+      version: details.version,
+      occurredAt: details.occurredAt,
+      context,
       amount: formatMinorAmount(details.totalMinor, displayCurrency)
     };
   }
@@ -58,11 +66,19 @@ export function describeActivity(
     return {
       actor,
       action,
-      context: `${context} · ${details.from.displayName} paid ${details.to.displayName}`,
+      subject: `${details.from.displayName} paid ${details.to.displayName}`,
+      version: details.version,
+      occurredAt: details.occurredAt,
+      context,
       amount: formatMinorAmount(details.amountMinor, displayCurrency)
     };
   }
-  return { actor, action, context: groupContext(item, context) };
+  return {
+    actor,
+    action,
+    subject: `${actor} ${action}`,
+    context: groupContext(item, context)
+  };
 }
 
 export function activityDayLabel(value: string) {
@@ -72,22 +88,21 @@ export function activityDayLabel(value: string) {
   yesterday.setUTCDate(today.getUTCDate() - 1);
   if (sameDay(date, today)) return 'Today';
   if (sameDay(date, yesterday)) return 'Yesterday';
-  return new Intl.DateTimeFormat(undefined, {
-    day: 'numeric',
-    month: 'short',
-    year:
-      date.getUTCFullYear() === today.getUTCFullYear() ? undefined : 'numeric',
-    timeZone: 'UTC'
-  }).format(date);
+  return formatDate(date, date.getUTCFullYear() !== today.getUTCFullYear());
 }
 
-export function activityTimeLabel(value: string) {
-  return new Intl.DateTimeFormat(undefined, {
-    hour: 'numeric',
-    minute: '2-digit',
-    timeZone: 'UTC',
-    timeZoneName: 'short'
-  }).format(new Date(value));
+export const activityTimeLabel = formatTime;
+
+export function activityOccurrenceLabel(
+  occurredAt: string | undefined,
+  createdAt: string
+) {
+  if (!occurredAt || occurredAt.slice(0, 10) === createdAt.slice(0, 10))
+    return '';
+  return (
+    ' · for ' +
+    formatDate(occurredAt, occurredAt.slice(0, 4) !== createdAt.slice(0, 4))
+  );
 }
 
 function groupName(item: ActivityItem) {

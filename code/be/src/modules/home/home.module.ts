@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 
-import { ActivityModule } from '../activity/activity.module';
-import { BalancesModule } from '../balances/balances.module';
-import { PersonalModule } from '../personal/personal.module';
-import { UsersModule } from '../users/users.module';
+import { ActivityModule } from '../activity';
+import { BalancesModule } from '../balances';
+import { PersonalModule } from '../personal';
+import { UsersModule } from '../users';
 import { HomeController } from './home.controller';
 import { HomeRepository } from './home.repository';
 import { HomeService } from './home.service';

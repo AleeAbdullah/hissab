@@ -12,7 +12,6 @@ export default function ActivityLayout() {
         name="index"
         options={{ title: 'Activity', headerLargeTitle: true }}
       />
-      <Stack.Screen name="search" options={{ title: 'Filter activity' }} />
     </Stack>
   );
 }

@@ -86,9 +86,9 @@ function ProfileForm({ profile }: { profile: Profile }) {
         selectable
         className="text-[13px] leading-[18px] text-muted-foreground"
       >
-        Display currency changes the symbol Hissab uses for amounts. It does not
-        convert stored values. Profile photos are not supported; initials are
-        generated from your name.
+        Display currency changes the symbol Tally Stick uses for amounts. It
+        does not convert stored values. Profile photos are not supported;
+        initials are generated from your name.
       </Text>
     </Screen>
   );

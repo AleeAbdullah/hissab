@@ -1,6 +1,5 @@
 import * as Device from 'expo-device';
 
-import { queryClient } from '@/api/query-client';
 import type { AuthTokens } from '@/api/contracts';
 import {
   authChangePassword,
@@ -11,6 +10,7 @@ import {
   authSignOut
 } from '@/api/generated/sdk.gen';
 import type { RegisterDto, SignInDto } from '@/api/generated/types.gen';
+import { queryClient } from '@/api/query-client';
 import { clearTokens, setTokens } from '@/api/session-store';
 import { idempotencyKey, publicRequest, request } from '@/api/transport';
 

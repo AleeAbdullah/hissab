@@ -1,3 +1,13 @@
+import type {
+  Group,
+  GroupArchiveResult,
+  GroupInvitation,
+  GroupInvitationResponse,
+  GroupInvitationResult,
+  GroupLeaveResult,
+  GroupMember,
+  GroupUpdateResult
+} from '@/api/contracts';
 import {
   groupInvitationsAccept,
   groupInvitationsDecline,
@@ -13,16 +23,6 @@ import {
   groupsListMembers,
   groupsUpdateGroup
 } from '@/api/generated/sdk.gen';
-import type {
-  Group,
-  GroupArchiveResult,
-  GroupInvitation,
-  GroupInvitationResponse,
-  GroupInvitationResult,
-  GroupLeaveResult,
-  GroupMember,
-  GroupUpdateResult
-} from '@/api/contracts';
 import { idempotencyKey, request } from '@/api/transport';
 
 export const groupsQuery = {

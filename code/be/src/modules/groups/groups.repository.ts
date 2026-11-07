@@ -1,22 +1,14 @@
 import { randomUUID } from 'node:crypto';
 
 import { Injectable } from '@nestjs/common';
-import { and, eq, or, sql } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 
 import {
   type AppDatabase,
   DatabaseService,
   type DatabaseTransaction,
 } from '../../database/database.service';
-import {
-  financialEvents,
-  groupProfiles,
-  ledgerMembers,
-  ledgerPostings,
-  ledgers,
-  userBlocks,
-  users,
-} from '../../database/schema';
+import { groupProfiles, ledgerMembers, ledgers } from '../../database/schema';
 
 export type GroupStatus = 'ACTIVE' | 'ARCHIVED';
 export type GroupMembershipStatus =
@@ -60,7 +52,41 @@ interface GroupRow {
   updatedAt: Date;
 }
 
-type DatabaseExecutor = AppDatabase | DatabaseTransaction;
+const GROUP_VIEW_SELECT = `
+  SELECT ledger.id,
+         profile.name,
+         ledger.status,
+         membership.status AS "membershipStatus",
+         (SELECT count(*)::integer
+          FROM ledger_members active_member
+          WHERE active_member.ledger_id = ledger.id
+            AND active_member.status = 'ACTIVE') AS "memberCount",
+         ledger.created_at AS "createdAt",
+         ledger.updated_at AS "updatedAt"
+  FROM ledgers ledger
+  JOIN group_profiles profile ON profile.ledger_id = ledger.id
+  JOIN ledger_members membership
+    ON membership.ledger_id = ledger.id
+   AND membership.user_id = $1::uuid
+  WHERE ledger.type = 'GROUP'
+    AND membership.joined_at IS NOT NULL
+`;
+
+const INVITATION_VIEW_SELECT = `
+  SELECT member.ledger_id AS "groupId",
+         profile.name AS "groupName",
+         member.user_id AS "userId",
+         invited.display_name AS "userDisplayName",
+         member.invited_by_user_id AS "invitedByUserId",
+         inviter.display_name AS "invitedByDisplayName",
+         member.invited_at AS "invitedAt"
+  FROM ledger_members member
+  JOIN ledgers ledger ON ledger.id = member.ledger_id
+  JOIN group_profiles profile ON profile.ledger_id = member.ledger_id
+  JOIN users invited ON invited.id = member.user_id
+  JOIN users inviter ON inviter.id = member.invited_by_user_id
+  WHERE member.status = 'INVITED'
+`;
 
 @Injectable()
 export class GroupsRepository {
@@ -127,11 +153,11 @@ export class GroupsRepository {
   }
 
   async findMembership(
+    executor: AppDatabase | DatabaseTransaction,
     groupId: string,
     userId: string,
-    transaction?: DatabaseTransaction,
   ): Promise<GroupMembershipRow | undefined> {
-    const [membership] = await this.executor(transaction)
+    const [membership] = await executor
       .select()
       .from(ledgerMembers)
       .where(
@@ -142,42 +168,6 @@ export class GroupsRepository {
       )
       .limit(1);
     return membership;
-  }
-
-  async isActiveUser(
-    userId: string,
-    transaction: DatabaseTransaction,
-  ): Promise<boolean> {
-    const [user] = await transaction
-      .select({ id: users.id })
-      .from(users)
-      .where(and(eq(users.id, userId), eq(users.status, 'ACTIVE')))
-      .limit(1);
-    return Boolean(user);
-  }
-
-  async isEitherUserBlocked(
-    firstUserId: string,
-    secondUserId: string,
-    transaction: DatabaseTransaction,
-  ): Promise<boolean> {
-    const [block] = await transaction
-      .select({ blockerUserId: userBlocks.blockerUserId })
-      .from(userBlocks)
-      .where(
-        or(
-          and(
-            eq(userBlocks.blockerUserId, firstUserId),
-            eq(userBlocks.blockedUserId, secondUserId),
-          ),
-          and(
-            eq(userBlocks.blockerUserId, secondUserId),
-            eq(userBlocks.blockedUserId, firstUserId),
-          ),
-        ),
-      )
-      .limit(1);
-    return Boolean(block);
   }
 
   async updateName(
@@ -259,48 +249,6 @@ export class GroupsRepository {
     return updated;
   }
 
-  async hasUnsettledBalance(
-    transaction: DatabaseTransaction,
-    groupId: string,
-    userId: string,
-  ): Promise<boolean> {
-    const [balance] = await transaction
-      .select({ userId: ledgerPostings.userId })
-      .from(ledgerPostings)
-      .innerJoin(
-        financialEvents,
-        eq(financialEvents.id, ledgerPostings.financialEventId),
-      )
-      .where(
-        and(
-          eq(financialEvents.ledgerId, groupId),
-          eq(ledgerPostings.userId, userId),
-        ),
-      )
-      .groupBy(ledgerPostings.userId)
-      .having(sql`sum(${ledgerPostings.amountMinor}) <> 0`)
-      .limit(1);
-    return Boolean(balance);
-  }
-
-  async groupHasUnsettledBalance(
-    transaction: DatabaseTransaction,
-    groupId: string,
-  ): Promise<boolean> {
-    const [balance] = await transaction
-      .select({ userId: ledgerPostings.userId })
-      .from(ledgerPostings)
-      .innerJoin(
-        financialEvents,
-        eq(financialEvents.id, ledgerPostings.financialEventId),
-      )
-      .where(eq(financialEvents.ledgerId, groupId))
-      .groupBy(ledgerPostings.userId)
-      .having(sql`sum(${ledgerPostings.amountMinor}) <> 0`)
-      .limit(1);
-    return Boolean(balance);
-  }
-
   async leaveGroup(
     transaction: DatabaseTransaction,
     groupId: string,
@@ -318,20 +266,20 @@ export class GroupsRepository {
       );
   }
 
-  async countActiveMembers(
+  countActiveMembers(
     transaction: DatabaseTransaction,
     groupId: string,
   ): Promise<number> {
-    const result = await transaction.$count(
+    return transaction.$count(
       ledgerMembers,
       and(
         eq(ledgerMembers.ledgerId, groupId),
         eq(ledgerMembers.status, 'ACTIVE'),
       ),
     );
-    return result;
   }
 
+  // Archiving cancels every pending invitation and returns who was invited.
   async archiveGroup(
     transaction: DatabaseTransaction,
     groupId: string,
@@ -356,28 +304,10 @@ export class GroupsRepository {
 
   async listGroups(userId: string): Promise<GroupView[]> {
     const result = await this.database.pool.query<GroupView>(
-      `
-        SELECT ledger.id,
-               profile.name,
-               ledger.status,
-               membership.status AS "membershipStatus",
-               (SELECT count(*)::integer
-                FROM ledger_members active_member
-                WHERE active_member.ledger_id = ledger.id
-                  AND active_member.status = 'ACTIVE') AS "memberCount",
-               ledger.created_at AS "createdAt",
-               ledger.updated_at AS "updatedAt"
-        FROM ledgers ledger
-        JOIN group_profiles profile ON profile.ledger_id = ledger.id
-        JOIN ledger_members membership
-          ON membership.ledger_id = ledger.id
-         AND membership.user_id = $1::uuid
-        WHERE ledger.type = 'GROUP'
-          AND membership.joined_at IS NOT NULL
+      `${GROUP_VIEW_SELECT}
         ORDER BY (ledger.status = 'ACTIVE') DESC,
                  ledger.updated_at DESC,
-                 ledger.id
-      `,
+                 ledger.id`,
       [userId],
     );
     return result.rows;
@@ -385,27 +315,9 @@ export class GroupsRepository {
 
   async findGroup(userId: string, groupId: string): Promise<GroupView | null> {
     const result = await this.database.pool.query<GroupView>(
-      `
-        SELECT ledger.id,
-               profile.name,
-               ledger.status,
-               membership.status AS "membershipStatus",
-               (SELECT count(*)::integer
-                FROM ledger_members active_member
-                WHERE active_member.ledger_id = ledger.id
-                  AND active_member.status = 'ACTIVE') AS "memberCount",
-               ledger.created_at AS "createdAt",
-               ledger.updated_at AS "updatedAt"
-        FROM ledgers ledger
-        JOIN group_profiles profile ON profile.ledger_id = ledger.id
-        JOIN ledger_members membership
-          ON membership.ledger_id = ledger.id
-         AND membership.user_id = $1::uuid
-        WHERE ledger.id = $2::uuid
-          AND ledger.type = 'GROUP'
-          AND membership.joined_at IS NOT NULL
-        LIMIT 1
-      `,
+      `${GROUP_VIEW_SELECT}
+          AND ledger.id = $2::uuid
+        LIMIT 1`,
       [userId, groupId],
     );
     return result.rows[0] ?? null;
@@ -434,22 +346,9 @@ export class GroupsRepository {
 
   async listGroupInvitations(groupId: string): Promise<GroupInvitationView[]> {
     const result = await this.database.pool.query<GroupInvitationView>(
-      `
-        SELECT member.ledger_id AS "groupId",
-               profile.name AS "groupName",
-               member.user_id AS "userId",
-               invited.display_name AS "userDisplayName",
-               member.invited_by_user_id AS "invitedByUserId",
-               inviter.display_name AS "invitedByDisplayName",
-               member.invited_at AS "invitedAt"
-        FROM ledger_members member
-        JOIN group_profiles profile ON profile.ledger_id = member.ledger_id
-        JOIN users invited ON invited.id = member.user_id
-        JOIN users inviter ON inviter.id = member.invited_by_user_id
-        WHERE member.ledger_id = $1::uuid
-          AND member.status = 'INVITED'
-        ORDER BY member.invited_at DESC, member.user_id
-      `,
+      `${INVITATION_VIEW_SELECT}
+          AND member.ledger_id = $1::uuid
+        ORDER BY member.invited_at DESC, member.user_id`,
       [groupId],
     );
     return result.rows;
@@ -459,30 +358,12 @@ export class GroupsRepository {
     userId: string,
   ): Promise<GroupInvitationView[]> {
     const result = await this.database.pool.query<GroupInvitationView>(
-      `
-        SELECT member.ledger_id AS "groupId",
-               profile.name AS "groupName",
-               member.user_id AS "userId",
-               invited.display_name AS "userDisplayName",
-               member.invited_by_user_id AS "invitedByUserId",
-               inviter.display_name AS "invitedByDisplayName",
-               member.invited_at AS "invitedAt"
-        FROM ledger_members member
-        JOIN ledgers ledger ON ledger.id = member.ledger_id
-        JOIN group_profiles profile ON profile.ledger_id = member.ledger_id
-        JOIN users invited ON invited.id = member.user_id
-        JOIN users inviter ON inviter.id = member.invited_by_user_id
-        WHERE member.user_id = $1::uuid
-          AND member.status = 'INVITED'
+      `${INVITATION_VIEW_SELECT}
+          AND member.user_id = $1::uuid
           AND ledger.status = 'ACTIVE'
-        ORDER BY member.invited_at DESC, member.ledger_id
-      `,
+        ORDER BY member.invited_at DESC, member.ledger_id`,
       [userId],
     );
     return result.rows;
-  }
-
-  private executor(transaction?: DatabaseTransaction): DatabaseExecutor {
-    return transaction ?? this.database.db;
   }
 }

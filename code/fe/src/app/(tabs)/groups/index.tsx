@@ -2,6 +2,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link } from 'expo-router';
 import { Stack } from 'expo-router/stack';
 import { UsersRound } from 'lucide-react-native';
+import { useRef } from 'react';
 import { View } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
@@ -23,7 +24,10 @@ import {
   useListSearch
 } from '@/components/ui/list-search';
 import { Text } from '@/components/ui/text';
-import { profileQuery } from '@/features/account/api';
+import {
+  notificationInboxQueryKey,
+  profileQuery
+} from '@/features/account/api';
 import { userBalancesQuery } from '@/features/balances/api';
 import { ledgerBalanceDescriptions } from '@/features/balances/format';
 import {
@@ -41,6 +45,7 @@ export default function GroupsScreen() {
   const invitations = useQuery(incomingGroupInvitationsQuery);
   const balances = useQuery(userBalancesQuery);
   const profile = useQuery(profileQuery);
+  const resolving = useRef(false);
   const resolveInvitation = useMutation({
     mutationFn: ({
       groupId,
@@ -58,10 +63,21 @@ export default function GroupsScreen() {
         queryClient.invalidateQueries({
           queryKey: incomingGroupInvitationsQuery.queryKey
         }),
-        queryClient.invalidateQueries({ queryKey: homeQuery.queryKey })
+        queryClient.invalidateQueries({ queryKey: homeQuery.queryKey }),
+        queryClient.invalidateQueries({ queryKey: userBalancesQuery.queryKey }),
+        queryClient.invalidateQueries({ queryKey: ['activity'] }),
+        queryClient.invalidateQueries({ queryKey: notificationInboxQueryKey })
       ]);
+    },
+    onSettled: () => {
+      resolving.current = false;
     }
   });
+  const respond = (groupId: string, response: 'accept' | 'decline') => {
+    if (resolving.current) return;
+    resolving.current = true;
+    resolveInvitation.mutate({ groupId, response });
+  };
   const filtered = (groups.data ?? []).filter((group) =>
     group.name.toLowerCase().includes(search.trim().toLowerCase())
   );
@@ -80,8 +96,8 @@ export default function GroupsScreen() {
               />
               <Link href="/groups/friends" asChild>
                 <Button
+                  className="w-12 px-0"
                   variant="ghost"
-                  size="icon"
                   role="link"
                   accessibilityLabel="Friends"
                 >
@@ -90,8 +106,8 @@ export default function GroupsScreen() {
               </Link>
               <Link href="/group-new" asChild>
                 <Button
+                  className="w-12 px-0"
                   variant="ghost"
-                  size="icon"
                   role="link"
                   accessibilityLabel="Create group"
                 >
@@ -135,22 +151,13 @@ export default function GroupsScreen() {
                 <GroupInvitationCard
                   key={invitation.groupId}
                   invitation={invitation}
+                  disabled={resolveInvitation.isPending}
                   loading={
                     resolveInvitation.isPending &&
                     resolveInvitation.variables?.groupId === invitation.groupId
                   }
-                  onAccept={() =>
-                    resolveInvitation.mutate({
-                      groupId: invitation.groupId,
-                      response: 'accept'
-                    })
-                  }
-                  onDecline={() =>
-                    resolveInvitation.mutate({
-                      groupId: invitation.groupId,
-                      response: 'decline'
-                    })
-                  }
+                  onAccept={() => respond(invitation.groupId, 'accept')}
+                  onDecline={() => respond(invitation.groupId, 'decline')}
                 />
               ))}
             </View>

@@ -1,5 +1,5 @@
 import type { DisplayCurrency, UserBalances } from '@/api/contracts';
-import { formatMinorAmount } from '@/lib/utils';
+import { formatMinorAmount } from '@/lib/money';
 
 export function ownBalanceDescription(
   netMinor: string,

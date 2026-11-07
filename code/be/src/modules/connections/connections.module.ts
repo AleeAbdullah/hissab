@@ -1,13 +1,15 @@
 import { Module } from '@nestjs/common';
 
-import { IdempotencyModule } from '../idempotency/idempotency.module';
-import { OutboxModule } from '../outbox/outbox.module';
+import { BalancesModule } from '../balances';
+import { IdempotencyModule } from '../idempotency';
+import { OutboxModule } from '../outbox';
+import { UsersModule } from '../users';
 import { ConnectionsController } from './connections.controller';
 import { ConnectionsRepository } from './connections.repository';
 import { ConnectionsService } from './connections.service';
 
 @Module({
-  imports: [IdempotencyModule, OutboxModule],
+  imports: [BalancesModule, IdempotencyModule, OutboxModule, UsersModule],
   controllers: [ConnectionsController],
   providers: [ConnectionsRepository, ConnectionsService],
 })

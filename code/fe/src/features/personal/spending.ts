@@ -1,4 +1,5 @@
 import type { PersonalReportBucket } from '@/api/contracts';
+import { formatDate, formatPeriod } from '@/lib/dates';
 
 export const SPENDING_PERIODS = ['1W', '1M', '6M', '1Y'] as const;
 export type SpendingPeriod = (typeof SPENDING_PERIODS)[number];
@@ -70,40 +71,16 @@ export function spendingPoints(
   return points;
 }
 
-const dayLabel = new Intl.DateTimeFormat(undefined, {
-  day: 'numeric',
-  month: 'short',
-  timeZone: 'UTC'
-});
-const monthLabel = new Intl.DateTimeFormat(undefined, {
-  month: 'short',
-  timeZone: 'UTC'
-});
-const dayYearLabel = new Intl.DateTimeFormat(undefined, {
-  day: 'numeric',
-  month: 'short',
-  year: 'numeric',
-  timeZone: 'UTC'
-});
-
-// Short axis label for a bucket period: `d MMM` for days, `MMM` for months.
+// Short axis labels keep charts readable; full dates accompany their textual values.
 export function spendingAxisLabel(period: string, bucket: SpendingBucket) {
   return bucket === 'MONTH'
-    ? monthLabel.format(new Date(`${period}-01T00:00:00Z`))
-    : dayLabel.format(new Date(`${period}T00:00:00Z`));
+    ? formatDate(`${period}-01`, false).split(' ').slice(1).join(' ')
+    : formatDate(period, false);
 }
 
-// Inclusive date range of the half-open [from, to) report range, e.g. `May 1 – Oct 1, 2026`.
 export function spendingRangeLabel(range: { from: string; to: string }) {
-  const first = new Date(range.from);
   const last = new Date(new Date(range.to).getTime() - 86400000);
-  if (first.toISOString().slice(0, 10) === last.toISOString().slice(0, 10))
-    return dayYearLabel.format(last);
-  const start =
-    first.getUTCFullYear() === last.getUTCFullYear()
-      ? dayLabel.format(first)
-      : dayYearLabel.format(first);
-  return `${start} – ${dayYearLabel.format(last)}`;
+  return formatPeriod(range.from.slice(0, 10), last.toISOString().slice(0, 10));
 }
 
 // Share of the total as text; non-zero amounts never round down to `0%`.

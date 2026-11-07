@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   HttpCode,
+  HttpStatus,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -97,7 +98,7 @@ export class GroupsController {
   }
 
   @Post(':groupId/leave')
-  @HttpCode(200)
+  @HttpCode(HttpStatus.OK)
   leaveGroup(
     @CurrentUser() user: AuthPrincipal,
     @Param('groupId', ParseUUIDPipe) groupId: string,
@@ -107,7 +108,7 @@ export class GroupsController {
   }
 
   @Post(':groupId/archive')
-  @HttpCode(200)
+  @HttpCode(HttpStatus.OK)
   archiveGroup(
     @CurrentUser() user: AuthPrincipal,
     @Param('groupId', ParseUUIDPipe) groupId: string,
@@ -129,7 +130,7 @@ export class GroupInvitationsController {
   }
 
   @Post(':groupId/accept')
-  @HttpCode(200)
+  @HttpCode(HttpStatus.OK)
   accept(
     @CurrentUser() user: AuthPrincipal,
     @Param('groupId', ParseUUIDPipe) groupId: string,
@@ -139,7 +140,7 @@ export class GroupInvitationsController {
   }
 
   @Post(':groupId/decline')
-  @HttpCode(200)
+  @HttpCode(HttpStatus.OK)
   decline(
     @CurrentUser() user: AuthPrincipal,
     @Param('groupId', ParseUUIDPipe) groupId: string,

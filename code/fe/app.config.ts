@@ -1,7 +1,14 @@
 import type { ExpoConfig } from 'expo/config';
 
+if (process.env.EAS_BUILD_PROFILE === 'production') {
+  const apiUrl = process.env.EXPO_PUBLIC_API_URL;
+  if (!apiUrl || new URL(apiUrl).protocol !== 'https:') {
+    throw new Error('Production builds require an HTTPS EXPO_PUBLIC_API_URL.');
+  }
+}
+
 const config: ExpoConfig = {
-  name: 'Hissab',
+  name: 'Tally Stick',
   slug: 'hissab',
   version: '1.0.0',
   orientation: 'portrait',
@@ -10,6 +17,9 @@ const config: ExpoConfig = {
   userInterfaceStyle: 'automatic',
   ios: {
     bundleIdentifier: 'com.alee.hissab',
+    infoPlist: {
+      ITSAppUsesNonExemptEncryption: false
+    },
     icon: {
       light: './assets/images/icons/app-icon-light.png',
       dark: './assets/images/icons/app-icon-dark.png'
@@ -30,7 +40,7 @@ const config: ExpoConfig = {
   },
   plugins: [
     'expo-router',
-    'expo-secure-store',
+    ['expo-secure-store', { faceIDPermission: false }],
     'expo-notifications',
     'expo-font',
     'expo-image',
@@ -52,6 +62,12 @@ const config: ExpoConfig = {
   experiments: {
     typedRoutes: true,
     reactCompiler: true
+  },
+  owner: 'aleeabdullah',
+  extra: {
+    eas: {
+      projectId: 'c2d7b3fd-3621-4a79-8ecb-de1857928973'
+    }
   }
 };
 

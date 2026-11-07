@@ -1,10 +1,11 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 
 import {
-  ActivityRepository,
-  type ActivityCursor,
-  type ActivityRow,
-} from './activity.repository';
+  decodeTimestampCursor,
+  encodeTimestampCursor,
+  UUID_PATTERN,
+} from '../../common/cursor';
+import { ActivityRepository, type ActivityRow } from './activity.repository';
 import {
   ACTIVITY_EVENT_TYPES,
   type ActivityArea,
@@ -17,9 +18,6 @@ import {
   type ListActivityDto,
   type SettlementActivityDetailsDto,
 } from './dto/activity.dto';
-
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const CONNECTION_STATUS: Record<
   string,
@@ -46,16 +44,15 @@ export class ActivityService {
       userId,
       eventTypes,
       query.ledgerId ?? null,
-      query.cursor ? this.decodeCursor(query.cursor) : null,
+      query.cursor ? decodeTimestampCursor(query.cursor, 'activity') : null,
       limit + 1,
     );
-    const items = rows.slice(0, limit).map((row) => this.toItem(userId, row));
+    const page = rows.slice(0, limit);
+    const last = page[page.length - 1];
     return {
-      items,
+      items: page.map((row) => this.toItem(userId, row)),
       nextCursor:
-        rows.length > limit && rows.length > 1
-          ? this.encodeCursor(rows[limit - 1])
-          : null,
+        rows.length > limit && last ? encodeTimestampCursor(last) : null,
     };
   }
 
@@ -240,42 +237,5 @@ export class ActivityService {
       throw new Error('Invalid financial activity snapshot.');
     }
     return value;
-  }
-
-  private encodeCursor(row: ActivityRow): string {
-    return Buffer.from(JSON.stringify([row.cursorCreatedAt, row.id])).toString(
-      'base64url',
-    );
-  }
-
-  private decodeCursor(cursor: string): ActivityCursor {
-    try {
-      const parsed: unknown = JSON.parse(
-        Buffer.from(cursor, 'base64url').toString('utf8'),
-      );
-      if (
-        !Array.isArray(parsed) ||
-        parsed.length !== 2 ||
-        typeof parsed[0] !== 'string' ||
-        typeof parsed[1] !== 'string' ||
-        !/^(?!0000)\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/.test(
-          parsed[0],
-        ) ||
-        !UUID_PATTERN.test(parsed[1])
-      ) {
-        throw new Error('invalid cursor');
-      }
-      const createdAt = new Date(parsed[0]);
-      const millisecondTimestamp = parsed[0].replace(/(\.\d{3})\d{3}Z$/, '$1Z');
-      if (
-        Number.isNaN(createdAt.getTime()) ||
-        createdAt.toISOString() !== millisecondTimestamp
-      ) {
-        throw new Error('invalid cursor date');
-      }
-      return { createdAt: parsed[0], id: parsed[1].toLowerCase() };
-    } catch {
-      throw new BadRequestException('Invalid activity cursor.');
-    }
   }
 }

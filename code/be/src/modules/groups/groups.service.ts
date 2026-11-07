@@ -5,10 +5,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
+import { recordDomainChange } from '../../common/domain-change';
 import type { DatabaseTransaction } from '../../database/database.service';
-import { activityEvents } from '../../database/schema';
+import { BalancesRepository } from '../balances/balances.repository';
 import { IdempotencyService } from '../idempotency';
 import { OutboxService } from '../outbox';
+import { UsersRepository } from '../users/users.repository';
 import type { CreateGroupDto, InviteGroupUserDto, UpdateGroupDto } from './dto';
 import {
   type GroupInvitationView,
@@ -22,6 +24,8 @@ import {
 export class GroupsService {
   constructor(
     private readonly repository: GroupsRepository,
+    private readonly balances: BalancesRepository,
+    private readonly users: UsersRepository,
     private readonly idempotency: IdempotencyService,
     private readonly outbox: OutboxService,
   ) {}
@@ -40,7 +44,7 @@ export class GroupsService {
         routeScope: 'groups:create',
       },
       async (transaction) => {
-        if (!(await this.repository.isActiveUser(userId, transaction))) {
+        if (!(await this.users.isActiveUser(transaction, userId))) {
           throw new NotFoundException('User not found.');
         }
         const group = await this.repository.createGroup(
@@ -137,23 +141,15 @@ export class GroupsService {
       },
       async (transaction) => {
         await this.requireActiveMember(transaction, groupId, userId);
-        if (!(await this.repository.isActiveUser(dto.userId, transaction))) {
+        if (!(await this.users.isActiveUser(transaction, dto.userId))) {
           throw new NotFoundException('User not found.');
         }
-        if (
-          await this.repository.isEitherUserBlocked(
-            userId,
-            dto.userId,
-            transaction,
-          )
-        ) {
-          throw new ForbiddenException('Group invitation is not allowed.');
-        }
+        await this.requirePairAllowed(transaction, userId, dto.userId);
 
         const existing = await this.repository.findMembership(
+          transaction,
           groupId,
           dto.userId,
-          transaction,
         );
         if (existing?.status === 'ACTIVE') {
           throw new ConflictException('The user is already a group member.');
@@ -170,6 +166,9 @@ export class GroupsService {
           dto.userId,
           userId,
         );
+        if (!invitation.invitedAt) {
+          throw new Error('Group invitation write returned no invitedAt.');
+        }
         await this.recordChange(
           transaction,
           userId,
@@ -181,7 +180,7 @@ export class GroupsService {
           groupId,
           userId: dto.userId,
           status: 'INVITED',
-          invitedAt: invitation.invitedAt!,
+          invitedAt: invitation.invitedAt,
         };
       },
     );
@@ -230,7 +229,38 @@ export class GroupsService {
     groupId: string,
     idempotencyKey: string,
   ): Promise<{ groupId: string; status: 'ACTIVE'; joinedAt: Date }> {
-    return this.resolveInvitation(userId, groupId, idempotencyKey, 'ACTIVE');
+    return this.idempotency.execute(
+      {
+        actor: { kind: 'user', subject: userId, userId },
+        key: idempotencyKey,
+        request: { groupId },
+        responseStatus: 200,
+        routeScope: 'group-invitations:active',
+      },
+      async (transaction) => {
+        const invitation = await this.requireOwnInvitation(
+          transaction,
+          groupId,
+          userId,
+        );
+        const membership = await this.repository.transitionInvitation(
+          transaction,
+          invitation,
+          'ACTIVE',
+        );
+        if (!membership.joinedAt) {
+          throw new Error('Group invitation acceptance returned no joinedAt.');
+        }
+        await this.recordChange(
+          transaction,
+          userId,
+          groupId,
+          'INVITATION_ACCEPTED',
+          { invitedUserId: userId },
+        );
+        return { groupId, status: 'ACTIVE', joinedAt: membership.joinedAt };
+      },
+    );
   }
 
   declineInvitation(
@@ -238,7 +268,35 @@ export class GroupsService {
     groupId: string,
     idempotencyKey: string,
   ): Promise<{ groupId: string; status: 'DECLINED' }> {
-    return this.resolveInvitation(userId, groupId, idempotencyKey, 'DECLINED');
+    return this.idempotency.execute(
+      {
+        actor: { kind: 'user', subject: userId, userId },
+        key: idempotencyKey,
+        request: { groupId },
+        responseStatus: 200,
+        routeScope: 'group-invitations:declined',
+      },
+      async (transaction) => {
+        const invitation = await this.requireOwnInvitation(
+          transaction,
+          groupId,
+          userId,
+        );
+        await this.repository.transitionInvitation(
+          transaction,
+          invitation,
+          'DECLINED',
+        );
+        await this.recordChange(
+          transaction,
+          userId,
+          groupId,
+          'INVITATION_DECLINED',
+          { invitedUserId: userId },
+        );
+        return { groupId, status: 'DECLINED' };
+      },
+    );
   }
 
   leaveGroup(
@@ -261,11 +319,7 @@ export class GroupsService {
       async (transaction) => {
         await this.requireActiveMember(transaction, groupId, userId);
         if (
-          await this.repository.hasUnsettledBalance(
-            transaction,
-            groupId,
-            userId,
-          )
+          await this.balances.hasUnsettledBalance(transaction, groupId, userId)
         ) {
           throw new ConflictException(
             'Settle all group balances before leaving.',
@@ -311,9 +365,7 @@ export class GroupsService {
       },
       async (transaction) => {
         await this.requireActiveMember(transaction, groupId, userId);
-        if (
-          await this.repository.groupHasUnsettledBalance(transaction, groupId)
-        ) {
+        if (await this.balances.hasUnsettledBalance(transaction, groupId)) {
           throw new ConflictException(
             'Settle all group balances before archiving.',
           );
@@ -330,71 +382,47 @@ export class GroupsService {
     );
   }
 
-  private resolveInvitation(
-    userId: string,
+  // The invitee may act on an invitation only while the group is active
+  // and neither party has blocked the other since it was sent.
+  private async requireOwnInvitation(
+    transaction: DatabaseTransaction,
     groupId: string,
-    idempotencyKey: string,
-    status: 'ACTIVE',
-  ): Promise<{ groupId: string; status: 'ACTIVE'; joinedAt: Date }>;
-  private resolveInvitation(
     userId: string,
-    groupId: string,
-    idempotencyKey: string,
-    status: 'DECLINED',
-  ): Promise<{ groupId: string; status: 'DECLINED' }>;
-  private resolveInvitation(
-    userId: string,
-    groupId: string,
-    idempotencyKey: string,
-    status: 'ACTIVE' | 'DECLINED',
-  ): Promise<
-    | { groupId: string; status: 'ACTIVE'; joinedAt: Date }
-    | { groupId: string; status: 'DECLINED' }
-  > {
-    return this.idempotency.execute(
-      {
-        actor: { kind: 'user', subject: userId, userId },
-        key: idempotencyKey,
-        request: { groupId },
-        responseStatus: 200,
-        routeScope: `group-invitations:${status.toLowerCase()}`,
-      },
-      async (transaction) => {
-        const group = await this.repository.lockGroup(transaction, groupId);
-        if (!group || group.status !== 'ACTIVE') {
-          throw new NotFoundException('Group invitation not found.');
-        }
-        const invitation = await this.requirePendingInvitation(
-          transaction,
-          groupId,
-          userId,
-        );
-        if (
-          !invitation.invitedByUserId ||
-          (await this.repository.isEitherUserBlocked(
-            invitation.invitedByUserId,
-            userId,
-            transaction,
-          ))
-        ) {
-          throw new ForbiddenException('Group invitation is not allowed.');
-        }
-
-        const membership = await this.repository.transitionInvitation(
-          transaction,
-          invitation,
-          status,
-        );
-        const eventType =
-          status === 'ACTIVE' ? 'INVITATION_ACCEPTED' : 'INVITATION_DECLINED';
-        await this.recordChange(transaction, userId, groupId, eventType, {
-          invitedUserId: userId,
-        });
-        return status === 'ACTIVE'
-          ? { groupId, status, joinedAt: membership.joinedAt! }
-          : { groupId, status };
-      },
+  ): Promise<GroupMembershipRow> {
+    const group = await this.repository.lockGroup(transaction, groupId);
+    if (!group || group.status !== 'ACTIVE') {
+      throw new NotFoundException('Group invitation not found.');
+    }
+    const invitation = await this.requirePendingInvitation(
+      transaction,
+      groupId,
+      userId,
     );
+    if (!invitation.invitedByUserId) {
+      throw new ForbiddenException('Group invitation is not allowed.');
+    }
+    await this.requirePairAllowed(
+      transaction,
+      invitation.invitedByUserId,
+      userId,
+    );
+    return invitation;
+  }
+
+  private async requirePairAllowed(
+    transaction: DatabaseTransaction,
+    firstUserId: string,
+    secondUserId: string,
+  ): Promise<void> {
+    if (
+      await this.users.isEitherUserBlocked(
+        transaction,
+        firstUserId,
+        secondUserId,
+      )
+    ) {
+      throw new ForbiddenException('Group invitation is not allowed.');
+    }
   }
 
   private async requireActiveMember(
@@ -407,9 +435,9 @@ export class GroupsService {
       throw new NotFoundException('Group not found.');
     }
     const membership = await this.repository.findMembership(
+      transaction,
       groupId,
       userId,
-      transaction,
     );
     if (membership?.status !== 'ACTIVE') {
       throw new NotFoundException('Group not found.');
@@ -425,9 +453,9 @@ export class GroupsService {
     userId: string,
   ): Promise<GroupMembershipRow> {
     const invitation = await this.repository.findMembership(
+      transaction,
       groupId,
       userId,
-      transaction,
     );
     if (invitation?.status !== 'INVITED') {
       throw new NotFoundException('Group invitation not found.');
@@ -435,26 +463,20 @@ export class GroupsService {
     return invitation;
   }
 
-  private async recordChange(
+  private recordChange(
     transaction: DatabaseTransaction,
     actorUserId: string,
     groupId: string,
     eventType: string,
     payload: Record<string, unknown>,
   ): Promise<void> {
-    await transaction.insert(activityEvents).values({
+    return recordDomainChange(transaction, this.outbox, {
       actorUserId,
+      aggregate: 'GROUP',
+      aggregateId: groupId,
+      eventType,
       ledgerId: groupId,
-      eventType: `GROUP_${eventType}`,
-      aggregateType: 'GROUP',
-      aggregateId: groupId,
       payload,
-    });
-    await this.outbox.enqueue(transaction, {
-      eventType: `group.${eventType.toLowerCase()}`,
-      aggregateType: 'group',
-      aggregateId: groupId,
-      payload: { actorUserId, ...payload },
     });
   }
 }

@@ -17,7 +17,7 @@ const points = [
   ],
   [
     'Record settlements made elsewhere',
-    'Cash, bank transfer, anything. Hissab keeps the record.'
+    'Cash, bank transfer, anything. Tally Stick keeps the record.'
   ]
 ];
 
@@ -32,7 +32,7 @@ export default function WelcomeScreen() {
                 selectable
                 className="font-serif text-[56px] font-medium leading-[60px]"
               >
-                Hissab
+                Tally Stick
               </Text>
               <View className="h-px w-12 bg-primary" />
               <View className="gap-2">
@@ -95,8 +95,8 @@ export default function WelcomeScreen() {
               selectable
               className="text-center text-xs leading-4 text-muted-foreground"
             >
-              Hissab records money that has already moved. It never transfers
-              funds, links a bank account, or touches a card.
+              Tally Stick records money that has already moved. It never
+              transfers funds, links a bank account, or touches a card.
             </Text>
           </View>
         </View>

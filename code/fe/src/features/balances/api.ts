@@ -1,8 +1,8 @@
+import type { LedgerBalances, UserBalances } from '@/api/contracts';
 import {
   balancesListLedgerBalances,
   balancesListUserBalances
 } from '@/api/generated/sdk.gen';
-import type { LedgerBalances, UserBalances } from '@/api/contracts';
 import { request } from '@/api/transport';
 
 export const userBalancesQuery = {

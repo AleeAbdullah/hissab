@@ -46,17 +46,14 @@ export class HttpExceptionFilter implements ExceptionFilter {
       );
     }
 
+    const { requestId } = response.locals as { requestId?: unknown };
     response.status(status).json({
       error: {
         code: body?.code ?? body?.error ?? `HTTP_${status}`,
         message,
         ...(body?.details === undefined ? {} : { details: body.details }),
       },
-      requestId:
-        typeof (response.locals as Record<string, unknown>).requestId ===
-        'string'
-          ? (response.locals as Record<string, unknown>).requestId
-          : undefined,
+      requestId: typeof requestId === 'string' ? requestId : undefined,
       timestamp: new Date().toISOString(),
     });
   }

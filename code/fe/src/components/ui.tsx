@@ -1,32 +1,50 @@
 import type { Href } from 'expo-router';
 import { Link } from 'expo-router';
+import { HeaderHeightContext } from 'expo-router/react-navigation';
+import { ChevronRight } from 'lucide-react-native';
 import {
   useEffect,
+  useContext,
   useState,
   type PropsWithChildren,
   type ReactElement,
-  type ReactNode
+  type ReactNode,
+  type Ref
 } from 'react';
 import {
   ActivityIndicator,
   Keyboard,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   TextInput,
   type TextInputProps,
   type RefreshControlProps,
   View
 } from 'react-native';
+import {
+  SafeAreaView,
+  useSafeAreaInsets
+} from 'react-native-safe-area-context';
 
+import { Icons } from '@/components/icons';
 import { Button as RnrButton } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
-import { Icons } from '@/components/icons';
 import { cn } from '@/lib/utils';
 
 export function Screen({
   children,
-  refreshControl
-}: PropsWithChildren<{ refreshControl?: ReactElement<RefreshControlProps> }>) {
+  refreshControl,
+  footer,
+  scrollRef
+}: PropsWithChildren<{
+  refreshControl?: ReactElement<RefreshControlProps>;
+  footer?: ReactNode;
+  scrollRef?: Ref<ScrollView>;
+}>) {
+  const insets = useSafeAreaInsets();
+  const headerHeight = useContext(HeaderHeightContext) ?? 0;
   const [keyboardHeight, setKeyboardHeight] = useState(
     () => Keyboard.metrics()?.height ?? 0
   );
@@ -44,17 +62,37 @@ export function Screen({
     };
   }, []);
 
-  return (
+  const content = (
     <ScrollView
+      ref={scrollRef}
       className="flex-1 bg-background"
       contentContainerClassName="flex-grow gap-4 p-5"
-      contentContainerStyle={{ paddingBottom: 20 + keyboardHeight }}
+      contentContainerStyle={{
+        paddingBottom: footer ? 20 : 20 + insets.bottom + keyboardHeight
+      }}
       contentInsetAdjustmentBehavior="automatic"
       keyboardShouldPersistTaps="handled"
       refreshControl={refreshControl}
     >
       {children}
     </ScrollView>
+  );
+  return footer ? (
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={headerHeight}
+    >
+      {content}
+      <SafeAreaView
+        edges={['bottom']}
+        className="border-t border-border bg-background px-5 pb-3 pt-3"
+      >
+        {footer}
+      </SafeAreaView>
+    </KeyboardAvoidingView>
+  ) : (
+    content
   );
 }
 
@@ -81,17 +119,20 @@ export function Row({
   title,
   titleBadge,
   detail,
+  detailClassName,
   subtitle,
   href,
   onPress,
   destructive,
   leading,
   trailing,
-  disabled
+  disabled,
+  className
 }: {
   title: string;
   titleBadge?: string;
   detail?: string;
+  detailClassName?: string;
   subtitle?: string;
   href?: Href;
   onPress?: () => void;
@@ -99,10 +140,12 @@ export function Row({
   leading?: ReactNode;
   trailing?: ReactNode;
   disabled?: boolean;
+  className?: string;
 }) {
   const rowClassName = cn(
     'min-h-[52px] w-full flex-row items-center justify-start gap-3 rounded-none border-b border-border p-3',
-    disabled && 'opacity-[0.55]'
+    disabled && 'opacity-[0.55]',
+    className
   );
   const content = (
     <>
@@ -136,14 +179,17 @@ export function Row({
       {detail ? (
         <Text
           selectable
-          className="max-w-[42%] text-right text-[15px] leading-5 text-muted-foreground"
+          className={cn(
+            'max-w-[42%] text-right text-[15px] leading-5 text-muted-foreground',
+            detailClassName
+          )}
         >
           {detail}
         </Text>
       ) : null}
       {trailing ??
         (href ? (
-          <Text className="text-[22px] text-muted-foreground">›</Text>
+          <Icon as={ChevronRight} size={20} className="text-muted-foreground" />
         ) : null)}
     </>
   );
@@ -169,7 +215,15 @@ export function Row({
   );
 }
 
-export function Avatar({ name, large }: { name: string; large?: boolean }) {
+export function Avatar({
+  name,
+  large,
+  hero
+}: {
+  name: string;
+  large?: boolean;
+  hero?: boolean;
+}) {
   const initials =
     name
       .trim()
@@ -181,15 +235,15 @@ export function Avatar({ name, large }: { name: string; large?: boolean }) {
     <View
       accessibilityLabel={`${name} avatar`}
       className={cn(
-        'items-center justify-center rounded-full bg-primary',
-        large ? 'size-14' : 'size-9'
+        'items-center justify-center rounded-full bg-secondary',
+        hero ? 'size-[88px]' : large ? 'size-14' : 'size-9'
       )}
     >
       <Text
         selectable
         className={cn(
-          'font-bold text-primary-foreground',
-          large ? 'text-xl' : 'text-[13px]'
+          'font-bold text-foreground',
+          hero ? 'text-[32px]' : large ? 'text-xl' : 'text-[13px]'
         )}
       >
         {initials}
@@ -204,6 +258,7 @@ export function Field({
   hint,
   secureTextEntry,
   trailing,
+  inputRef,
   className,
   style,
   ...props
@@ -212,6 +267,7 @@ export function Field({
   error?: string;
   hint?: string;
   trailing?: ReactNode;
+  inputRef?: Ref<TextInput>;
 }) {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const isPassword = secureTextEntry === true;
@@ -227,6 +283,7 @@ export function Field({
         )}
       >
         <TextInput
+          ref={inputRef}
           accessibilityLabel={label}
           secureTextEntry={isPassword && !passwordVisible}
           {...props}
@@ -239,8 +296,8 @@ export function Field({
         {trailing}
         {isPassword ? (
           <RnrButton
+            className="w-12 px-0"
             variant="ghost"
-            size="icon"
             accessibilityLabel={
               passwordVisible ? 'Hide password' : 'Show password'
             }

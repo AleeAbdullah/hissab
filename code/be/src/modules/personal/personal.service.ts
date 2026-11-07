@@ -5,6 +5,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
+import {
+  decodeOccurrenceCursor,
+  encodeOccurrenceCursor,
+  pageOf,
+} from '../../common/cursor';
+import { MAX_MINOR, parseMinorAmount } from '../../common/minor-units';
 import type { DatabaseTransaction } from '../../database/database.service';
 import { IdempotencyService } from '../idempotency';
 import {
@@ -17,18 +23,14 @@ import {
   type ReplacePersonalTransactionDto,
 } from './personal.dto';
 import {
+  type PersonalCategory,
   type PersonalCategoryView,
-  type PersonalTransactionCursor,
-  type PersonalTransactionFilters,
   type PersonalHistoryItemView,
+  type PersonalTransactionFilters,
   type PersonalTransactionRevision,
   type PersonalTransactionView,
   PersonalRepository,
 } from './personal.repository';
-
-const MAX_MINOR = 9_223_372_036_854_775_807n;
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 interface PreparedPersonalTransaction {
   type: PersonalTransactionType;
@@ -39,17 +41,19 @@ interface PreparedPersonalTransaction {
   notes: string | null;
 }
 
+interface ReportBucket {
+  period: string;
+  incomeMinor: string;
+  expenseMinor: string;
+  netMinor: string;
+}
+
 export interface PersonalReportView {
   bucket: 'DAY' | 'MONTH';
   incomeMinor: string;
   expenseMinor: string;
   netMinor: string;
-  buckets: Array<{
-    period: string;
-    incomeMinor: string;
-    expenseMinor: string;
-    netMinor: string;
-  }>;
+  buckets: ReportBucket[];
 }
 
 @Injectable()
@@ -64,7 +68,8 @@ export class PersonalService {
       PERSONAL_CATEGORY_CODES.map((code, index) => [code, index]),
     );
     return (await this.repository.listCategories()).sort(
-      (left, right) => order.get(left.code)! - order.get(right.code)!,
+      (left, right) =>
+        (order.get(left.code) ?? 0) - (order.get(right.code) ?? 0),
     );
   }
 
@@ -112,32 +117,19 @@ export class PersonalService {
     nextCursor: string | null;
     maxAmountMinor: string | null;
   }> {
-    const filters = this.filters(query);
-    const { minAmountMinor, maxAmountMinor } = this.amountFilters(query);
     const limit = query.limit ?? 50;
-    const [rows, largestAmountMinor] = await Promise.all([
+    const [rows, maxAmountMinor] = await Promise.all([
       this.repository.listTransactions(
         userId,
-        {
-          ...filters,
-          search: query.search?.trim() || undefined,
-          minAmountMinor,
-          maxAmountMinor,
-        },
-        query.cursor ? this.decodeCursor(query.cursor) : null,
+        this.filters(query),
+        query.cursor
+          ? decodeOccurrenceCursor(query.cursor, 'personal transaction')
+          : null,
         limit + 1,
       ),
       this.repository.maxTransactionAmountMinor(userId),
     ]);
-    const items = rows.slice(0, limit);
-    return {
-      items,
-      nextCursor:
-        rows.length > limit && items.length > 0
-          ? this.encodeCursor(items[items.length - 1])
-          : null,
-      maxAmountMinor: largestAmountMinor,
-    };
+    return { ...pageOf(rows, limit, encodeOccurrenceCursor), maxAmountMinor };
   }
 
   async listHistory(
@@ -149,29 +141,20 @@ export class PersonalService {
     maxAmountMinor: string | null;
     report: PersonalReportView;
   }> {
-    const { minAmountMinor, maxAmountMinor } = this.amountFilters(query);
     const bucket = query.bucket ?? 'MONTH';
     const limit = query.limit ?? 50;
     const result = await this.repository.listHistory(
       userId,
-      {
-        ...this.filters(query),
-        search: query.search?.trim() || undefined,
-        minAmountMinor,
-        maxAmountMinor,
-      },
+      this.filters(query),
       query.includeShared !== 'false',
       bucket,
-      query.cursor ? this.decodeCursor(query.cursor) : null,
+      query.cursor
+        ? decodeOccurrenceCursor(query.cursor, 'personal transaction')
+        : null,
       limit + 1,
     );
-    const items = result.items.slice(0, limit);
     return {
-      items,
-      nextCursor:
-        result.items.length > limit && items.length > 0
-          ? this.encodeCursor(items[items.length - 1])
-          : null,
+      ...pageOf(result.items, limit, encodeOccurrenceCursor),
       maxAmountMinor: result.maxAmountMinor,
       report: {
         bucket,
@@ -271,10 +254,9 @@ export class PersonalService {
           rootPersonalTransactionId,
           expectedVersion,
         );
-        const category = await this.repository.findCategoryById(
-          transaction,
-          latest.categoryId,
-        );
+        const category = await this.repository.findCategory(transaction, {
+          id: latest.categoryId,
+        });
         if (!category || category.kind !== latest.type) {
           throw new Error('Personal transaction category snapshot is missing.');
         }
@@ -301,128 +283,66 @@ export class PersonalService {
     userId: string,
     query: PersonalReportDto,
   ): Promise<PersonalReportView> {
-    const filters = this.filters(query);
     const bucket = query.bucket ?? 'MONTH';
     const rows = await this.repository.listReportBuckets(
       userId,
-      filters,
+      this.filters(query),
       query.includeShared !== 'false',
       bucket,
     );
-    const report: Omit<PersonalReportView, 'bucket'> = {
-      incomeMinor: '0',
-      expenseMinor: '0',
-      netMinor: '0',
-      buckets: [],
-    };
+    const buckets = new Map<string, { income: bigint; expense: bigint }>();
+    let income = 0n;
+    let expense = 0n;
     for (const row of rows) {
-      let period = report.buckets.find(
-        (candidate) => candidate.period === row.period,
-      );
-      if (!period) {
-        period = {
-          period: row.period,
-          incomeMinor: '0',
-          expenseMinor: '0',
-          netMinor: '0',
-        };
-        report.buckets.push(period);
-      }
+      const amount = BigInt(row.amountMinor);
+      const period = buckets.get(row.period) ?? { income: 0n, expense: 0n };
       if (row.type === 'INCOME') {
-        period.incomeMinor = row.amountMinor;
-        report.incomeMinor = (
-          BigInt(report.incomeMinor) + BigInt(row.amountMinor)
-        ).toString();
+        period.income += amount;
+        income += amount;
       } else {
-        period.expenseMinor = row.amountMinor;
-        report.expenseMinor = (
-          BigInt(report.expenseMinor) + BigInt(row.amountMinor)
-        ).toString();
+        period.expense += amount;
+        expense += amount;
       }
-      period.netMinor = (
-        BigInt(period.incomeMinor) - BigInt(period.expenseMinor)
-      ).toString();
-      report.netMinor = (
-        BigInt(report.incomeMinor) - BigInt(report.expenseMinor)
-      ).toString();
+      buckets.set(row.period, period);
     }
     return {
       bucket,
-      ...report,
-      buckets: report.buckets.sort((left, right) =>
-        left.period.localeCompare(right.period),
-      ),
+      incomeMinor: income.toString(),
+      expenseMinor: expense.toString(),
+      netMinor: (income - expense).toString(),
+      buckets: [...buckets]
+        .sort(([left], [right]) => left.localeCompare(right))
+        .map(([period, totals]) => ({
+          period,
+          incomeMinor: totals.income.toString(),
+          expenseMinor: totals.expense.toString(),
+          netMinor: (totals.income - totals.expense).toString(),
+        })),
     };
   }
 
   private prepare(
     dto: CreatePersonalTransactionDto | ReplacePersonalTransactionDto,
   ): PreparedPersonalTransaction {
-    if (!/^[1-9][0-9]*$/.test(dto.amountMinor)) {
-      throw new BadRequestException(
-        'Minor-unit amount must be a positive integer string.',
-      );
-    }
-    const amountMinor = BigInt(dto.amountMinor);
-    if (amountMinor > MAX_MINOR) {
-      throw new BadRequestException('Minor-unit amount exceeds 64-bit range.');
-    }
-    const description = dto.description.trim();
-    if (!description || description.length > 200) {
-      throw new BadRequestException(
-        'Description must be between 1 and 200 characters.',
-      );
-    }
-    const merchantOrSource = this.optionalText(
-      dto.merchantOrSource,
-      200,
-      'merchantOrSource',
-    );
-    const notes = this.optionalText(dto.notes, 2000, 'notes');
-    const occurredAt = new Date(dto.occurredAt);
-    if (Number.isNaN(occurredAt.getTime())) {
-      throw new BadRequestException('occurredAt must be a valid date-time.');
-    }
-    if (dto.type !== 'INCOME' && dto.type !== 'EXPENSE') {
-      throw new BadRequestException('type must be INCOME or EXPENSE.');
-    }
     return {
       type: dto.type,
-      amountMinor,
-      description,
-      merchantOrSource,
-      occurredAt,
-      notes,
+      amountMinor: parseMinorAmount(dto.amountMinor),
+      description: dto.description,
+      merchantOrSource: dto.merchantOrSource ?? null,
+      occurredAt: new Date(dto.occurredAt),
+      notes: dto.notes ?? null,
     };
-  }
-
-  private optionalText(
-    value: string | null | undefined,
-    maxLength: number,
-    name: string,
-  ): string | null {
-    if (value === null || value === undefined) {
-      return null;
-    }
-    const trimmed = value.trim();
-    if (!trimmed || trimmed.length > maxLength) {
-      throw new BadRequestException(
-        `${name} must be between 1 and ${maxLength} characters when provided.`,
-      );
-    }
-    return trimmed;
   }
 
   private async requireCategory(
     transaction: DatabaseTransaction,
     code: string,
     type: PersonalTransactionType,
-  ): Promise<PersonalCategoryView & { id: string }> {
-    const category = await this.repository.findCategory(
-      transaction,
+  ): Promise<PersonalCategory> {
+    const category = await this.repository.findCategory(transaction, {
       code,
       type,
-    );
+    });
     if (!category) {
       throw new BadRequestException(
         'Category must be an approved system category compatible with the transaction type.',
@@ -444,11 +364,6 @@ export class PersonalService {
     );
     if (!latest) {
       throw new NotFoundException('Personal transaction not found.');
-    }
-    if (!Number.isInteger(expectedVersion) || expectedVersion < 1) {
-      throw new BadRequestException(
-        'expectedVersion must be a positive integer.',
-      );
     }
     if (latest.version !== expectedVersion) {
       throw new ConflictException('Personal transaction version conflict.');
@@ -482,30 +397,15 @@ export class PersonalService {
     to?: string;
     type?: PersonalTransactionType;
     categoryCode?: string;
+    search?: string;
+    minAmountMinor?: string;
+    maxAmountMinor?: string;
   }): PersonalTransactionFilters {
     const from = query.from ? new Date(query.from) : null;
     const to = query.to ? new Date(query.to) : null;
-    if (
-      (from && Number.isNaN(from.getTime())) ||
-      (to && Number.isNaN(to.getTime()))
-    ) {
-      throw new BadRequestException('Date filters must be valid date-times.');
-    }
     if (from && to && from >= to) {
       throw new BadRequestException('from must be earlier than to.');
     }
-    return {
-      from,
-      to,
-      type: query.type,
-      categoryCode: query.categoryCode,
-    };
-  }
-
-  private amountFilters(query: {
-    minAmountMinor?: string;
-    maxAmountMinor?: string;
-  }): { minAmountMinor?: bigint; maxAmountMinor?: bigint } {
     const minAmountMinor = query.minAmountMinor
       ? BigInt(query.minAmountMinor)
       : undefined;
@@ -521,7 +421,15 @@ export class PersonalService {
     ) {
       throw new BadRequestException('Amount filters are invalid.');
     }
-    return { minAmountMinor, maxAmountMinor };
+    return {
+      from,
+      to,
+      type: query.type,
+      categoryCode: query.categoryCode,
+      search: query.search?.trim() || undefined,
+      minAmountMinor,
+      maxAmountMinor,
+    };
   }
 
   private toView(
@@ -541,41 +449,5 @@ export class PersonalService {
       version: revision.version,
       createdAt: revision.createdAt,
     };
-  }
-
-  private encodeCursor(transaction: {
-    occurredAt: Date | string;
-    id: string;
-  }): string {
-    return Buffer.from(
-      JSON.stringify([
-        new Date(transaction.occurredAt).toISOString(),
-        transaction.id,
-      ]),
-    ).toString('base64url');
-  }
-
-  private decodeCursor(cursor: string): PersonalTransactionCursor {
-    try {
-      const parsed: unknown = JSON.parse(
-        Buffer.from(cursor, 'base64url').toString('utf8'),
-      );
-      if (
-        !Array.isArray(parsed) ||
-        parsed.length !== 2 ||
-        typeof parsed[0] !== 'string' ||
-        typeof parsed[1] !== 'string' ||
-        !UUID_PATTERN.test(parsed[1])
-      ) {
-        throw new Error('invalid cursor');
-      }
-      const occurredAt = new Date(parsed[0]);
-      if (Number.isNaN(occurredAt.getTime())) {
-        throw new Error('invalid cursor date');
-      }
-      return { occurredAt, rootId: parsed[1].toLowerCase() };
-    } catch {
-      throw new BadRequestException('Invalid personal transaction cursor.');
-    }
   }
 }

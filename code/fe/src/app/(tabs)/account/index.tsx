@@ -1,15 +1,7 @@
-import { useDialog } from '@/components/ui/dialog';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import Constants from 'expo-constants';
 import { ActivityIndicator, View } from 'react-native';
 
-import {
-  notificationPreferencesQuery,
-  profileQuery,
-  sessionsQuery
-} from '@/features/account/api';
-import { signOut } from '@/features/auth/api';
-import { ExportAccountRow } from '@/features/account/components/export-account-row';
 import {
   Avatar,
   Card,
@@ -20,7 +12,16 @@ import {
   SectionLabel
 } from '@/components/ui';
 import { Button } from '@/components/ui/button';
+import { useDialog } from '@/components/ui/dialog';
 import { Text } from '@/components/ui/text';
+import {
+  notificationPreferencesQuery,
+  profileQuery,
+  sessionsQuery
+} from '@/features/account/api';
+import { ExportAccountRow } from '@/features/account/components/export-account-row';
+import { canRegisterPushNotifications } from '@/features/account/push';
+import { signOut } from '@/features/auth/api';
 
 export default function AccountScreen() {
   const dialog = useDialog();
@@ -52,6 +53,19 @@ export default function AccountScreen() {
           detail={profile.data?.displayCurrency}
           href="/account/profile"
         />
+        <Row
+          title="Notifications"
+          subtitle={
+            !canRegisterPushNotifications()
+              ? 'Push unavailable'
+              : notifications.data?.pushEnabled
+                ? 'On'
+                : notifications.data
+                  ? 'Push off'
+                  : undefined
+          }
+          href="/account/notifications"
+        />
       </Card>
       <SectionLabel>SECURITY</SectionLabel>
       <Card>
@@ -61,17 +75,6 @@ export default function AccountScreen() {
           title="Devices and sessions"
           detail={sessions.data ? `${sessions.data.length} active` : undefined}
           href="/account/sessions"
-        />
-        <Row
-          title="Notifications"
-          detail={
-            notifications.data?.pushEnabled
-              ? 'On'
-              : notifications.data
-                ? 'Off'
-                : undefined
-          }
-          href="/account/notifications"
         />
       </Card>
       <SectionLabel>YOUR DATA</SectionLabel>
@@ -87,11 +90,11 @@ export default function AccountScreen() {
       <Card>
         <Row
           title="Privacy policy"
-          href="https://hisab-weld-psi.vercel.app/privacy/"
+          href="https://hissabapp.vercel.app/privacy/"
         />
         <Row
           title="Terms and conditions"
-          href="https://hisab-weld-psi.vercel.app/terms/"
+          href="https://hissabapp.vercel.app/terms/"
         />
       </Card>
       <View className="gap-2">
@@ -119,8 +122,8 @@ export default function AccountScreen() {
           selectable
           className="text-center text-[13px] text-muted-foreground"
         >
-          Hissab {Constants.expoConfig?.version ?? '1.0'} · Other sessions stay
-          signed in.
+          Tally Stick {Constants.expoConfig?.version ?? '1.0'} · Other sessions
+          stay signed in.
         </Text>
       </View>
     </Screen>

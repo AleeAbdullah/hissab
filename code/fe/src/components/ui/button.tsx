@@ -1,13 +1,14 @@
-import { TextClassContext } from '@/components/ui/text';
-import { DialogTriggerContext } from '@/components/ui/dialog-trigger';
-import { cn } from '@/lib/utils';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { useContext } from 'react';
-import { Platform, Pressable } from 'react-native';
+import { Platform, Pressable, View } from 'react-native';
+
+import { DialogTriggerContext } from '@/components/ui/dialog-trigger';
+import { TextClassContext } from '@/components/ui/text';
+import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
   cn(
-    'group shrink-0 flex-row items-center justify-center gap-2 rounded-xl',
+    'shrink-0 flex-row items-center justify-center gap-2 rounded-xl',
     Platform.select({
       web: "focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive whitespace-nowrap outline-none transition-all focus-visible:ring-[3px] disabled:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0"
     })
@@ -50,12 +51,7 @@ const buttonVariants = cva(
           'min-h-12 px-4 py-2',
           Platform.select({ web: 'has-[>svg]:px-3' })
         ),
-        sm: cn(
-          'min-h-12 gap-1.5 px-3',
-          Platform.select({ web: 'has-[>svg]:px-2.5' })
-        ),
-        lg: cn('min-h-12 px-6', Platform.select({ web: 'has-[>svg]:px-4' })),
-        icon: 'h-12 w-12'
+        compact: 'min-h-8 px-3 py-1.5'
       }
     },
     defaultVariants: {
@@ -88,9 +84,7 @@ const buttonTextVariants = cva(
       },
       size: {
         default: '',
-        sm: '',
-        lg: '',
-        icon: ''
+        compact: 'text-[15px] leading-5'
       }
     },
     defaultVariants: {
@@ -104,18 +98,45 @@ type ButtonProps = React.ComponentProps<typeof Pressable> &
   React.RefAttributes<typeof Pressable> &
   VariantProps<typeof buttonVariants>;
 
-function Button({ className, variant, size, onPress, ...props }: ButtonProps) {
+function Button({
+  className,
+  variant,
+  size = 'default',
+  onPress,
+  children,
+  ...props
+}: ButtonProps) {
   const captureTrigger = useContext(DialogTriggerContext);
+  const filled =
+    !variant || ['default', 'destructive', 'secondary'].includes(variant);
+  const disabledFill = props.disabled && filled;
+  const bodyClass = cn(
+    buttonVariants({ variant, size }),
+    className,
+    disabledFill && 'bg-muted'
+  );
   return (
-    <TextClassContext.Provider value={buttonTextVariants({ variant, size })}>
+    <TextClassContext.Provider
+      value={cn(
+        buttonTextVariants({ variant, size }),
+        disabledFill && 'text-muted-foreground'
+      )}
+    >
       <Pressable
-        className={cn(
-          props.disabled && 'opacity-50',
-          buttonVariants({ variant, size }),
-          className
-        )}
         role="button"
         {...props}
+        accessibilityState={{
+          ...props.accessibilityState,
+          disabled: Boolean(props.disabled)
+        }}
+        className={
+          size === 'compact'
+            ? cn(
+                'group min-w-12 shrink justify-center',
+                Platform.OS === 'ios' ? 'min-h-11' : 'min-h-12'
+              )
+            : cn('group', bodyClass)
+        }
         onPress={
           onPress
             ? (event) => {
@@ -124,7 +145,24 @@ function Button({ className, variant, size, onPress, ...props }: ButtonProps) {
               }
             : undefined
         }
-      />
+      >
+        {size === 'compact'
+          ? (state) => (
+              <View
+                pointerEvents="none"
+                accessible={false}
+                focusable={false}
+                className={cn(
+                  'max-w-full',
+                  bodyClass,
+                  state.pressed && !props.disabled && 'opacity-80'
+                )}
+              >
+                {typeof children === 'function' ? children(state) : children}
+              </View>
+            )
+          : children}
+      </Pressable>
     </TextClassContext.Provider>
   );
 }

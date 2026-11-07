@@ -47,8 +47,8 @@ export class IdempotencyService {
     );
 
     return this.database.transaction(async (transaction) => {
-      // ponytail: one global shared/exclusive lock makes deletion atomic against
-      // every mutation; partition it only if deletion throughput becomes real.
+      // One global shared/exclusive lock keeps deletion atomic against every
+      // mutation. Partition it only if deletion throughput becomes real.
       await transaction.execute(
         execution.routeScope === 'account:delete'
           ? sql`select pg_advisory_xact_lock(hashtextextended('hissab:account-deletion', 0))`

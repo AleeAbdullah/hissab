@@ -3,9 +3,9 @@ import {
   DefaultTheme,
   type Theme
 } from 'expo-router/react-navigation';
+import { useUnstableNativeVariable } from 'nativewind';
 import { useMemo } from 'react';
 import { useColorScheme } from 'react-native';
-import { useUnstableNativeVariable } from 'nativewind';
 
 export const THEME_VARIABLES = {
   background: '--background',
@@ -14,6 +14,7 @@ export const THEME_VARIABLES = {
   popover: '--popover',
   primary: '--primary',
   primaryText: '--primary-text',
+  primaryForeground: '--primary-foreground',
   secondary: '--secondary',
   muted: '--muted',
   mutedForeground: '--muted-foreground',

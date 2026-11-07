@@ -1,10 +1,21 @@
+import { ApiProperty, IntersectionType } from '@nestjs/swagger';
 import { Equals, IsString, MaxLength, MinLength } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
 
-import { DISPLAY_CURRENCIES } from '../../common/display-currency';
+import {
+  DISPLAY_CURRENCIES,
+  type DisplayCurrency,
+} from '../../common/display-currency';
 
 const date = { type: String, format: 'date-time' } as const;
 const nullableDate = { ...date, nullable: true } as const;
+const MEMBERSHIP_STATUSES = [
+  'INVITED',
+  'ACTIVE',
+  'DECLINED',
+  'CANCELLED',
+  'LEFT',
+] as const;
+type MembershipStatus = (typeof MEMBERSHIP_STATUSES)[number];
 
 export class DeleteAccountDto {
   @ApiProperty({ minLength: 12, maxLength: 1024, writeOnly: true })
@@ -46,7 +57,7 @@ export class ExportProfileDto {
   displayName!: string;
 
   @ApiProperty({ enum: DISPLAY_CURRENCIES })
-  displayCurrency!: string;
+  displayCurrency!: DisplayCurrency;
 
   @ApiProperty({ enum: ['ACTIVE'] })
   status!: 'ACTIVE';
@@ -90,10 +101,8 @@ export class ExportNotificationPreferencesDto {
 }
 
 export class ExportMembershipDto {
-  @ApiProperty({
-    enum: ['INVITED', 'ACTIVE', 'DECLINED', 'CANCELLED', 'LEFT'],
-  })
-  status!: 'INVITED' | 'ACTIVE' | 'DECLINED' | 'CANCELLED' | 'LEFT';
+  @ApiProperty({ enum: MEMBERSHIP_STATUSES })
+  status!: MembershipStatus;
 
   @ApiProperty({ format: 'uuid', nullable: true })
   invitedByUserId!: string | null;
@@ -111,27 +120,10 @@ export class ExportMembershipDto {
   updatedAt!: Date;
 }
 
-export class ExportGroupMemberDto extends ExportUserDto {
-  @ApiProperty({
-    enum: ['INVITED', 'ACTIVE', 'DECLINED', 'CANCELLED', 'LEFT'],
-  })
-  status!: 'INVITED' | 'ACTIVE' | 'DECLINED' | 'CANCELLED' | 'LEFT';
-
-  @ApiProperty({ format: 'uuid', nullable: true })
-  invitedByUserId!: string | null;
-
-  @ApiProperty(nullableDate)
-  invitedAt!: Date | null;
-
-  @ApiProperty(nullableDate)
-  joinedAt!: Date | null;
-
-  @ApiProperty(date)
-  createdAt!: Date;
-
-  @ApiProperty(date)
-  updatedAt!: Date;
-}
+export class ExportGroupMemberDto extends IntersectionType(
+  ExportUserDto,
+  ExportMembershipDto,
+) {}
 
 export class ExportGroupDto {
   @ApiProperty({ format: 'uuid' })

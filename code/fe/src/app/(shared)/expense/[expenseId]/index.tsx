@@ -1,4 +1,3 @@
-import { useDialog } from '@/components/ui/dialog';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link, router, useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, View } from 'react-native';
@@ -14,15 +13,17 @@ import {
   SectionLabel
 } from '@/components/ui';
 import { Button } from '@/components/ui/button';
+import { useDialog } from '@/components/ui/dialog';
 import { Text } from '@/components/ui/text';
 import { profileQuery } from '@/features/account/api';
 import {
   ledgerBalancesQuery,
   userBalancesQuery
 } from '@/features/balances/api';
-import { formatMinorAmount } from '@/lib/utils';
-import { homeQuery } from '@/features/home/api';
 import { deleteExpense, expenseQuery } from '@/features/expenses/api';
+import { homeQuery } from '@/features/home/api';
+import { formatDate } from '@/lib/dates';
+import { formatMinorAmount } from '@/lib/money';
 
 export default function ExpenseDetailScreen() {
   const dialog = useDialog();
@@ -74,7 +75,7 @@ export default function ExpenseDetailScreen() {
       <Card>
         <Row
           title={expense.data.description}
-          subtitle={expense.data.occurredAt.slice(0, 10)}
+          subtitle={formatDate(expense.data.occurredAt)}
           detail={formatMinorAmount(
             expense.data.totalMinor,
             profile.data.displayCurrency
@@ -83,8 +84,8 @@ export default function ExpenseDetailScreen() {
       </Card>
       {expense.data.status === 'DELETED' ? (
         <Notice title="Deleted expense">
-          This record remains in Hissab’s audit history and no longer affects
-          balances.
+          This record remains in Tally Stick’s audit history and no longer
+          affects balances.
         </Notice>
       ) : null}
       <Allocations

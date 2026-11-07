@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+
 import { CreateGroupForm } from '@/features/groups/components/create-group-form';
 
 export default function NewGroupScreen() {

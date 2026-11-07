@@ -11,27 +11,27 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import type { CreatePersonalTransactionDto } from '@/api/generated/types.gen';
 import type {
   DisplayCurrency,
   PersonalCategoryCode,
   PersonalTransaction,
   PersonalTransactionType
 } from '@/api/contracts';
+import type { CreatePersonalTransactionDto } from '@/api/generated/types.gen';
+import { DateField } from '@/components/date-field';
 import { ErrorMessage, Field } from '@/components/ui';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
-import { todayDate } from '@/features/expenses/form';
 import { personalCategoriesQuery } from '@/features/personal/api';
 import { CategoryPicker } from '@/features/personal/components/category-picker';
-import { TransactionDateField } from '@/features/personal/components/transaction-date-field';
 import {
   buildPersonalTransactionBody,
   personalTransactionInitialValues,
   type PersonalTransactionField
 } from '@/features/personal/form';
-import { formatMinorAmount } from '@/lib/utils';
+import { todayDate } from '@/lib/dates';
+import { formatMinorAmount } from '@/lib/money';
 
 export type PersonalTransactionFormDraft = {
   amount: string;
@@ -320,7 +320,7 @@ export function PersonalTransactionEditor({
             fieldY.current.date = event.nativeEvent.layout.y;
           }}
         >
-          <TransactionDateField
+          <DateField
             value={occurredDate}
             error={fieldErrors.date}
             onChange={(value) => {

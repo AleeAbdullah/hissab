@@ -5,9 +5,9 @@ import Animated, {
   ReduceMotion
 } from 'react-native-reanimated';
 
+import { Icons } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
-import { Icons } from '@/components/icons';
 import { cn } from '@/lib/utils';
 
 export type StackedCardItem = {
@@ -59,10 +59,10 @@ export function StackedCards({ cards }: StackedCardsProps) {
             {isFront ? (
               <Button
                 variant="ghost"
-                size="icon"
                 accessibilityLabel={rearCard.accessibilityLabel}
+                hitSlop={4}
                 onPress={() => setFrontId(rearCard.id)}
-                className="absolute bottom-3 right-3 size-10 rounded-full bg-muted"
+                className="absolute bottom-3 right-3 min-h-12 w-12 rounded-full bg-muted px-0"
               >
                 <Icon
                   as={Icons.arrowUpDown}

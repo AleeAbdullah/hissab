@@ -12,7 +12,7 @@ Use this standard for Expo Router layouts, tabs, stacks, links, redirects, route
 ## Native Behavior
 
 - Prefer native tabs, stacks, links, and platform chrome. OS permissions, folder pickers, and share sheets stay native.
-- All app-owned prompts use the shared Hissab dialog (KAN-4), including destructive and discard confirmations. Keep explicit effect copy, a safe cancel action, semantic destructive styling, and side-effect-free platform Back. Ignore backdrop taps and preserve drafts/input on cancellation.
+- All app-owned prompts use the shared app dialog (KAN-4), including destructive and discard confirmations. Keep explicit effect copy, a safe cancel action, semantic destructive styling, and side-effect-free platform Back. Ignore backdrop taps and preserve drafts/input on cancellation.
 - Keep the global dialog above native-stack sheets with `FullWindowOverlay` on iOS and React Native `Modal` on Android. Share its UI and callers; restore focus and run confirmed effects only after the dialog is removed.
 - Preserve hardware and predictive-back behavior. Do not intercept back unless unsaved state or a defined workflow requires it.
 - Use automatic content inset adjustment and safe-area-aware layouts. Forms must remain usable with the keyboard shown.

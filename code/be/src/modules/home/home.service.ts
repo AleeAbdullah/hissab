@@ -1,18 +1,16 @@
 import { Injectable } from '@nestjs/common';
 
 import { ActivityService } from '../activity/activity.service';
-import type { ActivityItemDto } from '../activity/dto/activity.dto';
+import type {
+  ActivityItemDto,
+  ExpenseActivityDetailsDto,
+  SettlementActivityDetailsDto,
+} from '../activity/dto/activity.dto';
 import { BalancesService } from '../balances/balances.service';
 import { PersonalService } from '../personal/personal.service';
 import type { PersonalTransactionView } from '../personal/personal.repository';
 import { UsersService } from '../users/users.service';
-import {
-  type HomeDto,
-  type HomeRecentItemDto,
-  HomeCategoryDto,
-  HomeLedgerDto,
-  HomeUserDto,
-} from './home.dto';
+import type { HomeDto, HomeRecentItemDto } from './home.dto';
 import { HomeRepository } from './home.repository';
 
 @Injectable()
@@ -48,7 +46,9 @@ export class HomeService {
     const monthNetMinor =
       report.buckets.find((bucket) => bucket.period === month)?.netMinor ?? '0';
     const recent = [
-      ...personalTransactions.items.map((item) => this.personalItem(item)),
+      ...personalTransactions.items
+        .filter((item) => item.status === 'ACTIVE')
+        .map((item) => this.personalItem(item)),
       ...expenseActivity.items.map((item) => this.sharedItem(item)),
       ...settlementActivity.items.map((item) => this.sharedItem(item)),
     ]
@@ -87,58 +87,40 @@ export class HomeService {
     };
   }
 
+  // Home only lists expense and settlement activity, whose details are
+  // financial snapshots; the activity service guarantees their shape.
   private sharedItem(item: ActivityItemDto): HomeRecentItemDto {
+    const base = {
+      id: item.aggregateId,
+      ledger: item.ledger
+        ? { id: item.ledger.id, type: item.ledger.type, name: item.ledger.name }
+        : null,
+      actor: item.actor,
+      createdAt: item.createdAt,
+    };
     if (item.area === 'EXPENSE') {
-      const details = item.details as {
-        totalMinor: string;
-        description: string;
-        category: HomeCategoryDto;
-        occurredAt: Date;
-      };
+      const details = item.details as ExpenseActivityDetailsDto;
       return {
+        ...base,
         kind: 'SHARED_EXPENSE',
-        id: item.aggregateId,
         amountMinor: details.totalMinor,
-        ledger: item.ledger && this.ledger(item.ledger),
-        actor: item.actor && this.user(item.actor),
         category: details.category,
         description: details.description,
         from: null,
         to: null,
         occurredAt: details.occurredAt,
-        createdAt: item.createdAt,
       };
     }
-
-    const details = item.details as {
-      amountMinor: string;
-      from: HomeUserDto;
-      to: HomeUserDto;
-      occurredAt: Date;
-    };
+    const details = item.details as SettlementActivityDetailsDto;
     return {
+      ...base,
       kind: 'SHARED_SETTLEMENT',
-      id: item.aggregateId,
       amountMinor: details.amountMinor,
-      ledger: item.ledger && this.ledger(item.ledger),
-      actor: item.actor && this.user(item.actor),
       category: null,
       description: null,
       from: details.from,
       to: details.to,
       occurredAt: details.occurredAt,
-      createdAt: item.createdAt,
     };
-  }
-
-  private ledger(ledger: ActivityItemDto['ledger']): HomeLedgerDto {
-    if (!ledger) {
-      throw new Error('Expected a ledger.');
-    }
-    return { id: ledger.id, type: ledger.type, name: ledger.name };
-  }
-
-  private user(user: NonNullable<ActivityItemDto['actor']>): HomeUserDto {
-    return { userId: user.userId, displayName: user.displayName };
   }
 }

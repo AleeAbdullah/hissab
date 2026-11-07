@@ -1,5 +1,5 @@
-import { homeGetHome } from '@/api/generated/sdk.gen';
 import type { Home } from '@/api/contracts';
+import { homeGetHome } from '@/api/generated/sdk.gen';
 import { request } from '@/api/transport';
 
 export const homeQuery = {

@@ -3,6 +3,7 @@ import { Link, Stack } from 'expo-router';
 import { useMemo } from 'react';
 import { View } from 'react-native';
 
+import { Icons } from '@/components/icons';
 import {
   Card,
   ErrorMessage,
@@ -10,21 +11,20 @@ import {
   Screen,
   SectionLabel
 } from '@/components/ui';
-import { Icons } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { profileQuery } from '@/features/account/api';
-import { PersonalSummary } from '@/features/personal/components/personal-summary';
-import { SpendingChart } from '@/features/personal/components/spending-chart';
-import { PersonalHistoryRow } from '@/features/personal/components/personal-history-row';
 import {
   personalHistoryInfiniteQuery,
   personalReportQuery
 } from '@/features/personal/api';
+import { PersonalHistoryRow } from '@/features/personal/components/personal-history-row';
+import { PersonalSummary } from '@/features/personal/components/personal-summary';
+import { SpendingChart } from '@/features/personal/components/spending-chart';
 import { periodLabel } from '@/features/personal/form';
 import { spendingRange } from '@/features/personal/spending';
-import { formatMinorAmount } from '@/lib/utils';
+import { formatMinorAmount } from '@/lib/money';
 
 export default function PersonalScreen() {
   const profile = useQuery(profileQuery);
@@ -133,8 +133,8 @@ function AddTransactionButton() {
   return (
     <Link href="/personal-transaction" asChild>
       <Button
+        className="w-12 px-0"
         variant="ghost"
-        size="icon"
         role="link"
         accessibilityLabel="Add personal transaction"
       >

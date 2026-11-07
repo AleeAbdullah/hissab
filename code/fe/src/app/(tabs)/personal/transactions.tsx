@@ -2,52 +2,41 @@ import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { Stack } from 'expo-router/stack';
 import { ListFilter, Search, X } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
-import {
-  ActivityIndicator,
-  Keyboard,
-  ScrollView,
-  TextInput,
-  View
-} from 'react-native';
+import { ActivityIndicator, Keyboard, TextInput, View } from 'react-native';
 
 import type {
   PersonalCategoryCode,
   PersonalHistoryItem,
-  PersonalReport,
   PersonalTransactionType
 } from '@/api/contracts';
 import {
   Card,
   ErrorMessage,
   Loading,
-  Row,
   Screen,
   SectionLabel
 } from '@/components/ui';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
-import { ChoiceChips } from '@/components/choice-chips';
 import { profileQuery } from '@/features/account/api';
-import { IncludeSharedSwitch } from '@/features/personal/components/include-shared-switch';
-import { PersonalSummary } from '@/features/personal/components/personal-summary';
-import { PersonalHistoryRow } from '@/features/personal/components/personal-history-row';
-import {
-  TransactionFilterSheet,
-  type TransactionFilters
-} from '@/features/personal/components/transaction-filter-sheet';
 import {
   personalCategoriesQuery,
   personalHistoryInfiniteQuery
 } from '@/features/personal/api';
-import { dateToIso } from '@/features/expenses/form';
-import { dateToExclusiveIso, periodLabel } from '@/features/personal/form';
-import { formatMinorAmount } from '@/lib/utils';
+import { IncludeSharedSwitch } from '@/features/personal/components/include-shared-switch';
+import { PersonalHistoryRow } from '@/features/personal/components/personal-history-row';
+import { PersonalHistorySummary } from '@/features/personal/components/personal-summary';
+import {
+  TransactionFilterSheet,
+  type TransactionFilters
+} from '@/features/personal/components/transaction-filter-sheet';
+import { periodLabel } from '@/features/personal/form';
+import { dateToIso, dateToExclusiveIso, formatPeriod } from '@/lib/dates';
+import { formatMinorAmount } from '@/lib/money';
 
 export default function TransactionsScreen() {
   const [includeShared, setIncludeShared] = useState(true);
-  const [bucket, setBucket] = useState<PersonalReport['bucket']>('MONTH');
-  const [totalsOpen, setTotalsOpen] = useState(false);
   const [type, setType] = useState<PersonalTransactionType | undefined>();
   const [categoryCode, setCategoryCode] = useState<
     PersonalCategoryCode | undefined
@@ -77,7 +66,7 @@ export default function TransactionsScreen() {
       maxAmountMinor,
       search: search || undefined,
       includeShared: includeShared ? 'true' : 'false',
-      bucket
+      bucket: 'MONTH'
     })
   );
   const items = useMemo(
@@ -150,8 +139,8 @@ export default function TransactionsScreen() {
           headerRight: () => (
             <View className="flex-row">
               <Button
+                className="w-12 px-0"
                 variant="ghost"
-                size="icon"
                 accessibilityLabel={
                   searchOpen ? 'Close search' : 'Search history'
                 }
@@ -164,8 +153,8 @@ export default function TransactionsScreen() {
                 />
               </Button>
               <Button
+                className="w-12 px-0"
                 variant="ghost"
-                size="icon"
                 accessibilityLabel={
                   sheetFilterCount
                     ? `Filter history, ${sheetFilterCount} selected`
@@ -189,72 +178,7 @@ export default function TransactionsScreen() {
           value={includeShared}
           onValueChange={setIncludeShared}
         />
-        {history.isLoading ? (
-          <ActivityIndicator className="mt-8 text-primary" />
-        ) : history.error || !report ? (
-          <ErrorMessage
-            error={history.error ?? new Error('History is unavailable.')}
-          />
-        ) : (
-          <>
-            <PersonalSummary
-              displayCurrency={profile.data.displayCurrency}
-              report={report}
-              title={fromDate || toDate ? 'Selected period' : 'All time'}
-            />
-            <Button
-              variant="outline"
-              accessibilityState={{ expanded: totalsOpen }}
-              onPress={() => setTotalsOpen(!totalsOpen)}
-            >
-              <Text>
-                {totalsOpen ? 'Hide' : 'View'}{' '}
-                {bucket === 'MONTH' ? 'monthly' : 'daily'} totals
-              </Text>
-            </Button>
-            {totalsOpen ? (
-              <View className="gap-2">
-                <ChoiceChips
-                  choices={[
-                    { label: 'Month', value: 'MONTH' },
-                    { label: 'Day', value: 'DAY' }
-                  ]}
-                  value={bucket}
-                  onChange={(value) =>
-                    setBucket(value as PersonalReport['bucket'])
-                  }
-                />
-                {report.buckets.length ? (
-                  <Card>
-                    {report.buckets
-                      .slice()
-                      .reverse()
-                      .map((total) => (
-                        <Row
-                          key={total.period}
-                          title={periodLabel(total.period, bucket)}
-                          subtitle={`Income ${formatMinorAmount(total.incomeMinor, profile.data.displayCurrency)} · Spending ${formatMinorAmount(total.expenseMinor, profile.data.displayCurrency)}`}
-                          detail={
-                            BigInt(total.netMinor) >= 0n
-                              ? `Left ${formatMinorAmount(total.netMinor, profile.data.displayCurrency)}`
-                              : `Over ${formatMinorAmount((-BigInt(total.netMinor)).toString(), profile.data.displayCurrency)}`
-                          }
-                        />
-                      ))}
-                  </Card>
-                ) : (
-                  <Text selectable>No totals for this period.</Text>
-                )}
-              </View>
-            ) : null}
-          </>
-        )}
-        <ScrollView
-          horizontal
-          className="h-12 flex-grow-0"
-          showsHorizontalScrollIndicator={false}
-          contentContainerClassName="items-center gap-2"
-        >
+        <View className="flex-row flex-wrap items-center gap-2">
           {[
             { label: 'All', value: 'ALL' },
             { label: 'Expenses', value: 'EXPENSE' },
@@ -265,6 +189,7 @@ export default function TransactionsScreen() {
               <Button
                 key={choice.value}
                 variant="ghost"
+                size="compact"
                 className="px-0 py-0"
                 accessibilityState={{ selected }}
                 onPress={() => changeType(choice.value)}
@@ -292,6 +217,7 @@ export default function TransactionsScreen() {
           {categoryCode ? (
             <Button
               variant="ghost"
+              size="compact"
               className="px-0 py-0"
               accessibilityLabel={`Remove ${selectedCategory?.name ?? 'category'} filter`}
               onPress={() => setCategoryCode(undefined)}
@@ -307,6 +233,7 @@ export default function TransactionsScreen() {
           {fromDate || toDate ? (
             <Button
               variant="ghost"
+              size="compact"
               className="px-0 py-0"
               accessibilityLabel="Remove date filter"
               onPress={() => {
@@ -316,7 +243,7 @@ export default function TransactionsScreen() {
             >
               <View className="min-h-8 flex-row items-center gap-1 rounded-full border border-primary px-3 py-1">
                 <Text className="text-[15px] font-medium text-primary">
-                  {filterDateRangeLabel(fromDate, toDate)}
+                  {formatPeriod(fromDate, toDate)}
                 </Text>
                 <Icon as={X} size={14} className="text-primary" />
               </View>
@@ -325,6 +252,7 @@ export default function TransactionsScreen() {
           {minAmountMinor || maxAmountMinor ? (
             <Button
               variant="ghost"
+              size="compact"
               className="px-0 py-0"
               accessibilityLabel="Remove amount filter"
               onPress={() => {
@@ -350,7 +278,41 @@ export default function TransactionsScreen() {
               </View>
             </Button>
           ) : null}
-        </ScrollView>
+        </View>
+        <PersonalHistorySummary
+          displayCurrency={profile.data.displayCurrency}
+          report={report}
+          title={formatPeriod(fromDate, toDate)}
+          type={type}
+          loading={
+            history.isPending ||
+            history.isRefetching ||
+            searchText.trim() !== search
+          }
+          caption={[
+            type === 'EXPENSE'
+              ? 'Expenses'
+              : type === 'INCOME'
+                ? 'Income'
+                : undefined,
+            selectedCategory?.name,
+            searchText.trim() ? `“${searchText.trim()}”` : undefined,
+            minAmountMinor || maxAmountMinor
+              ? `${formatMinorAmount(minAmountMinor ?? '0', profile.data.displayCurrency)}–${maxAmountMinor ? formatMinorAmount(maxAmountMinor, profile.data.displayCurrency) : 'Any'}`
+              : undefined,
+            !includeShared ? 'Shared excluded' : undefined
+          ]
+            .filter(Boolean)
+            .join(' · ')}
+        />
+        {history.error ? (
+          <View className="gap-2">
+            <ErrorMessage error={history.error} />
+            <Button variant="outline" onPress={() => history.refetch()}>
+              <Text>Try again</Text>
+            </Button>
+          </View>
+        ) : null}
         {categories.error ? <ErrorMessage error={categories.error} /> : null}
         {history.isLoading || history.error ? null : groups.length ? (
           groups.map((group) => (
@@ -432,18 +394,4 @@ function groupByMonth(items: PersonalHistoryItem[]) {
     else groups.push({ period, items: [item] });
   }
   return groups;
-}
-
-function filterDateRangeLabel(from?: string, to?: string) {
-  const format = (value: string, year: boolean) =>
-    new Intl.DateTimeFormat(undefined, {
-      day: 'numeric',
-      month: 'short',
-      year: year ? 'numeric' : undefined,
-      timeZone: 'UTC'
-    }).format(new Date(`${value}T12:00:00.000Z`));
-  if (from && to)
-    return `${format(from, from.slice(0, 4) !== to.slice(0, 4))} – ${format(to, true)}`;
-  if (from) return `From ${format(from, true)}`;
-  return to ? `To ${format(to, true)}` : 'Any date';
 }

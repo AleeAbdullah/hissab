@@ -6,10 +6,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
+import { recordDomainChange } from '../../common/domain-change';
 import type { DatabaseTransaction } from '../../database/database.service';
-import { activityEvents } from '../../database/schema';
-import { IdempotencyService } from '../idempotency/idempotency.service';
-import { OutboxService } from '../outbox/outbox.service';
+import { BalancesRepository } from '../balances/balances.repository';
+import { IdempotencyService } from '../idempotency';
+import { OutboxService } from '../outbox';
+import { UsersRepository } from '../users/users.repository';
 import {
   type BlockView,
   type ConnectionCandidateView,
@@ -28,6 +30,8 @@ import type {
 export class ConnectionsService {
   constructor(
     private readonly repository: ConnectionsRepository,
+    private readonly balances: BalancesRepository,
+    private readonly users: UsersRepository,
     private readonly idempotency: IdempotencyService,
     private readonly outbox: OutboxService,
   ) {}
@@ -50,9 +54,7 @@ export class ConnectionsService {
         routeScope: 'connection-requests:create',
       },
       async (transaction) => {
-        if (
-          !(await this.repository.isActiveUser(transaction, dto.receiverUserId))
-        ) {
+        if (!(await this.users.isActiveUser(transaction, dto.receiverUserId))) {
           throw new NotFoundException('User not found.');
         }
         await this.repository.lockPair(transaction, userId, dto.receiverUserId);
@@ -185,12 +187,14 @@ export class ConnectionsService {
       },
       async (transaction) => {
         await this.repository.lockPair(transaction, userId, blockedUserId);
+        const ledgerId = await this.repository.lockDirectLedger(
+          transaction,
+          userId,
+          blockedUserId,
+        );
         if (
-          await this.repository.hasUnsettledDirectBalance(
-            transaction,
-            userId,
-            blockedUserId,
-          )
+          ledgerId &&
+          (await this.balances.hasUnsettledBalance(transaction, ledgerId))
         ) {
           throw new ConflictException(
             'The connection cannot be blocked until all balances are settled.',
@@ -332,7 +336,7 @@ export class ConnectionsService {
     secondUserId: string,
   ): Promise<void> {
     if (
-      await this.repository.isEitherUserBlocked(
+      await this.users.isEitherUserBlocked(
         transaction,
         firstUserId,
         secondUserId,
@@ -342,25 +346,19 @@ export class ConnectionsService {
     }
   }
 
-  private async recordChange(
+  private recordChange(
     transaction: DatabaseTransaction,
     actorUserId: string,
     aggregateId: string,
     eventType: string,
     payload: Record<string, unknown>,
   ): Promise<void> {
-    await transaction.insert(activityEvents).values({
+    return recordDomainChange(transaction, this.outbox, {
       actorUserId,
-      eventType: `CONNECTION_${eventType}`,
-      aggregateType: 'CONNECTION_REQUEST',
+      aggregate: 'CONNECTION_REQUEST',
       aggregateId,
+      eventType,
       payload,
-    });
-    await this.outbox.enqueue(transaction, {
-      eventType: `connection.${eventType.toLowerCase()}`,
-      aggregateType: 'connection_request',
-      aggregateId,
-      payload: { actorUserId, ...payload },
     });
   }
 }

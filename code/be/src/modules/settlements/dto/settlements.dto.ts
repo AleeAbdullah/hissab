@@ -1,17 +1,9 @@
-import { Type } from 'class-transformer';
-import {
-  IsInt,
-  IsISO8601,
-  IsOptional,
-  IsString,
-  IsUUID,
-  Matches,
-  Max,
-  Min,
-} from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, IntersectionType } from '@nestjs/swagger';
+import { IsISO8601, IsString, IsUUID, Matches } from 'class-validator';
 
-const POSITIVE_MINOR_PATTERN = '^[1-9][0-9]*$';
+import { CursorPageQueryDto } from '../../../common/dto/cursor-page-query.dto';
+import { ExpectedVersionDto } from '../../../common/dto/expected-version.dto';
+import { POSITIVE_MINOR_PATTERN } from '../../../common/minor-units';
 
 class MutableSettlementFieldsDto {
   @ApiProperty({ format: 'uuid' })
@@ -34,33 +26,11 @@ class MutableSettlementFieldsDto {
 
 export class CreateSettlementDto extends MutableSettlementFieldsDto {}
 
-export class ReplaceSettlementDto extends MutableSettlementFieldsDto {
-  @ApiProperty({ minimum: 1 })
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  expectedVersion!: number;
-}
+export class ReplaceSettlementDto extends IntersectionType(
+  MutableSettlementFieldsDto,
+  ExpectedVersionDto,
+) {}
 
-export class ListSettlementsDto {
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  cursor?: string;
+export class ListSettlementsDto extends CursorPageQueryDto {}
 
-  @ApiPropertyOptional({ maximum: 100, minimum: 1 })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(100)
-  limit?: number;
-}
-
-export class DeleteSettlementDto {
-  @ApiProperty({ minimum: 1 })
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  expectedVersion!: number;
-}
+export class DeleteSettlementDto extends ExpectedVersionDto {}

@@ -7,8 +7,8 @@ import { Card, ErrorMessage, Screen } from '@/components/ui';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { forgotPassword } from '@/features/auth/api';
-import { AuthPageHeader } from '@/features/auth/components/auth-page-header';
 import { AuthTextField } from '@/features/auth/components/auth-field';
+import { AuthPageHeader } from '@/features/auth/components/auth-page-header';
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState('');
@@ -22,15 +22,15 @@ export default function ForgotPasswordScreen() {
             <Text className="text-[28px] font-bold text-primary">✓</Text>
           </View>
           <Text selectable className="text-xl font-semibold leading-[25px]">
-            Instructions requested
+            Check your email
           </Text>
           <Text
             selectable
             className="text-[15px] leading-[22px] text-muted-foreground"
           >
-            If an account exists for {email}, a reset link request has been
-            recorded. Reset email delivery is coming later, so no link has been
-            sent.
+            If an account exists for {email}, we&apos;ve sent a link to set a
+            new password. Open it on this phone within 60 minutes. Check your
+            spam folder if it doesn&apos;t arrive.
           </Text>
           <Text selectable className="text-xs leading-4 text-muted-foreground">
             We do not confirm whether an email is registered.

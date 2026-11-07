@@ -8,7 +8,7 @@ export function Footer() {
       <div className="site-width footer-grid">
         <div className="footer-statement">
           <BrandLockup />
-          <p>Hissab records debts and settlements between people. It never holds, sends, or converts money.</p>
+          <p>Tally Stick records debts and settlements between people. It never holds, sends, or converts money.</p>
         </div>
         <nav aria-label="Footer navigation">
           <Link href="/">Home</Link>
@@ -18,7 +18,7 @@ export function Footer() {
           <Link href="/delete-account/">Delete account</Link>
         </nav>
         <div className="footer-end">
-          <p>Operated by aliabdullah</p>
+          <p>Operated by Ali Abdullah</p>
           <EqualityMark />
         </div>
       </div>

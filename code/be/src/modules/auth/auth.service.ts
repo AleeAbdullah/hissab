@@ -74,8 +74,8 @@ export class AuthService {
       async (transaction) => {
         if (
           await this.repository.findPasswordAccountByEmail(
-            dto.email,
             transaction,
+            dto.email,
           )
         ) {
           throw new ConflictException(
@@ -157,8 +157,8 @@ export class AuthService {
       },
       async (transaction) => {
         const initial = await this.repository.findRefreshSessionByHash(
-          tokenHash,
           transaction,
+          tokenHash,
         );
         if (!initial) {
           return { ok: false };
@@ -166,8 +166,8 @@ export class AuthService {
 
         await this.repository.lockRefreshFamily(transaction, initial.familyId);
         const session = await this.repository.findRefreshSessionByHash(
-          tokenHash,
           transaction,
+          tokenHash,
           true,
         );
         if (!session) {
@@ -192,8 +192,8 @@ export class AuthService {
         }
 
         const user = await this.repository.findActiveAuthUserById(
-          session.userId,
           transaction,
+          session.userId,
         );
         if (!user) {
           return { ok: false };
@@ -233,8 +233,8 @@ export class AuthService {
       },
       async (transaction) => {
         const session = await this.repository.findRefreshSessionById(
-          sessionId,
           transaction,
+          sessionId,
         );
         if (session?.userId === userId) {
           await this.repository.revokeRefreshFamily(
@@ -282,8 +282,8 @@ export class AuthService {
       },
       async (transaction) => {
         const session = await this.repository.findRefreshSessionById(
-          sessionId,
           transaction,
+          sessionId,
         );
         if (session?.userId === userId) {
           await this.repository.revokeRefreshFamily(
@@ -337,8 +337,8 @@ export class AuthService {
       },
       async (transaction) => {
         const account = await this.repository.findPasswordAccountByEmail(
-          dto.email,
           transaction,
+          dto.email,
         );
         if (account?.status === 'ACTIVE') {
           await this.repository.invalidatePasswordResetTokens(
@@ -395,8 +395,8 @@ export class AuthService {
           return { ok: false };
         }
         const user = await this.repository.findActiveAuthUserById(
-          reset.userId,
           transaction,
+          reset.userId,
         );
         if (!user) {
           return { ok: false };
@@ -442,13 +442,13 @@ export class AuthService {
       },
       async (transaction) => {
         const user = await this.repository.findActiveAuthUserById(
-          userId,
           transaction,
+          userId,
         );
         const account = user
           ? await this.repository.findPasswordAccountByEmail(
-              user.email,
               transaction,
+              user.email,
             )
           : undefined;
         if (
@@ -478,8 +478,8 @@ export class AuthService {
     transaction: DatabaseTransaction,
   ): Promise<PasswordAccount> {
     const account = await this.repository.findPasswordAccountByEmail(
-      dto.email,
       transaction,
+      dto.email,
     );
     const valid = await this.passwordHasher.verify(
       dto.password,
@@ -534,12 +534,6 @@ export class AuthService {
       actorUserId: userId,
       eventType,
       aggregateType: 'USER',
-      aggregateId: userId,
-      payload,
-    });
-    await this.outbox.enqueue(transaction, {
-      eventType: `auth.${eventType.toLowerCase()}`,
-      aggregateType: 'user',
       aggregateId: userId,
       payload,
     });

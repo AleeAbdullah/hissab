@@ -28,7 +28,7 @@ Use this standard for shared expenses, settlements, personal transactions, money
 ## UX Rules
 
 - Use the approved fixed category lists. Do not add custom, percentage, or share-based split UI without product approval.
-- Use the shared Hissab dialog for destructive confirmations and app-owned overpayment warnings (KAN-4). Cancel/Back must preserve entered values and drafts. The backend accepts settlement credit without a confirmation flag.
+- Use the shared app dialog for destructive confirmations and app-owned overpayment warnings (KAN-4). Cancel/Back must preserve entered values and drafts. The backend accepts settlement credit without a confirmation flag.
 - Duplicate personal-transaction warnings are an app concern, but the heuristic is an open decision: do not invent one.
 - Dates and reports use the user's stored timezone. Do not infer timezone-sensitive grouping from device formatting alone when the API owns it.
 

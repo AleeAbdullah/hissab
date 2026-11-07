@@ -1,20 +1,9 @@
-import type { CreateExpenseDto } from '@/api/generated/types.gen';
 import type { SharedExpense, SharedExpenseCategoryCode } from '@/api/contracts';
+import type { CreateExpenseDto } from '@/api/generated/types.gen';
+import { dateToIso } from '@/lib/dates';
+import { minorToInput, parseMinorAmount } from '@/lib/money';
 
 export type AmountInputs = Record<string, string>;
-
-export function parseMinorAmount(value: string) {
-  const match = value.trim().match(/^(\d+)(?:\.(\d{1,2}))?$/);
-  if (!match) return null;
-  const whole = BigInt(match[1]);
-  const fraction = (match[2] ?? '').padEnd(2, '0');
-  return (whole * 100n + BigInt(fraction || '0')).toString();
-}
-
-export function minorToInput(minor: string) {
-  const digits = BigInt(minor).toString().padStart(3, '0');
-  return `${digits.slice(0, -2)}.${digits.slice(-2)}`;
-}
 
 export function buildExpenseBody(input: {
   amount: string;
@@ -26,20 +15,32 @@ export function buildExpenseBody(input: {
   payerUserIds: string[];
   participantUserIds: string[];
   splitMethod: 'EQUAL' | 'EXACT';
-}): { body: CreateExpenseDto } | { error: string } {
+}):
+  | { body: CreateExpenseDto }
+  | {
+      error: string;
+      field:
+        'amount' | 'description' | 'category' | 'date' | 'payers' | 'split';
+    } {
   const totalMinor = parseMinorAmount(input.amount);
   if (!totalMinor || BigInt(totalMinor) <= 0n)
-    return { error: 'Enter an amount greater than zero.' };
-  if (!input.description.trim()) return { error: 'Enter a description.' };
-  if (!input.categoryCode) return { error: 'Choose a category.' };
+    return { error: 'Enter an amount greater than zero.', field: 'amount' };
+  if (!input.description.trim())
+    return { error: 'Enter a description.', field: 'description' };
+  if (!input.categoryCode)
+    return { error: 'Choose a category.', field: 'category' };
   const occurredAt = dateToIso(input.occurredDate);
-  if (!occurredAt) return { error: 'Enter a valid date as YYYY-MM-DD.' };
+  if (!occurredAt)
+    return { error: 'Enter a valid date as YYYY-MM-DD.', field: 'date' };
   const payers = allocationsFor(input.payerUserIds, input.payerAmounts);
-  if ('error' in payers) return payers;
+  if ('error' in payers) return { ...payers, field: 'payers' };
   if (sum(payers.map((payer) => payer.amountMinor)) !== BigInt(totalMinor))
-    return { error: 'Payer amounts must add up to the total.' };
+    return {
+      error: 'Payer amounts must add up to the total.',
+      field: 'payers'
+    };
   if (!input.participantUserIds.length)
-    return { error: 'Choose at least one participant.' };
+    return { error: 'Choose at least one participant.', field: 'split' };
   if (input.splitMethod === 'EQUAL') {
     return {
       body: {
@@ -59,12 +60,15 @@ export function buildExpenseBody(input: {
     input.participantUserIds,
     input.exactAmounts
   );
-  if ('error' in allocations) return allocations;
+  if ('error' in allocations) return { ...allocations, field: 'split' };
   if (
     sum(allocations.map((allocation) => allocation.amountMinor)) !==
     BigInt(totalMinor)
   )
-    return { error: 'Exact split amounts must add up to the total.' };
+    return {
+      error: 'Exact split amounts must add up to the total.',
+      field: 'split'
+    };
   return {
     body: {
       categoryCode: input.categoryCode,
@@ -120,12 +124,16 @@ function sum(amounts: string[]) {
   return amounts.reduce((total, amount) => total + BigInt(amount), 0n);
 }
 
-export function dateToIso(value: string) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
-  const date = new Date(`${value}T00:00:00.000Z`);
-  return date.toISOString().slice(0, 10) === value ? date.toISOString() : null;
-}
-
-export function todayDate() {
-  return new Date().toISOString().slice(0, 10);
+export function equalAllocations(totalMinor: string, userIds: string[]) {
+  const ids = [...new Set(userIds)].sort();
+  if (!ids.length) return {} as Record<string, string>;
+  const total = BigInt(totalMinor);
+  const base = total / BigInt(ids.length);
+  const remainder = Number(total % BigInt(ids.length));
+  return Object.fromEntries(
+    ids.map((id, index) => [
+      id,
+      (base + (index < remainder ? 1n : 0n)).toString()
+    ])
+  );
 }

@@ -1,4 +1,3 @@
-import { useDialog } from '@/components/ui/dialog';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link, router, useLocalSearchParams } from 'expo-router';
 import { Stack } from 'expo-router/stack';
@@ -7,6 +6,7 @@ import { ActivityIndicator, View } from 'react-native';
 import { queryClient } from '@/api/query-client';
 import { Avatar, Card, ErrorMessage, Notice, Screen } from '@/components/ui';
 import { Button } from '@/components/ui/button';
+import { useDialog } from '@/components/ui/dialog';
 import { Text } from '@/components/ui/text';
 import {
   ledgerBalancesQuery,
@@ -82,8 +82,8 @@ export default function FriendSettingsScreen() {
       ) : null}
       {balances.isLoading ? (
         <Notice title="Checking balances">
-          Blocking remains unavailable until Hissab confirms this direct ledger
-          is settled.
+          Blocking remains unavailable until Tally Stick confirms this direct
+          ledger is settled.
         </Notice>
       ) : null}
       {balances.data && !settled ? (
@@ -129,6 +129,21 @@ export default function FriendSettingsScreen() {
       <Link href="/account/blocked-people" asChild>
         <Button variant="outline" role="link">
           <Text>View blocked people</Text>
+        </Button>
+      </Link>
+      <Link
+        href={{
+          pathname: '/report',
+          params: {
+            targetType: 'USER',
+            targetId: friendId,
+            name: friend?.displayName ?? ''
+          }
+        }}
+        asChild
+      >
+        <Button variant="outline" role="link">
+          <Text>Report person</Text>
         </Button>
       </Link>
     </Screen>

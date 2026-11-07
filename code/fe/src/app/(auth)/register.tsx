@@ -8,9 +8,9 @@ import { Card, ErrorMessage, Screen } from '@/components/ui';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { register } from '@/features/auth/api';
-import { AuthPageHeader } from '@/features/auth/components/auth-page-header';
 import { AuthTextField } from '@/features/auth/components/auth-field';
 import { AuthLegalLinks } from '@/features/auth/components/auth-legal-links';
+import { AuthPageHeader } from '@/features/auth/components/auth-page-header';
 
 export default function RegisterScreen() {
   const router = useRouter();

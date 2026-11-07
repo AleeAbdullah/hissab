@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 
+import { MAX_MINOR } from '../../common/minor-units';
 import {
   DatabaseService,
   type DatabaseTransaction,
@@ -24,7 +25,6 @@ import { OutboxService } from '../outbox';
 import type { CreateReminderDto } from './dto/create-reminder.dto';
 
 const COOLDOWN_MS = 24 * 60 * 60 * 1_000;
-const MAX_MINOR = 9_223_372_036_854_775_807n;
 
 type ReminderRow = typeof reminderRequests.$inferSelect;
 

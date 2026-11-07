@@ -1,11 +1,11 @@
 import Constants from 'expo-constants';
 
+import type { AuthTokens } from './contracts';
+import { errorMessage } from './error-message';
 import { client } from './generated/client.gen';
 import { authRefresh } from './generated/sdk.gen';
-import { errorMessage } from './error-message';
 import { runSingleRefresh } from './refresh-lock';
 import { clearTokens, getTokens, setTokens } from './session-store';
-import type { AuthTokens } from './contracts';
 
 type Result = {
   data?: unknown;

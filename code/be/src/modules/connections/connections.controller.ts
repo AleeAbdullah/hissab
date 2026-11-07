@@ -3,6 +3,7 @@ import {
   Delete,
   Get,
   HttpCode,
+  HttpStatus,
   Param,
   ParseUUIDPipe,
   Post,
@@ -54,7 +55,7 @@ export class ConnectionsController {
   }
 
   @Post('connection-requests/:requestId/accept')
-  @HttpCode(200)
+  @HttpCode(HttpStatus.OK)
   acceptRequest(
     @CurrentUser() user: AuthPrincipal,
     @Param('requestId', ParseUUIDPipe) requestId: string,
@@ -68,7 +69,7 @@ export class ConnectionsController {
   }
 
   @Post('connection-requests/:requestId/decline')
-  @HttpCode(200)
+  @HttpCode(HttpStatus.OK)
   declineRequest(
     @CurrentUser() user: AuthPrincipal,
     @Param('requestId', ParseUUIDPipe) requestId: string,
@@ -82,7 +83,7 @@ export class ConnectionsController {
   }
 
   @Post('connection-requests/:requestId/cancel')
-  @HttpCode(200)
+  @HttpCode(HttpStatus.OK)
   cancelRequest(
     @CurrentUser() user: AuthPrincipal,
     @Param('requestId', ParseUUIDPipe) requestId: string,

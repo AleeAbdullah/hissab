@@ -12,6 +12,7 @@ import {
   personalCategoriesQuery,
   personalReportQuery
 } from '@/features/personal/api';
+import { IncludeSharedSwitch } from '@/features/personal/components/include-shared-switch';
 import {
   SpendingChart,
   SpendingPlotFrame
@@ -20,7 +21,6 @@ import {
   CategorySwatch,
   SpendingDonut
 } from '@/features/personal/components/spending-donut';
-import { IncludeSharedSwitch } from '@/features/personal/components/include-shared-switch';
 import { periodLabel } from '@/features/personal/form';
 import {
   SPENDING_PERIOD_NAMES,
@@ -33,7 +33,8 @@ import {
   spendingShareLabel,
   type SpendingPeriod
 } from '@/features/personal/spending';
-import { cn, formatMinorAmount } from '@/lib/utils';
+import { formatMinorAmount } from '@/lib/money';
+import { cn } from '@/lib/utils';
 
 export function SpendingDetails({
   displayCurrency
@@ -71,7 +72,7 @@ export function SpendingDetails({
     (category) => category.kind === 'EXPENSE'
   );
   const categoryReports = useQueries({
-    // ponytail: nine fixed categories; use a grouped endpoint if the category list grows.
+    // Nine fixed categories. Use a grouped endpoint if the category list grows.
     queries: expenseCategories.map((category) => ({
       ...personalReportQuery({ ...filters, categoryCode: category.code }),
       enabled: hasSpending && !refreshing
@@ -154,13 +155,11 @@ export function SpendingDetails({
               <Button
                 key={option.value}
                 variant="ghost"
-                size="icon"
-                // 32-point visible body; hitSlop keeps the 48-point touch region.
-                hitSlop={{ top: 8, bottom: 8 }}
+                size="compact"
                 className={
                   graph === option.value
-                    ? 'h-8 rounded-full bg-card'
-                    : 'h-8 rounded-full'
+                    ? 'rounded-full bg-card'
+                    : 'rounded-full'
                 }
                 accessibilityLabel={option.label}
                 accessibilityState={{ selected: graph === option.value }}

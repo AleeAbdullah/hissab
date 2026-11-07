@@ -5,10 +5,10 @@ import { ActivityIndicator } from 'react-native';
 
 import { Card, ErrorMessage, Notice, Screen } from '@/components/ui';
 import { Button } from '@/components/ui/button';
-import { Text as ButtonText } from '@/components/ui/text';
+import { Text } from '@/components/ui/text';
 import { resetPassword } from '@/features/auth/api';
-import { AuthPageHeader } from '@/features/auth/components/auth-page-header';
 import { AuthTextField } from '@/features/auth/components/auth-field';
+import { AuthPageHeader } from '@/features/auth/components/auth-page-header';
 
 export default function ResetPasswordScreen() {
   const { token = '' } = useLocalSearchParams<{ token?: string }>();
@@ -30,7 +30,7 @@ export default function ResetPasswordScreen() {
         </Notice>
         <Link href="/sign-in" asChild>
           <Button variant="outline" role="link">
-            <ButtonText>Back to sign in</ButtonText>
+            <Text>Back to sign in</Text>
           </Button>
         </Link>
       </Screen>
@@ -77,15 +77,15 @@ export default function ResetPasswordScreen() {
         onPress={() => mutation.mutate()}
       >
         {mutation.isPending ? (
-          <ActivityIndicator color="white" />
+          <ActivityIndicator className="text-primary-foreground" />
         ) : (
-          <ButtonText>Save new password</ButtonText>
+          <Text>Save new password</Text>
         )}
       </Button>
       {!token ? (
         <Link href="/forgot-password" asChild>
           <Button variant="outline" role="link">
-            <ButtonText>Request a new link</ButtonText>
+            <Text>Request a new link</Text>
           </Button>
         </Link>
       ) : null}

@@ -597,6 +597,10 @@ export type ReplaceSettlementDto = {
     expectedVersion: number;
 };
 
+export type NotificationUnreadCountDto = {
+    unreadCount: number;
+};
+
 export type NotificationDto = {
     id: string;
     actorUserId: string | null;
@@ -685,6 +689,18 @@ export type ReminderCooldownResponseDto = {
     error: ReminderCooldownErrorDto;
     requestId: string;
     timestamp: string;
+};
+
+export type CreateReportDto = {
+    targetType: 'USER' | 'GROUP';
+    targetId: string;
+    reason: 'HARASSMENT' | 'SPAM_OR_SCAM' | 'INAPPROPRIATE_CONTENT' | 'IMPERSONATION' | 'OTHER';
+    details?: string;
+};
+
+export type ReportDto = {
+    id: string;
+    createdAt: string;
 };
 
 export type DeleteAccountDtoWritable = {
@@ -1839,6 +1855,19 @@ export type SettlementsReplaceSettlementResponses = {
 
 export type SettlementsReplaceSettlementResponse = SettlementsReplaceSettlementResponses[keyof SettlementsReplaceSettlementResponses];
 
+export type NotificationsGetUnreadCountData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/v1/notifications/unread-count';
+};
+
+export type NotificationsGetUnreadCountResponses = {
+    200: NotificationUnreadCountDto;
+};
+
+export type NotificationsGetUnreadCountResponse = NotificationsGetUnreadCountResponses[keyof NotificationsGetUnreadCountResponses];
+
 export type NotificationsListNotificationsData = {
     body?: never;
     path?: never;
@@ -1993,3 +2022,22 @@ export type RemindersCreateReminderResponses = {
 };
 
 export type RemindersCreateReminderResponse = RemindersCreateReminderResponses[keyof RemindersCreateReminderResponses];
+
+export type ReportsCreateReportData = {
+    body: CreateReportDto;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/reports';
+};
+
+export type ReportsCreateReportResponses = {
+    201: ReportDto;
+};
+
+export type ReportsCreateReportResponse = ReportsCreateReportResponses[keyof ReportsCreateReportResponses];

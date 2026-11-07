@@ -2,17 +2,17 @@ import { LegalClause, LegalPage } from '@/components/legal-page'
 
 export const metadata = {
   title: 'Delete your account',
-  description: 'How to permanently delete a Hissab account and its associated personal information.'
+  description: 'How to permanently delete a Tally Stick account and its associated personal information.'
 }
 
 <LegalPage
   eyebrow="Account deletion"
-  title="Delete your Hissab account."
+  title="Delete your Tally Stick account."
   lead="You can permanently delete your account in the app or submit a deletion request from the web."
   meta={{
     effective: 'September 6, 2026',
-    lastUpdated: 'September 6, 2026',
-    responsibleEntity: 'aliabdullah',
+    lastUpdated: 'November 7, 2026',
+    responsibleEntity: 'Ali Abdullah',
     contact: <a href="mailto:spam.alee.abd@gmail.com">spam.alee.abd@gmail.com</a>
   }}
   notice={null}
@@ -24,23 +24,23 @@ export const metadata = {
   ]}
 >
   <LegalClause number="01" id="in-app" title="Delete in the app">
-    <p>In Hissab, open <strong>Account</strong>, choose <strong>Delete account</strong>, enter your current password, type <strong>DELETE</strong> exactly, and confirm the native deletion prompt.</p>
+    <p>In Tally Stick, open <strong>Account</strong>, choose <strong>Delete account</strong>, enter your current password, type <strong>DELETE</strong> exactly, and confirm the deletion prompt.</p>
     <p>This is the fastest route because it verifies your identity inside the authenticated application.</p>
   </LegalClause>
 
   <LegalClause number="02" id="web-request" title="Request deletion from the web">
-    <p>Email <a href="mailto:spam.alee.abd@gmail.com?subject=Hissab%20account%20deletion%20request">spam.alee.abd@gmail.com</a> from the email address registered to your Hissab account with the subject “Hissab account deletion request.” We will verify account ownership before processing the request.</p>
+    <p>Email <a href="mailto:spam.alee.abd@gmail.com?subject=Tally%20Stick%20account%20deletion%20request">spam.alee.abd@gmail.com</a> from the email address registered to your Tally Stick account with the subject “Tally Stick account deletion request.” We will verify account ownership before processing the request.</p>
     <p>Do not include your password or financial details in the email.</p>
   </LegalClause>
 
   <LegalClause number="03" id="requirements" title="Before deletion">
-    <p>Every Hissab ledger balance must be zero and you must leave every active group before deletion can complete. If deletion is blocked, settle open balances and leave active groups, then try again or reply to the deletion-request email for assistance.</p>
+    <p>Every Tally Stick ledger balance must be zero and you must leave every active group before deletion can complete. If deletion is blocked, settle open balances and leave active groups, then try again or reply to the deletion-request email for assistance.</p>
     <p>Deletion is permanent and has no recovery period.</p>
   </LegalClause>
 
   <LegalClause number="04" id="data" title="What is deleted and retained">
     <p>Deletion removes your email, authentication credentials, device tokens, notifications, preferences, and other non-financial account and security information. All sessions are revoked immediately, pending invitations and connection requests are cancelled, and your profile becomes “Deleted user.”</p>
     <p>Immutable financial history is retained in anonymized form so other participants’ ledgers and resolved balances remain accurate. This includes relevant expense, allocation, settlement, and transaction revision records linked only to the anonymized account identifier. Limited residual copies may remain temporarily in protected backups until routine rotation.</p>
-    <p>See the <a href="/privacy/">Privacy Policy</a> for the complete description of Hissab’s data practices.</p>
+    <p>See the <a href="/privacy/">Privacy Policy</a> for the complete description of Tally Stick’s data practices.</p>
   </LegalClause>
 </LegalPage>

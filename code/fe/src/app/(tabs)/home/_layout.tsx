@@ -1,6 +1,8 @@
 import { Stack } from 'expo-router/stack';
 import { Platform } from 'react-native';
 
+import { InboxButton } from '@/features/account/components/inbox-button';
+
 export default function HomeLayout() {
   return (
     <Stack
@@ -12,7 +14,8 @@ export default function HomeLayout() {
       <Stack.Screen
         name="index"
         options={{
-          title: 'Hissab',
+          title: 'Tally Stick',
+          headerRight: () => <InboxButton />,
           headerLargeTitle: Platform.OS === 'ios',
           headerTitleAlign: 'left',
           headerTitleStyle: {
@@ -26,6 +29,10 @@ export default function HomeLayout() {
             fontSize: 32
           }
         }}
+      />
+      <Stack.Screen
+        name="inbox"
+        options={{ title: 'Inbox', headerTitleAlign: 'center' }}
       />
     </Stack>
   );

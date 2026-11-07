@@ -1,17 +1,16 @@
 import { randomUUID } from 'node:crypto';
 
 import { Injectable } from '@nestjs/common';
-import { and, desc, eq, inArray, isNotNull, ne } from 'drizzle-orm';
+import { and, desc, eq, ne } from 'drizzle-orm';
 
+import type { OccurrenceCursor } from '../../common/cursor';
 import {
   DatabaseService,
   type DatabaseTransaction,
 } from '../../database/database.service';
 import {
   financialEvents,
-  ledgerMembers,
   ledgerPostings,
-  ledgers,
   payments,
 } from '../../database/schema';
 
@@ -31,11 +30,6 @@ export interface SettlementView {
   createdAt: Date;
 }
 
-export interface SettlementCursor {
-  occurredAt: Date;
-  rootId: string;
-}
-
 export interface SettlementPosting {
   userId: string;
   amountMinor: bigint;
@@ -44,19 +38,6 @@ export interface SettlementPosting {
 export interface SettlementEffectSnapshot {
   id: string;
   postings: LedgerPostingRow[];
-}
-
-interface SettlementReadRow {
-  rootPaymentId: string;
-  ledgerId: string;
-  createdByUserId: string;
-  fromUserId: string;
-  toUserId: string;
-  amountMinor: string;
-  occurredAt: Date;
-  status: 'ACTIVE' | 'DELETED';
-  version: number;
-  createdAt: Date;
 }
 
 interface InsertRevisionInput {
@@ -81,77 +62,22 @@ interface InsertFinancialEventInput {
   postings: SettlementPosting[];
 }
 
+const SETTLEMENT_READ_COLUMNS = `
+  payment.root_payment_id AS id,
+  payment.ledger_id AS "ledgerId",
+  payment.created_by_user_id AS "createdByUserId",
+  payment.from_user_id AS "fromUserId",
+  payment.to_user_id AS "toUserId",
+  payment.amount_minor::text AS "amountMinor",
+  payment.occurred_at AS "occurredAt",
+  payment.status,
+  payment.version,
+  payment.created_at AS "createdAt"
+`;
+
 @Injectable()
 export class SettlementsRepository {
   constructor(private readonly database: DatabaseService) {}
-
-  async lockLedger(
-    transaction: DatabaseTransaction,
-    ledgerId: string,
-  ): Promise<{ id: string; status: 'ACTIVE' | 'ARCHIVED' } | undefined> {
-    const [ledger] = await transaction
-      .select({ id: ledgers.id, status: ledgers.status })
-      .from(ledgers)
-      .where(eq(ledgers.id, ledgerId))
-      .limit(1)
-      .for('update');
-    return ledger;
-  }
-
-  async isActiveMember(
-    transaction: DatabaseTransaction,
-    ledgerId: string,
-    userId: string,
-  ): Promise<boolean> {
-    const [member] = await transaction
-      .select({ userId: ledgerMembers.userId })
-      .from(ledgerMembers)
-      .where(
-        and(
-          eq(ledgerMembers.ledgerId, ledgerId),
-          eq(ledgerMembers.userId, userId),
-          eq(ledgerMembers.status, 'ACTIVE'),
-        ),
-      )
-      .limit(1);
-    return Boolean(member);
-  }
-
-  async findActiveMemberIds(
-    transaction: DatabaseTransaction,
-    ledgerId: string,
-    userIds: string[],
-  ): Promise<string[]> {
-    const rows = await transaction
-      .select({ userId: ledgerMembers.userId })
-      .from(ledgerMembers)
-      .where(
-        and(
-          eq(ledgerMembers.ledgerId, ledgerId),
-          eq(ledgerMembers.status, 'ACTIVE'),
-          inArray(ledgerMembers.userId, userIds),
-        ),
-      );
-    return rows.map(({ userId }) => userId);
-  }
-
-  async hasJoinedMembership(
-    ledgerId: string,
-    userId: string,
-  ): Promise<boolean> {
-    const [member] = await this.database.db
-      .select({ userId: ledgerMembers.userId })
-      .from(ledgerMembers)
-      .where(
-        and(
-          eq(ledgerMembers.ledgerId, ledgerId),
-          eq(ledgerMembers.userId, userId),
-          isNotNull(ledgerMembers.joinedAt),
-        ),
-      )
-      .limit(1);
-    return Boolean(member);
-  }
 
   async lockSettlementChain(
     transaction: DatabaseTransaction,
@@ -259,10 +185,10 @@ export class SettlementsRepository {
 
   async listSettlementViews(
     ledgerId: string,
-    cursor: SettlementCursor | null,
+    cursor: OccurrenceCursor | null,
     limit: number,
   ): Promise<SettlementView[]> {
-    const result = await this.database.pool.query<SettlementReadRow>(
+    const result = await this.database.pool.query<SettlementView>(
       `
         WITH ranked AS (
           SELECT payment.*,
@@ -273,16 +199,7 @@ export class SettlementsRepository {
           FROM payments payment
           WHERE payment.ledger_id = $1::uuid
         )
-        SELECT payment.root_payment_id AS "rootPaymentId",
-               payment.ledger_id AS "ledgerId",
-               payment.created_by_user_id AS "createdByUserId",
-               payment.from_user_id AS "fromUserId",
-               payment.to_user_id AS "toUserId",
-               payment.amount_minor::text AS "amountMinor",
-               payment.occurred_at AS "occurredAt",
-               payment.status,
-               payment.version,
-               payment.created_at AS "createdAt"
+        SELECT ${SETTLEMENT_READ_COLUMNS}
         FROM ranked payment
         WHERE payment.revision_order = 1
           AND (
@@ -295,36 +212,16 @@ export class SettlementsRepository {
       `,
       [ledgerId, cursor?.occurredAt ?? null, cursor?.rootId ?? null, limit],
     );
-    return result.rows.map((row) => ({
-      id: row.rootPaymentId,
-      ledgerId: row.ledgerId,
-      createdByUserId: row.createdByUserId,
-      fromUserId: row.fromUserId,
-      toUserId: row.toUserId,
-      amountMinor: row.amountMinor,
-      occurredAt: row.occurredAt,
-      status: row.status,
-      version: row.version,
-      createdAt: row.createdAt,
-    }));
+    return result.rows;
   }
 
   async findSettlementView(
     userId: string,
     rootPaymentId: string,
   ): Promise<SettlementView | null> {
-    const result = await this.database.pool.query<SettlementReadRow>(
+    const result = await this.database.pool.query<SettlementView>(
       `
-        SELECT payment.root_payment_id AS "rootPaymentId",
-               payment.ledger_id AS "ledgerId",
-               payment.created_by_user_id AS "createdByUserId",
-               payment.from_user_id AS "fromUserId",
-               payment.to_user_id AS "toUserId",
-               payment.amount_minor::text AS "amountMinor",
-               payment.occurred_at AS "occurredAt",
-               payment.status,
-               payment.version,
-               payment.created_at AS "createdAt"
+        SELECT ${SETTLEMENT_READ_COLUMNS}
         FROM payments payment
         JOIN ledger_members member
           ON member.ledger_id = payment.ledger_id
@@ -336,20 +233,21 @@ export class SettlementsRepository {
       `,
       [userId, rootPaymentId],
     );
-    const row = result.rows[0];
-    return row
-      ? {
-          id: row.rootPaymentId,
-          ledgerId: row.ledgerId,
-          createdByUserId: row.createdByUserId,
-          fromUserId: row.fromUserId,
-          toUserId: row.toUserId,
-          amountMinor: row.amountMinor,
-          occurredAt: row.occurredAt,
-          status: row.status,
-          version: row.version,
-          createdAt: row.createdAt,
-        }
-      : null;
+    return result.rows[0] ?? null;
+  }
+
+  toView(revision: SettlementRevisionRow): SettlementView {
+    return {
+      id: revision.rootPaymentId,
+      ledgerId: revision.ledgerId,
+      createdByUserId: revision.createdByUserId,
+      fromUserId: revision.fromUserId,
+      toUserId: revision.toUserId,
+      amountMinor: revision.amountMinor.toString(),
+      occurredAt: revision.occurredAt,
+      status: revision.status,
+      version: revision.version,
+      createdAt: revision.createdAt,
+    };
   }
 }

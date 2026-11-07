@@ -4,6 +4,9 @@ import { performance } from 'node:perf_hooks';
 
 import { Pool, type PoolClient } from 'pg';
 
+import { SHARED_EXPENSE_CATEGORY_CODES } from '../modules/expenses/dto/expenses.dto';
+import { PERSONAL_INCOME_CATEGORY_CODES } from '../modules/personal/personal.dto';
+
 interface Sample {
   id: string;
   reason: string;
@@ -21,6 +24,10 @@ interface Check {
 }
 
 const ZERO_UUID = '00000000-0000-0000-0000-000000000000';
+const sqlList = (codes: readonly string[]) =>
+  codes.map((code) => `'${code}'`).join(', ');
+const EXPENSE_CODES = sqlList(SHARED_EXPENSE_CATEGORY_CODES);
+const INCOME_CODES = sqlList(PERSONAL_INCOME_CATEGORY_CODES);
 
 const checks: Check[] = [
   {
@@ -176,10 +183,7 @@ const checks: Check[] = [
       WHERE category.id IS NULL
          OR NOT category.is_system
          OR category.kind <> 'EXPENSE'
-         OR category.code NOT IN (
-           'FOOD_AND_DRINK', 'GROCERIES', 'TRANSPORT', 'ACCOMMODATION',
-           'UTILITIES', 'ENTERTAINMENT', 'SHOPPING', 'HEALTHCARE', 'OTHER'
-         )
+         OR category.code NOT IN (${EXPENSE_CODES})
     `,
   },
   {
@@ -481,13 +485,8 @@ const checks: Check[] = [
       WHERE category.id IS NULL
          OR NOT category.is_system
          OR category.kind::text <> personal.type::text
-         OR (personal.type = 'EXPENSE' AND category.code NOT IN (
-           'FOOD_AND_DRINK', 'GROCERIES', 'TRANSPORT', 'ACCOMMODATION',
-           'UTILITIES', 'ENTERTAINMENT', 'SHOPPING', 'HEALTHCARE', 'OTHER'
-         ))
-         OR (personal.type = 'INCOME' AND category.code NOT IN (
-           'SALARY', 'FREELANCE', 'BUSINESS', 'GIFTS', 'REFUNDS', 'OTHER_INCOME'
-         ))
+         OR (personal.type = 'EXPENSE' AND category.code NOT IN (${EXPENSE_CODES}))
+         OR (personal.type = 'INCOME' AND category.code NOT IN (${INCOME_CODES}))
       UNION ALL
       SELECT account.id, 'invalid_user_lifecycle_shape'
       FROM users account

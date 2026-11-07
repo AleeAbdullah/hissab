@@ -1,5 +1,5 @@
-import { activityList } from '@/api/generated/sdk.gen';
 import type { ActivityArea, ActivityPage } from '@/api/contracts';
+import { activityList } from '@/api/generated/sdk.gen';
 import { request } from '@/api/transport';
 
 export type ActivityFilters = {

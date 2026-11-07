@@ -215,18 +215,19 @@ function HissabDialog({
   onClose: (action?: DialogAction) => void;
   onReady?: () => void;
 }) {
-  const { fontScale } = useWindowDimensions();
+  const { fontScale, height } = useWindowDimensions();
   // Unlike a native Modal, the window overlay keeps an already-open keyboard.
-  const [keyboardHeight, setKeyboardHeight] = useState(() =>
-    Platform.OS === 'ios' ? (Keyboard.metrics()?.height ?? 0) : 0
+  const [keyboardTop, setKeyboardTop] = useState(
+    () => Keyboard.metrics()?.screenY ?? null
   );
   useEffect(() => {
-    if (Platform.OS !== 'ios') return;
-    const show = Keyboard.addListener('keyboardWillShow', (event) =>
-      setKeyboardHeight(event.endCoordinates.height)
+    const show = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (event) => setKeyboardTop(event.endCoordinates.screenY)
     );
-    const hide = Keyboard.addListener('keyboardWillHide', () =>
-      setKeyboardHeight(0)
+    const hide = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => setKeyboardTop(null)
     );
     return () => {
       show.remove();
@@ -254,7 +255,13 @@ function HissabDialog({
         accessible={false}
         className="absolute inset-0 bg-scrim opacity-50 dark:opacity-70"
       />
-      <View className="flex-1" style={{ paddingBottom: keyboardHeight }}>
+      <View
+        className="flex-1"
+        style={{
+          paddingBottom:
+            keyboardTop === null ? 0 : Math.max(0, height - keyboardTop)
+        }}
+      >
         <SafeAreaView className="flex-1 items-center justify-center p-5">
           <View
             role="dialog"

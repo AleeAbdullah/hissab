@@ -1,18 +1,22 @@
-import { Transform, Type } from 'class-transformer';
+import {
+  ApiProperty,
+  ApiPropertyOptional,
+  IntersectionType,
+} from '@nestjs/swagger';
 import {
   IsIn,
-  IsInt,
   IsISO8601,
   IsOptional,
   IsString,
   Matches,
-  Max,
   MaxLength,
-  Min,
   MinLength,
 } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
+import { CursorPageQueryDto } from '../../common/dto/cursor-page-query.dto';
+import { ExpectedVersionDto } from '../../common/dto/expected-version.dto';
+import { Trim } from '../../common/dto/transforms';
+import { POSITIVE_MINOR_PATTERN } from '../../common/minor-units';
 import { SHARED_EXPENSE_CATEGORY_CODES } from '../expenses/dto/expenses.dto';
 
 export const PERSONAL_INCOME_CATEGORY_CODES = [
@@ -31,8 +35,6 @@ export const PERSONAL_CATEGORY_CODES = [
 
 export type PersonalTransactionType = 'INCOME' | 'EXPENSE';
 
-const POSITIVE_MINOR_PATTERN = '^[1-9][0-9]*$';
-
 class MutablePersonalTransactionDto {
   @ApiProperty({ enum: ['INCOME', 'EXPENSE'] })
   @IsIn(['INCOME', 'EXPENSE'])
@@ -48,9 +50,7 @@ class MutablePersonalTransactionDto {
   categoryCode!: (typeof PERSONAL_CATEGORY_CODES)[number];
 
   @ApiProperty({ example: 'Monthly salary', maxLength: 200 })
-  @Transform(({ value }: { value: unknown }) =>
-    typeof value === 'string' ? value.trim() : value,
-  )
+  @Trim()
   @IsString()
   @MinLength(1)
   @MaxLength(200)
@@ -61,9 +61,7 @@ class MutablePersonalTransactionDto {
   occurredAt!: string;
 
   @ApiPropertyOptional({ maxLength: 200, nullable: true })
-  @Transform(({ value }: { value: unknown }) =>
-    typeof value === 'string' ? value.trim() : value,
-  )
+  @Trim()
   @IsOptional()
   @IsString()
   @MinLength(1)
@@ -71,9 +69,7 @@ class MutablePersonalTransactionDto {
   merchantOrSource?: string | null;
 
   @ApiPropertyOptional({ maxLength: 2000, nullable: true })
-  @Transform(({ value }: { value: unknown }) =>
-    typeof value === 'string' ? value.trim() : value,
-  )
+  @Trim()
   @IsOptional()
   @IsString()
   @MinLength(1)
@@ -83,13 +79,10 @@ class MutablePersonalTransactionDto {
 
 export class CreatePersonalTransactionDto extends MutablePersonalTransactionDto {}
 
-export class ReplacePersonalTransactionDto extends MutablePersonalTransactionDto {
-  @ApiProperty({ minimum: 1 })
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  expectedVersion!: number;
-}
+export class ReplacePersonalTransactionDto extends IntersectionType(
+  MutablePersonalTransactionDto,
+  ExpectedVersionDto,
+) {}
 
 class PersonalTransactionFiltersDto {
   @ApiPropertyOptional({
@@ -119,7 +112,7 @@ class PersonalTransactionFiltersDto {
   categoryCode?: (typeof PERSONAL_CATEGORY_CODES)[number];
 }
 
-export class ListPersonalTransactionsDto extends PersonalTransactionFiltersDto {
+class PersonalTransactionSearchDto extends PersonalTransactionFiltersDto {
   @ApiPropertyOptional({ pattern: '^[0-9]+$', maxLength: 19 })
   @IsOptional()
   @IsString()
@@ -139,21 +132,12 @@ export class ListPersonalTransactionsDto extends PersonalTransactionFiltersDto {
   @IsString()
   @MaxLength(100)
   search?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  @MaxLength(512)
-  cursor?: string;
-
-  @ApiPropertyOptional({ maximum: 100, minimum: 1 })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(100)
-  limit?: number;
 }
+
+export class ListPersonalTransactionsDto extends IntersectionType(
+  PersonalTransactionSearchDto,
+  CursorPageQueryDto,
+) {}
 
 export class ListPersonalHistoryDto extends ListPersonalTransactionsDto {
   @ApiPropertyOptional({ enum: ['true', 'false'], default: 'true' })
@@ -183,13 +167,7 @@ export class PersonalReportDto extends PersonalTransactionFiltersDto {
   bucket?: 'DAY' | 'MONTH';
 }
 
-export class DeletePersonalTransactionDto {
-  @ApiProperty({ minimum: 1 })
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  expectedVersion!: number;
-}
+export class DeletePersonalTransactionDto extends ExpectedVersionDto {}
 
 export class PersonalCategoryDto {
   @ApiProperty({ enum: PERSONAL_CATEGORY_CODES })

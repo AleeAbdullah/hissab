@@ -1,4 +1,4 @@
-# Hissab repository contract
+# Tally Stick repository contract
 
 This file applies to the entire repository. Read it before changing product behavior, data models, API contracts, routes, or UI.
 
@@ -30,11 +30,11 @@ Preserve the audit contents and screen numbers. These screenshots are historical
 
 ## Product contract
 
-- Hissab records debts and settlements. It never holds, sends, or converts money.
-- Hissab is intended for users aged 18 or older. Configure Google Play's target audience as 18 and over and restrict minor access.
+- Tally Stick records debts and settlements. It never holds, sends, or converts money.
+- Tally Stick is intended for users aged 16 or older. Configure Google Play's target audience as 16–17 and 18 and over, and restrict access for younger users. The App Store age rating follows Apple's content questionnaire.
 - Keep exactly five tabs in this order: Groups, Activity, Home, Personal, Account. Friends is accessed from the Groups screen and remains part of the Groups navigation stack.
 - Shared and Personal are separate contexts. Shared activity must not silently become a personal transaction or vice versa.
-- Financial amounts are currency-neutral integer minor units. Hissab does not hold, send, convert, or record a money denomination.
+- Financial amounts are currency-neutral integer minor units. Tally Stick does not hold, send, convert, or record a money denomination.
 - Each user may select a `displayCurrency` in Settings from PKR, USD, GBP, EUR, AED, and SAR. It controls only the symbol rendered by that user’s frontend, may differ between viewers, and never converts or changes a financial record.
 - The target shared-expense model supports multiple payers and Equal or Exact splits only.
 - Shared-expense APIs operate on both direct friend ledgers and group ledgers.
@@ -49,7 +49,7 @@ Preserve the audit contents and screen numbers. These screenshots are historical
 - Authoritative balances are computed from immutable ledger postings, grouped by ledger and user; do not persist mutable balance projections.
 - Debt simplification is read-only and optional.
 - Group types are not part of v1.
-- Group invitations are in-app only and target existing Hissab users. An invited user cannot participate until they explicitly accept.
+- Group invitations are in-app only and target existing Tally Stick users. An invited user cannot participate until they explicitly accept.
 - Groups have no roles. Every active member has the same group-management privileges.
 - Leaving a group and archiving a group are blocked by unsettled balances. Users cannot be removed from groups.
 - Any active group member may update the group, invite users, cancel invitations, or archive a fully settled group.
@@ -65,7 +65,10 @@ Preserve the audit contents and screen numbers. These screenshots are historical
 - Personal transaction and report queries may filter by date range, type, and category. Duplicate warnings are entirely an app concern; the backend does not detect, block, merge, or annotate possible duplicates.
 - Shared Activity contains expense, settlement, group, invitation, connection, block, and unblock events. It excludes authentication, session, profile, and security events.
 - Activity supports area, ledger, opaque-cursor, and limit filters. Ledger events are visible to users who joined that ledger historically; connection events are visible to both parties; block and unblock events are actor-only.
+- Users may privately report a person they share a ledger or connection request with, or a group they belong to, choosing a fixed reason (Harassment, Spam or scam, Inappropriate content, Impersonation, Other) with optional details up to 1,000 characters. The reported party is never notified and reports create no Activity entry. Each report is emailed to the support address; account deletion clears the reporter's details text.
+- Password-reset links are emailed through Resend and open an HTTPS handoff page on the public site that carries the token only in the URL fragment and opens the app's reset screen. The delivered token is scrubbed from the outbox.
 - Durable in-app notifications cover shared financial changes, group invitations, connection requests and acceptance, and manual reminders. Push preferences have master, expense, settlement, social, and reminder switches.
+- The Inbox is a dedicated screen opened from a top-right Home action; notification preferences stay in Account. An unread badge may show only the authoritative server unread count, never a count estimated from loaded pages, and is hidden while that count is loading or unavailable.
 - Realtime delivery uses authenticated Socket.IO invalidations without replay; clients refetch authoritative HTTP state after reconnect or invalidation.
 - A manual reminder requires the sender to be owed and the recipient to owe in the same active ledger. Apply one rolling 24-hour cooldown per recipient and ledger, regardless of sender.
 - Reminder push copy is `Balance reminder from {name}` and `You have an unsettled balance in {ledger}.`; do not include an amount on the lock screen.
@@ -81,7 +84,7 @@ Preserve the audit contents and screen numbers. These screenshots are historical
 Implemented now:
 
 - health, authentication, users, idempotency, and a durable outbox worker;
-- registration, sign-in, password reset primitives, and password change;
+- registration, sign-in, emailed password reset, and password change;
 - profile, preferences, session listing, and session revocation;
 - exact-email user discovery, friend requests, direct connections, blocking, and unblocking;
 - group creation, reads, name updates, equal-privilege membership, invitations, leaving, and archival;
@@ -90,23 +93,25 @@ Implemented now:
 - immutable external settlement records with reversal-based edits and tombstone deletion;
 - structured shared Activity queries with filters, historical-ledger visibility, and opaque cursor pagination;
 - durable in-app notifications, preferences, Expo device registration, push ticket/receipt handling, and invalid-token revocation;
+- authenticated, read-only inbox unread count for the active user and session;
 - authenticated Socket.IO invalidations over PostgreSQL `LISTEN`/`NOTIFY`;
 - balance-aware manual reminders with a rolling 24-hour cooldown;
+- private user and group reports emailed to support;
 - fixed personal categories, immutable manual personal transactions, and UTC-grouped personal reports that include shared allocations;
 - versioned JSON account export and irreversible, balance-aware account anonymization with immediate session revocation;
-- read-only operator reconciliation for schema guardrails, immutable histories, financial postings, and account lifecycle state.
+- read-only operator reconciliation for schema guardrails, immutable histories, financial postings, and account lifecycle state;
+- user-scoped filesystem persistence for approved query-read snapshots and form drafts, with versioned envelopes and query-cache expiry.
 
 Incomplete or intentionally unavailable:
 
-- password-reset email delivery;
 - receipt attachments;
-- query persistence, offline financial writes, and local SQLite drafts.
+- offline financial writes and SQLite-backed persistence. Existing query snapshots and drafts use filesystem JSON, not SQLite.
 
 Routes for unimplemented modules must show an honest Coming Later state. Never invent financial data to make a screen look complete.
 
-## Target v1
+## v1 scope
 
-Build only when the relevant work is requested:
+Maintain existing behavior within this scope; implement missing behavior only when requested:
 
 - groups, membership administration rules, and invitations;
 - multi-payer expenses with immutable payer and split allocations;
@@ -148,7 +153,7 @@ Explicitly post-v1 or out of scope:
 - Overpayment confirmation is enforced by the app, not by settlement APIs.
 - Duplicate personal transactions may trigger a warning but must never be auto-merged.
 - Personal transaction replacement and deletion use optimistic `expectedVersion` concurrency.
-- Financial writes require a network connection. Cached reads and local drafts may be added later, but queued automatic financial mutations are not allowed.
+- Financial writes require a network connection. Existing cached reads and local drafts provide recovery only; queued automatic financial mutations are not allowed.
 - Account deletion is blocked by unresolved balances or required memberships. Once allowed, anonymize personal data while retaining the financial audit trail.
 
 ## API and security
@@ -162,24 +167,24 @@ Explicitly post-v1 or out of scope:
 - Password-reset tokens expire after 60 minutes.
 - Password change invalidates sessions; clear local credentials and return to sign-in.
 - Every protected HTTP request must verify that its user is active and its referenced session remains active, not merely that its JWT signature is valid.
-- New accounts default to PKR as a display preference; Settings is the only currency-selection surface. Hissab does not store a user timezone.
+- New accounts default to PKR as a display preference; Settings is the only currency-selection surface. Tally Stick does not store a user timezone.
 
 ## Frontend rules
 
-- Use TanStack Query for server state. In-memory query state is current behavior; SQLite persistence is deferred.
+- Use TanStack Query for server state. Approved query reads and form drafts persist as versioned, user-scoped filesystem JSON; hydrate cached reads before authenticated consumers render. The server remains authoritative. SQLite persistence is deferred.
 - Keep route files focused on composition. Reuse existing components and hooks before adding helpers.
 - Use the generated client for request shapes and the shared response contracts for parsing.
 - A visible control must work or be visibly disabled with truthful copy.
-- Every app-owned choice, confirmation, warning, error, and success prompt uses the shared Hissab dialog on Android and iOS (KAN-4). OS permissions, folder pickers, and share sheets stay native.
+- Every app-owned choice, confirmation, warning, error, and success prompt uses the shared app dialog on Android and iOS (KAN-4). OS permissions, folder pickers, and share sheets stay native.
 - Dialog confirmations dismiss only through their safe Cancel action or platform Back; backdrop taps do nothing. Cancellation preserves input and drafts and never runs the confirmed action. Keep all authorization, financial, deletion, and optimistic-version guards.
 - Dialogs use a centered popover-token surface, 20-point corners, a border hairline, no shadow, 20-point screen margins, maximum width 400, and 24-point padding over an Ink scrim (50% light / 70% dark). Keep actions visible above the keyboard, scroll the body as needed, announce title/body, contain focus, and restore it to the trigger.
 - Dialog actions use sentence case and native minimum touch targets. Place two short actions side by side with Cancel left; stack primary first and Cancel last for three actions, labels longer than 16 characters, or font scale 1.3+. Use filled Copper for primary, semantic destructive fill for destructive actions, Copper outlines with theme-aware primary text for peer choices, and borderless foreground text for Cancel. Warnings, errors, and success have semantic icons.
 - Use native platform chrome and predictive-back behavior where supported.
-- Use `Hissab` capitalization everywhere.
+- Use `Tally Stick` (two words, title case) as the product name in all user-visible copy. The app was formerly named Hissab; internal identifiers keep `hissab` (bundle ID, URL scheme, storage keys, database, JWT issuer, EAS slug, skill path) and must not be renamed.
 - Friends may show connection state and authoritative balances using the viewing user’s display symbol.
 - Session screens must not infer device location from unavailable data.
 - “Revoke other sessions” is one backend mutation, not a client loop.
-- Terms and Privacy controls link to `https://hisab-weld-psi.vercel.app/terms/` and `https://hisab-weld-psi.vercel.app/privacy/`. The public account-deletion resource is `https://hisab-weld-psi.vercel.app/delete-account/`.
+- Terms and Privacy controls link to `https://hissabapp.vercel.app/terms/` and `https://hissabapp.vercel.app/privacy/`. The public account-deletion resource is `https://hissabapp.vercel.app/delete-account/`.
 
 ## Design and accessibility
 
@@ -189,9 +194,9 @@ Explicitly post-v1 or out of scope:
 - In dark appearance, Copper text and icons use `#E0805C` for contrast; filled primary buttons retain `#A83A1B`.
 - Reserve green `#2E7D59` for positive money and success states; it is not a second brand color.
 - The Copper/Paper system is implemented across every mockup section.
-- Use a 4-point spacing grid: 20-point page gutters, 16-point card gaps and field padding, and 32-point major sections. Controls use 12-point radii, cards use 16, sheets/dialogs use 20, and visible button bodies are 32 points high with a 48 dp/44 pt minimum touch region.
+- Use a 4-point spacing grid: 20-point page gutters, 16-point card gaps and field padding, and 32-point major sections. Controls use 12-point radii, cards use 16, sheets/dialogs use 20, and buttons use exactly two sizes. Default buttons have a visible body of at least 48 points that grows with text; use them for full-width and primary actions, bottom action bars, form submission, dialog actions, and empty-state calls to action. Compact buttons have a visible body of at least 32 points that grows with text inside a 48 dp/44 pt minimum touch region at least 48 points wide; use them for actions inside rows or cards, such as Invite, Cancel invitation, Remind, Mark all read, Home card actions, and chips. Do not add other button heights.
 - Center inline navigation titles against the screen, not between unequal leading and trailing controls. Keep tab-root large titles left-aligned.
-- Use serif typography only for the Hissab wordmark and editorial welcome heading. Keep product UI in a sans serif: page titles 32/38, body 16/24, supporting text 15/22, and labels 12/16.
+- Use serif typography only for the Tally Stick wordmark and editorial welcome heading. Keep product UI in a sans serif: page titles 32/38, body 16/24, supporting text 15/22, and labels 12/16.
 - Use Paper as the canvas, near-white cards, thin warm dividers, and no card shadows. Primary actions are filled Copper; secondary actions are Copper outlines; green, amber, and red stay semantic.
 - Support light and dark appearance.
 - Minimum touch targets are 44 points on iOS and 48 dp on Android.
@@ -211,7 +216,7 @@ Do not guess these:
 
 ## Verification
 
-Automated test files and test runners are intentionally not maintained. Product testing is manual.
+Conventional automated test suites and test runners are intentionally not maintained. Use the existing focused Node assertion checks where applicable; product testing is manual.
 
 Backend changes:
 

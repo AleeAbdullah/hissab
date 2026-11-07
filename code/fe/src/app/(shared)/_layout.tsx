@@ -5,6 +5,7 @@ export default function SharedLayout() {
     <Stack
       screenOptions={{
         headerBackButtonDisplayMode: 'minimal',
+        headerTitleAlign: 'center',
         headerShadowVisible: false
       }}
     >

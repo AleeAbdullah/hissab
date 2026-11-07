@@ -5,9 +5,16 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
+import {
+  decodeOccurrenceCursor,
+  encodeOccurrenceCursor,
+  pageOf,
+} from '../../common/cursor';
+import { recordDomainChange } from '../../common/domain-change';
+import { parseMinorAmount } from '../../common/minor-units';
 import type { DatabaseTransaction } from '../../database/database.service';
-import { activityEvents } from '../../database/schema';
 import { IdempotencyService } from '../idempotency';
+import { LedgerAccessRepository } from '../ledgers';
 import { OutboxService } from '../outbox';
 import {
   SHARED_EXPENSE_CATEGORY_CODES,
@@ -17,9 +24,8 @@ import {
 } from './dto/expenses.dto';
 import {
   type ExpenseAllocation,
+  type ExpenseCategory,
   type ExpenseCategoryView,
-  type ExpenseCursor,
-  type ExpenseParticipantView,
   type ExpenseRevisionRow,
   type ExpenseSplitAllocation,
   type ExpenseView,
@@ -29,23 +35,21 @@ import {
   ExpensesRepository,
 } from './expenses.repository';
 
-const MAX_MINOR = 9_223_372_036_854_775_807n;
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
 interface PreparedExpense {
   description: string;
   totalMinor: bigint;
   occurredAt: Date;
   payers: ExpenseAllocation[];
   splits: ExpenseSplitAllocation[];
-  memberUserIds: string[];
 }
+
+type ExpenseChange = 'CREATED' | 'REPLACED' | 'DELETED';
 
 @Injectable()
 export class ExpensesService {
   constructor(
     private readonly repository: ExpensesRepository,
+    private readonly ledgers: LedgerAccessRepository,
     private readonly idempotency: IdempotencyService,
     private readonly outbox: OutboxService,
   ) {}
@@ -57,7 +61,10 @@ export class ExpensesService {
     );
     return categories
       .filter(({ code }) => order.has(code))
-      .sort((left, right) => order.get(left.code)! - order.get(right.code)!);
+      .sort(
+        (left, right) =>
+          (order.get(left.code) ?? 0) - (order.get(right.code) ?? 0),
+      );
   }
 
   createExpense(
@@ -75,13 +82,9 @@ export class ExpensesService {
         routeScope: 'expenses:create',
       },
       async (transaction) => {
-        await this.requireWritableLedger(transaction, ledgerId, userId);
+        await this.ledgers.requireWritableLedger(transaction, ledgerId, userId);
         const prepared = this.prepareExpense(dto);
-        await this.requireActiveAllocationMembers(
-          transaction,
-          ledgerId,
-          prepared,
-        );
+        await this.requireActiveMembers(transaction, ledgerId, prepared);
         const category = await this.requireCategory(
           transaction,
           dto.categoryCode,
@@ -98,23 +101,8 @@ export class ExpensesService {
           payers: prepared.payers,
           splits: prepared.splits,
         });
-        await this.repository.insertFinancialEvent(transaction, {
-          ledgerId,
-          expenseId: revision.id,
-          eventType: 'CREATED',
-          createdByUserId: userId,
-          allocations: this.eventAllocations(prepared),
-          postings: this.postings(prepared),
-        });
-        await this.recordChange(
-          transaction,
-          userId,
-          ledgerId,
-          revision.rootExpenseId,
-          'CREATED',
-          revision.version,
-          prepared.totalMinor,
-        );
+        await this.applyEffect(transaction, userId, revision, prepared);
+        await this.recordChange(transaction, userId, revision, 'CREATED');
         return this.toView(revision, category, prepared);
       },
     );
@@ -126,25 +114,13 @@ export class ExpensesService {
     query: ListExpensesDto,
   ): Promise<{ items: ExpenseView[]; nextCursor: string | null }> {
     const limit = query.limit ?? 50;
-    if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
-      throw new BadRequestException('limit must be between 1 and 100.');
-    }
-    if (!(await this.repository.hasJoinedMembership(ledgerId, userId))) {
-      throw new NotFoundException('Ledger not found.');
-    }
+    await this.ledgers.requireJoinedMembership(ledgerId, userId);
     const rows = await this.repository.listExpenseViews(
       ledgerId,
-      query.cursor ? this.decodeCursor(query.cursor) : null,
+      query.cursor ? decodeOccurrenceCursor(query.cursor, 'expense') : null,
       limit + 1,
     );
-    const items = rows.slice(0, limit);
-    return {
-      items,
-      nextCursor:
-        rows.length > limit && items.length > 0
-          ? this.encodeCursor(items[items.length - 1])
-          : null,
-    };
+    return pageOf(rows, limit, encodeOccurrenceCursor);
   }
 
   async getExpense(userId: string, expenseId: string): Promise<ExpenseView> {
@@ -177,17 +153,12 @@ export class ExpensesService {
           dto.expectedVersion,
         );
         const prepared = this.prepareExpense(dto);
-        await this.requireActiveAllocationMembers(
-          transaction,
-          latest.ledgerId,
-          prepared,
-        );
+        await this.requireActiveMembers(transaction, latest.ledgerId, prepared);
         const category = await this.requireCategory(
           transaction,
           dto.categoryCode,
         );
-        const previousEffect = await this.requireEffect(transaction, latest.id);
-        await this.reverseEffect(transaction, userId, latest, previousEffect);
+        await this.reverseEffect(transaction, userId, latest);
         const revision = await this.repository.insertRevision(transaction, {
           rootExpenseId: latest.rootExpenseId,
           replacesExpenseId: latest.id,
@@ -202,23 +173,8 @@ export class ExpensesService {
           payers: prepared.payers,
           splits: prepared.splits,
         });
-        await this.repository.insertFinancialEvent(transaction, {
-          ledgerId: latest.ledgerId,
-          expenseId: revision.id,
-          eventType: 'REPLACEMENT',
-          createdByUserId: userId,
-          allocations: this.eventAllocations(prepared),
-          postings: this.postings(prepared),
-        });
-        await this.recordChange(
-          transaction,
-          userId,
-          latest.ledgerId,
-          rootExpenseId,
-          'REPLACED',
-          revision.version,
-          prepared.totalMinor,
-        );
+        await this.applyEffect(transaction, userId, revision, prepared);
+        await this.recordChange(transaction, userId, revision, 'REPLACED');
         return this.toView(revision, category, prepared);
       },
     );
@@ -249,19 +205,20 @@ export class ExpensesService {
           transaction,
           latest.id,
         );
-        await this.requireActiveUserIds(transaction, latest.ledgerId, [
-          ...allocations.payers.map(({ userId }) => userId),
-          ...allocations.splits.map(({ userId }) => userId),
-        ]);
-        const category = await this.repository.findCategoryById(
-          transaction,
-          latest.categoryId,
-        );
+        const snapshot: PreparedExpense = {
+          description: latest.description,
+          totalMinor: latest.totalMinor,
+          occurredAt: latest.occurredAt,
+          ...allocations,
+        };
+        await this.requireActiveMembers(transaction, latest.ledgerId, snapshot);
+        const category = await this.repository.findCategory(transaction, {
+          id: latest.categoryId,
+        });
         if (!category) {
           throw new Error('Expense category snapshot is missing.');
         }
-        const previousEffect = await this.requireEffect(transaction, latest.id);
-        await this.reverseEffect(transaction, userId, latest, previousEffect);
+        await this.reverseEffect(transaction, userId, latest);
         const revision = await this.repository.insertRevision(transaction, {
           rootExpenseId: latest.rootExpenseId,
           replacesExpenseId: latest.id,
@@ -276,28 +233,8 @@ export class ExpensesService {
           payers: allocations.payers,
           splits: allocations.splits,
         });
-        await this.recordChange(
-          transaction,
-          userId,
-          latest.ledgerId,
-          rootExpenseId,
-          'DELETED',
-          revision.version,
-          latest.totalMinor,
-        );
-        return this.toView(revision, category, {
-          description: latest.description,
-          totalMinor: latest.totalMinor,
-          occurredAt: latest.occurredAt,
-          payers: allocations.payers,
-          splits: allocations.splits,
-          memberUserIds: [
-            ...new Set([
-              ...allocations.payers.map(({ userId }) => userId),
-              ...allocations.splits.map(({ userId }) => userId),
-            ]),
-          ],
-        });
+        await this.recordChange(transaction, userId, revision, 'DELETED');
+        return this.toView(revision, category, snapshot);
       },
     );
   }
@@ -305,34 +242,15 @@ export class ExpensesService {
   private prepareExpense(
     dto: CreateExpenseDto | ReplaceExpenseDto,
   ): PreparedExpense {
-    if (
-      !dto.split ||
-      typeof dto.split !== 'object' ||
-      !['EQUAL', 'EXACT'].includes(dto.split.method)
-    ) {
-      throw new BadRequestException('Split method must be EQUAL or EXACT.');
-    }
-    const totalMinor = this.parseMinor(dto.totalMinor);
-    const description = dto.description.trim();
-    if (!description) {
-      throw new BadRequestException('Description is required.');
-    }
-    const occurredAt = new Date(dto.occurredAt);
-    if (Number.isNaN(occurredAt.getTime())) {
-      throw new BadRequestException('occurredAt must be a valid date-time.');
-    }
+    const totalMinor = parseMinorAmount(dto.totalMinor);
     const payers = this.normalizeAllocations(dto.payers);
     if (this.sum(payers) !== totalMinor) {
       throw new BadRequestException('Payer allocations must equal the total.');
     }
 
     let splits: ExpenseSplitAllocation[];
-    let participantUserIds: string[];
     if (dto.split.method === 'EQUAL') {
       const userIds = this.uniqueUserIds(dto.split.participantUserIds);
-      if (userIds.length === 0) {
-        throw new BadRequestException('At least one participant is required.');
-      }
       const base = totalMinor / BigInt(userIds.length);
       const remainder = Number(totalMinor % BigInt(userIds.length));
       splits = userIds.flatMap((userId, index) => {
@@ -341,7 +259,6 @@ export class ExpensesService {
           ? [{ userId, amountMinor, splitMethod: 'EQUAL' as const }]
           : [];
       });
-      participantUserIds = userIds;
     } else {
       splits = this.normalizeAllocations(dto.split.allocations).map(
         (allocation) => ({ ...allocation, splitMethod: 'EXACT' as const }),
@@ -351,29 +268,19 @@ export class ExpensesService {
           'Participant allocations must equal the total.',
         );
       }
-      participantUserIds = splits.map(({ userId }) => userId);
     }
     return {
-      description,
+      description: dto.description,
       totalMinor,
-      occurredAt,
+      occurredAt: new Date(dto.occurredAt),
       payers,
       splits,
-      memberUserIds: [
-        ...new Set([
-          ...payers.map(({ userId }) => userId),
-          ...participantUserIds,
-        ]),
-      ],
     };
   }
 
   private normalizeAllocations(
     allocations: Array<{ userId: string; amountMinor: string }>,
   ): ExpenseAllocation[] {
-    if (allocations.length === 0) {
-      throw new BadRequestException('At least one allocation is required.');
-    }
     const seen = new Set<string>();
     return allocations
       .map(({ userId, amountMinor }) => {
@@ -384,7 +291,7 @@ export class ExpensesService {
         seen.add(normalizedUserId);
         return {
           userId: normalizedUserId,
-          amountMinor: this.parseMinor(amountMinor),
+          amountMinor: parseMinorAmount(amountMinor),
         };
       })
       .sort((left, right) => left.userId.localeCompare(right.userId));
@@ -398,21 +305,30 @@ export class ExpensesService {
     return normalized.sort();
   }
 
-  private parseMinor(value: string): bigint {
-    if (!/^[1-9][0-9]*$/.test(value)) {
-      throw new BadRequestException(
-        'Minor-unit amounts must be positive integer strings.',
-      );
-    }
-    const amount = BigInt(value);
-    if (amount > MAX_MINOR) {
-      throw new BadRequestException('Minor-unit amount exceeds 64-bit range.');
-    }
-    return amount;
-  }
-
   private sum(allocations: ExpenseAllocation[]): bigint {
     return allocations.reduce((total, item) => total + item.amountMinor, 0n);
+  }
+
+  private memberUserIds(prepared: PreparedExpense): string[] {
+    return [
+      ...new Set([
+        ...prepared.payers.map(({ userId }) => userId),
+        ...prepared.splits.map(({ userId }) => userId),
+      ]),
+    ];
+  }
+
+  private requireActiveMembers(
+    transaction: DatabaseTransaction,
+    ledgerId: string,
+    prepared: PreparedExpense,
+  ): Promise<void> {
+    return this.ledgers.requireActiveMembers(
+      transaction,
+      ledgerId,
+      this.memberUserIds(prepared),
+      'All payers and participants must be active ledger members.',
+    );
   }
 
   private eventAllocations(
@@ -433,6 +349,7 @@ export class ExpensesService {
     ];
   }
 
+  // A user's net posting is paid minus owed; zero nets are omitted.
   private postings(prepared: PreparedExpense): FinancialEventPosting[] {
     const net = new Map<string, bigint>();
     for (const payer of prepared.payers) {
@@ -445,23 +362,6 @@ export class ExpensesService {
       .filter(([, amountMinor]) => amountMinor !== 0n)
       .sort(([left], [right]) => left.localeCompare(right))
       .map(([userId, amountMinor]) => ({ userId, amountMinor }));
-  }
-
-  private async requireWritableLedger(
-    transaction: DatabaseTransaction,
-    ledgerId: string,
-    userId: string,
-  ): Promise<void> {
-    const ledger = await this.repository.lockLedger(transaction, ledgerId);
-    if (
-      !ledger ||
-      !(await this.repository.isActiveMember(transaction, ledgerId, userId))
-    ) {
-      throw new NotFoundException('Ledger not found.');
-    }
-    if (ledger.status !== 'ACTIVE') {
-      throw new ConflictException('Archived ledgers are read-only.');
-    }
   }
 
   private async requireMutableExpense(
@@ -477,12 +377,11 @@ export class ExpensesService {
     if (!latest || latest.createdByUserId !== userId) {
       throw new NotFoundException('Expense not found.');
     }
-    await this.requireWritableLedger(transaction, latest.ledgerId, userId);
-    if (!Number.isInteger(expectedVersion) || expectedVersion < 1) {
-      throw new BadRequestException(
-        'expectedVersion must be a positive integer.',
-      );
-    }
+    await this.ledgers.requireWritableLedger(
+      transaction,
+      latest.ledgerId,
+      userId,
+    );
     if (latest.version !== expectedVersion) {
       throw new ConflictException('Expense version conflict.');
     }
@@ -492,42 +391,12 @@ export class ExpensesService {
     return latest;
   }
 
-  private async requireActiveAllocationMembers(
-    transaction: DatabaseTransaction,
-    ledgerId: string,
-    prepared: PreparedExpense,
-  ): Promise<void> {
-    await this.requireActiveUserIds(
-      transaction,
-      ledgerId,
-      prepared.memberUserIds,
-    );
-  }
-
-  private async requireActiveUserIds(
-    transaction: DatabaseTransaction,
-    ledgerId: string,
-    userIds: string[],
-  ): Promise<void> {
-    const unique = [...new Set(userIds)].sort();
-    const active = await this.repository.findActiveMemberIds(
-      transaction,
-      ledgerId,
-      unique,
-    );
-    if (active.length !== unique.length) {
-      throw new BadRequestException(
-        'All payers and participants must be active ledger members.',
-      );
-    }
-  }
-
   private async requireCategory(
     transaction: DatabaseTransaction,
     code: string,
-  ): Promise<ExpenseCategoryView & { id: string }> {
-    const category = await this.repository.findCategory(transaction, code);
-    if (!category || !SHARED_EXPENSE_CATEGORY_CODES.includes(code as never)) {
+  ): Promise<ExpenseCategory> {
+    const category = await this.repository.findCategory(transaction, { code });
+    if (!category) {
       throw new NotFoundException('Shared expense category not found.');
     }
     return category;
@@ -547,12 +416,28 @@ export class ExpensesService {
     return effect;
   }
 
+  private applyEffect(
+    transaction: DatabaseTransaction,
+    userId: string,
+    revision: ExpenseRevisionRow,
+    prepared: PreparedExpense,
+  ): Promise<string> {
+    return this.repository.insertFinancialEvent(transaction, {
+      ledgerId: revision.ledgerId,
+      expenseId: revision.id,
+      eventType: revision.version === 1 ? 'CREATED' : 'REPLACEMENT',
+      createdByUserId: userId,
+      allocations: this.eventAllocations(prepared),
+      postings: this.postings(prepared),
+    });
+  }
+
   private async reverseEffect(
     transaction: DatabaseTransaction,
     userId: string,
     revision: ExpenseRevisionRow,
-    effect: FinancialEffectSnapshot,
   ): Promise<void> {
+    const effect = await this.requireEffect(transaction, revision.id);
     await this.repository.insertFinancialEvent(transaction, {
       ledgerId: revision.ledgerId,
       expenseId: revision.id,
@@ -577,20 +462,13 @@ export class ExpensesService {
     category: ExpenseCategoryView,
     prepared: PreparedExpense,
   ): ExpenseView {
-    const participants: ExpenseParticipantView[] = prepared.splits.map(
-      (split) => ({
-        userId: split.userId,
-        owedMinor: split.amountMinor.toString(),
-        splitMethod: split.splitMethod,
-      }),
-    );
     return {
       id: revision.rootExpenseId,
       ledgerId: revision.ledgerId,
       createdByUserId: revision.createdByUserId,
       description: revision.description,
       totalMinor: revision.totalMinor.toString(),
-      category,
+      category: { code: category.code, name: category.name },
       occurredAt: revision.occurredAt,
       status: revision.status,
       version: revision.version,
@@ -598,64 +476,31 @@ export class ExpensesService {
         userId: payer.userId,
         amountMinor: payer.amountMinor.toString(),
       })),
-      participants,
+      participants: prepared.splits.map((split) => ({
+        userId: split.userId,
+        owedMinor: split.amountMinor.toString(),
+        splitMethod: split.splitMethod,
+      })),
       createdAt: revision.createdAt,
     };
   }
 
-  private encodeCursor(expense: ExpenseView): string {
-    return Buffer.from(
-      JSON.stringify([expense.occurredAt.toISOString(), expense.id]),
-    ).toString('base64url');
-  }
-
-  private decodeCursor(cursor: string): ExpenseCursor {
-    try {
-      const parsed: unknown = JSON.parse(
-        Buffer.from(cursor, 'base64url').toString('utf8'),
-      );
-      if (
-        !Array.isArray(parsed) ||
-        parsed.length !== 2 ||
-        typeof parsed[0] !== 'string' ||
-        typeof parsed[1] !== 'string' ||
-        !UUID_PATTERN.test(parsed[1])
-      ) {
-        throw new Error('invalid cursor');
-      }
-      const occurredAt = new Date(parsed[0]);
-      if (Number.isNaN(occurredAt.getTime())) {
-        throw new Error('invalid cursor date');
-      }
-      return { occurredAt, rootId: parsed[1].toLowerCase() };
-    } catch {
-      throw new BadRequestException('Invalid expense cursor.');
-    }
-  }
-
-  private async recordChange(
+  private recordChange(
     transaction: DatabaseTransaction,
     actorUserId: string,
-    ledgerId: string,
-    expenseId: string,
-    eventType: 'CREATED' | 'REPLACED' | 'DELETED',
-    version: number,
-    totalMinor: bigint,
+    revision: ExpenseRevisionRow,
+    eventType: ExpenseChange,
   ): Promise<void> {
-    const payload = { version, totalMinor: totalMinor.toString() };
-    await transaction.insert(activityEvents).values({
+    return recordDomainChange(transaction, this.outbox, {
       actorUserId,
-      ledgerId,
-      eventType: `EXPENSE_${eventType}`,
-      aggregateType: 'EXPENSE',
-      aggregateId: expenseId,
-      payload,
-    });
-    await this.outbox.enqueue(transaction, {
-      eventType: `expense.${eventType.toLowerCase()}`,
-      aggregateType: 'expense',
-      aggregateId: expenseId,
-      payload: { actorUserId, ledgerId, ...payload },
+      aggregate: 'EXPENSE',
+      aggregateId: revision.rootExpenseId,
+      eventType,
+      ledgerId: revision.ledgerId,
+      payload: {
+        version: revision.version,
+        totalMinor: revision.totalMinor.toString(),
+      },
     });
   }
 }

@@ -21,7 +21,7 @@ Use this standard for persisted query reads, form drafts, filesystem data, hydra
 
 - Use stable, domain-scoped draft keys containing the immutable owner, such as a ledger ID.
 - Save user-entered form values, not authoritative balances or derived server records.
-- Preserve drafts across recoverable navigation/app interruptions; clear only after successful submission or explicit native discard confirmation.
+- Preserve drafts across recoverable navigation/app interruptions. Within an active session, clear only after successful submission or explicit discard confirmation through the shared app dialog. Session cleanup follows the [authentication standard](auth-security-standard.md).
 - A full disk, corrupt file, or unavailable recovery store must not block the core online flow.
 
 ## Offline Boundary

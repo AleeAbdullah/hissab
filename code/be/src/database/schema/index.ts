@@ -19,12 +19,17 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 
+import { DISPLAY_CURRENCIES } from '../../common/display-currency';
+
 const citext = customType<{ data: string }>({
   dataType: () => 'citext',
 });
 
 const displayCurrencyCheck = (column: AnyPgColumn) =>
-  sql`${column}::text IN ('PKR', 'USD', 'GBP', 'EUR', 'AED', 'SAR')`;
+  sql`${column}::text IN (${sql.join(
+    DISPLAY_CURRENCIES.map((code) => sql`${code}`),
+    sql`, `,
+  )})`;
 
 export const userStatusEnum = pgEnum('user_status', [
   'ACTIVE',
@@ -1200,5 +1205,53 @@ export const reminderRequests = pgTable(
       table.recipientUserId,
       table.createdAt.desc(),
     ),
+  ],
+);
+
+export const REPORT_REASONS = [
+  'HARASSMENT',
+  'SPAM_OR_SCAM',
+  'INAPPROPRIATE_CONTENT',
+  'IMPERSONATION',
+  'OTHER',
+] as const;
+
+export const userReports = pgTable(
+  'user_reports',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    reporterUserId: uuid('reporter_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    reportedUserId: uuid('reported_user_id').references(() => users.id, {
+      onDelete: 'restrict',
+    }),
+    groupLedgerId: uuid('group_ledger_id').references(() => ledgers.id, {
+      onDelete: 'restrict',
+    }),
+    reason: text('reason').notNull(),
+    details: text('details'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    check(
+      'user_reports_single_target_check',
+      sql`(${table.reportedUserId} IS NULL) <> (${table.groupLedgerId} IS NULL)`,
+    ),
+    check(
+      'user_reports_not_self_check',
+      sql`${table.reportedUserId} IS NULL OR ${table.reportedUserId} <> ${table.reporterUserId}`,
+    ),
+    check(
+      'user_reports_reason_check',
+      sql`${table.reason} IN ('HARASSMENT', 'SPAM_OR_SCAM', 'INAPPROPRIATE_CONTENT', 'IMPERSONATION', 'OTHER')`,
+    ),
+    check(
+      'user_reports_details_length_check',
+      sql`${table.details} IS NULL OR char_length(${table.details}) BETWEEN 1 AND 1000`,
+    ),
+    index('user_reports_reporter_idx').on(table.reporterUserId),
   ],
 );

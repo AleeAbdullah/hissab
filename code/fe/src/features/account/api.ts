@@ -1,3 +1,13 @@
+import type {
+  AccountDeletionResult,
+  InAppNotification,
+  NotificationDevice,
+  NotificationPage,
+  NotificationPreferences,
+  NotificationUnreadCount,
+  Profile,
+  Session
+} from '@/api/contracts';
 import {
   accountDeleteAccount,
   accountExportAccount,
@@ -6,6 +16,7 @@ import {
   authRevokeSession,
   notificationsGetNotificationPreferences,
   notificationsListNotifications,
+  notificationsGetUnreadCount,
   notificationsMarkAllNotificationsRead,
   notificationsMarkNotificationRead,
   notificationsRegisterNotificationDevice,
@@ -21,15 +32,6 @@ import type {
   UpdateNotificationPreferencesDto,
   UpdateProfileDto
 } from '@/api/generated/types.gen';
-import type {
-  AccountDeletionResult,
-  InAppNotification,
-  NotificationDevice,
-  NotificationPage,
-  NotificationPreferences,
-  Profile,
-  Session
-} from '@/api/contracts';
 import { idempotencyKey, request } from '@/api/transport';
 
 export const profileQuery = {
@@ -51,6 +53,12 @@ export const notificationPreferencesQuery = {
 };
 
 export const notificationInboxQueryKey = ['notifications'] as const;
+
+export const unreadCountQuery = {
+  queryKey: ['notifications', 'unread-count'] as const,
+  queryFn: () =>
+    request<NotificationUnreadCount>(() => notificationsGetUnreadCount())
+};
 
 export function notificationInboxInfiniteQuery() {
   return {

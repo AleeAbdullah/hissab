@@ -1,8 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { and, eq, isNotNull } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 
-import { DatabaseService } from '../../database/database.service';
-import { ledgerMembers } from '../../database/schema';
+import {
+  type AppDatabase,
+  DatabaseService,
+  type DatabaseTransaction,
+} from '../../database/database.service';
+import { financialEvents, ledgerPostings } from '../../database/schema';
 
 export interface UserBalanceRow {
   ledgerId: string;
@@ -49,22 +53,29 @@ export class BalancesRepository {
     return result.rows;
   }
 
-  async hasJoinedMembership(
-    userId: string,
+  // True when any member (or the given member) still has a non-zero net.
+  async hasUnsettledBalance(
+    executor: AppDatabase | DatabaseTransaction,
     ledgerId: string,
+    userId?: string,
   ): Promise<boolean> {
-    const [membership] = await this.database.db
-      .select({ userId: ledgerMembers.userId })
-      .from(ledgerMembers)
+    const [balance] = await executor
+      .select({ userId: ledgerPostings.userId })
+      .from(ledgerPostings)
+      .innerJoin(
+        financialEvents,
+        eq(financialEvents.id, ledgerPostings.financialEventId),
+      )
       .where(
         and(
-          eq(ledgerMembers.ledgerId, ledgerId),
-          eq(ledgerMembers.userId, userId),
-          isNotNull(ledgerMembers.joinedAt),
+          eq(financialEvents.ledgerId, ledgerId),
+          userId ? eq(ledgerPostings.userId, userId) : undefined,
         ),
       )
+      .groupBy(ledgerPostings.userId)
+      .having(sql`sum(${ledgerPostings.amountMinor}) <> 0`)
       .limit(1);
-    return Boolean(membership);
+    return Boolean(balance);
   }
 
   async listLedgerBalances(

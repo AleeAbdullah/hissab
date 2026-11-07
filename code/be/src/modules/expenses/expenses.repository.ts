@@ -1,8 +1,9 @@
 import { randomUUID } from 'node:crypto';
 
 import { Injectable } from '@nestjs/common';
-import { and, asc, desc, eq, inArray, isNotNull, ne } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, ne } from 'drizzle-orm';
 
+import type { OccurrenceCursor } from '../../common/cursor';
 import {
   DatabaseService,
   type DatabaseTransaction,
@@ -14,9 +15,7 @@ import {
   expenses,
   expenseSplits,
   financialEvents,
-  ledgerMembers,
   ledgerPostings,
-  ledgers,
 } from '../../database/schema';
 
 export type ExpenseRevisionRow = typeof expenses.$inferSelect;
@@ -26,6 +25,10 @@ type LedgerPostingRow = typeof ledgerPostings.$inferSelect;
 export interface ExpenseCategoryView {
   code: string;
   name: string;
+}
+
+export interface ExpenseCategory extends ExpenseCategoryView {
+  id: string;
 }
 
 export interface ExpensePayerView {
@@ -52,11 +55,6 @@ export interface ExpenseView {
   payers: ExpensePayerView[];
   participants: ExpenseParticipantView[];
   createdAt: Date;
-}
-
-export interface ExpenseCursor {
-  occurredAt: Date;
-  rootId: string;
 }
 
 export interface ExpenseAllocation {
@@ -121,6 +119,21 @@ interface InsertFinancialEventInput {
   postings: FinancialEventPosting[];
 }
 
+const EXPENSE_READ_COLUMNS = `
+  expense.id AS "revisionId",
+  expense.root_expense_id AS "rootExpenseId",
+  expense.ledger_id AS "ledgerId",
+  expense.created_by_user_id AS "createdByUserId",
+  expense.description,
+  expense.total_minor::text AS "totalMinor",
+  category.code AS "categoryCode",
+  category.name AS "categoryName",
+  expense.occurred_at AS "occurredAt",
+  expense.status,
+  expense.version,
+  expense.created_at AS "createdAt"
+`;
+
 @Injectable()
 export class ExpensesRepository {
   constructor(private readonly database: DatabaseService) {}
@@ -137,8 +150,8 @@ export class ExpensesRepository {
 
   async findCategory(
     transaction: DatabaseTransaction,
-    code: string,
-  ): Promise<(ExpenseCategoryView & { id: string }) | undefined> {
+    key: { code: string } | { id: string },
+  ): Promise<ExpenseCategory | undefined> {
     const [category] = await transaction
       .select({
         id: categories.id,
@@ -148,106 +161,15 @@ export class ExpensesRepository {
       .from(categories)
       .where(
         and(
-          eq(categories.code, code),
+          'code' in key
+            ? eq(categories.code, key.code)
+            : eq(categories.id, key.id),
           eq(categories.isSystem, true),
           eq(categories.kind, 'EXPENSE'),
         ),
       )
       .limit(1);
     return category?.code ? { ...category, code: category.code } : undefined;
-  }
-
-  async findCategoryById(
-    transaction: DatabaseTransaction,
-    categoryId: string,
-  ): Promise<(ExpenseCategoryView & { id: string }) | undefined> {
-    const [category] = await transaction
-      .select({
-        id: categories.id,
-        code: categories.code,
-        name: categories.name,
-      })
-      .from(categories)
-      .where(
-        and(
-          eq(categories.id, categoryId),
-          eq(categories.isSystem, true),
-          eq(categories.kind, 'EXPENSE'),
-        ),
-      )
-      .limit(1);
-    return category?.code ? { ...category, code: category.code } : undefined;
-  }
-
-  async lockLedger(
-    transaction: DatabaseTransaction,
-    ledgerId: string,
-  ): Promise<{ id: string; status: 'ACTIVE' | 'ARCHIVED' } | undefined> {
-    const [ledger] = await transaction
-      .select({ id: ledgers.id, status: ledgers.status })
-      .from(ledgers)
-      .where(eq(ledgers.id, ledgerId))
-      .limit(1)
-      .for('update');
-    return ledger;
-  }
-
-  async isActiveMember(
-    transaction: DatabaseTransaction,
-    ledgerId: string,
-    userId: string,
-  ): Promise<boolean> {
-    const [membership] = await transaction
-      .select({ userId: ledgerMembers.userId })
-      .from(ledgerMembers)
-      .where(
-        and(
-          eq(ledgerMembers.ledgerId, ledgerId),
-          eq(ledgerMembers.userId, userId),
-          eq(ledgerMembers.status, 'ACTIVE'),
-        ),
-      )
-      .limit(1);
-    return Boolean(membership);
-  }
-
-  async hasJoinedMembership(
-    ledgerId: string,
-    userId: string,
-  ): Promise<boolean> {
-    const [membership] = await this.database.db
-      .select({ userId: ledgerMembers.userId })
-      .from(ledgerMembers)
-      .where(
-        and(
-          eq(ledgerMembers.ledgerId, ledgerId),
-          eq(ledgerMembers.userId, userId),
-          isNotNull(ledgerMembers.joinedAt),
-        ),
-      )
-      .limit(1);
-    return Boolean(membership);
-  }
-
-  async findActiveMemberIds(
-    transaction: DatabaseTransaction,
-    ledgerId: string,
-    userIds: string[],
-  ): Promise<string[]> {
-    if (userIds.length === 0) {
-      return [];
-    }
-    const rows = await transaction
-      .select({ userId: ledgerMembers.userId })
-      .from(ledgerMembers)
-      .where(
-        and(
-          eq(ledgerMembers.ledgerId, ledgerId),
-          eq(ledgerMembers.status, 'ACTIVE'),
-          inArray(ledgerMembers.userId, userIds),
-        ),
-      );
-    return rows.map(({ userId }) => userId);
   }
 
   async lockExpenseChain(
@@ -419,7 +341,7 @@ export class ExpensesRepository {
 
   async listExpenseViews(
     ledgerId: string,
-    cursor: ExpenseCursor | null,
+    cursor: OccurrenceCursor | null,
     limit: number,
   ): Promise<ExpenseView[]> {
     const result = await this.database.pool.query<ExpenseReadRow>(
@@ -433,18 +355,7 @@ export class ExpensesRepository {
           FROM expenses expense
           WHERE expense.ledger_id = $1::uuid
         )
-        SELECT expense.id AS "revisionId",
-               expense.root_expense_id AS "rootExpenseId",
-               expense.ledger_id AS "ledgerId",
-               expense.created_by_user_id AS "createdByUserId",
-               expense.description,
-               expense.total_minor::text AS "totalMinor",
-               category.code AS "categoryCode",
-               category.name AS "categoryName",
-               expense.occurred_at AS "occurredAt",
-               expense.status,
-               expense.version,
-               expense.created_at AS "createdAt"
+        SELECT ${EXPENSE_READ_COLUMNS}
         FROM ranked expense
         JOIN categories category ON category.id = expense.category_id
         WHERE expense.revision_order = 1
@@ -467,18 +378,7 @@ export class ExpensesRepository {
   ): Promise<ExpenseView | null> {
     const result = await this.database.pool.query<ExpenseReadRow>(
       `
-        SELECT expense.id AS "revisionId",
-               expense.root_expense_id AS "rootExpenseId",
-               expense.ledger_id AS "ledgerId",
-               expense.created_by_user_id AS "createdByUserId",
-               expense.description,
-               expense.total_minor::text AS "totalMinor",
-               category.code AS "categoryCode",
-               category.name AS "categoryName",
-               expense.occurred_at AS "occurredAt",
-               expense.status,
-               expense.version,
-               expense.created_at AS "createdAt"
+        SELECT ${EXPENSE_READ_COLUMNS}
         FROM expenses expense
         JOIN categories category ON category.id = expense.category_id
         JOIN ledger_members member

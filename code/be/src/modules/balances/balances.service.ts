@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 
-import { BalancesRepository, type UserBalanceRow } from './balances.repository';
+import { LedgerAccessRepository } from '../ledgers';
+import { BalancesRepository } from './balances.repository';
 
 export interface UserBalancesView {
   totalNetMinor: string;
@@ -25,38 +26,29 @@ export interface LedgerBalancesView {
 
 @Injectable()
 export class BalancesService {
-  constructor(private readonly repository: BalancesRepository) {}
+  constructor(
+    private readonly repository: BalancesRepository,
+    private readonly ledgers: LedgerAccessRepository,
+  ) {}
 
   async listUserBalances(userId: string): Promise<UserBalancesView> {
-    const rows = await this.repository.listUserBalances(userId);
-    return this.groupUserBalances(rows);
+    const ledgers = await this.repository.listUserBalances(userId);
+    return {
+      totalNetMinor: ledgers
+        .reduce((total, ledger) => total + BigInt(ledger.netMinor), 0n)
+        .toString(),
+      ledgers,
+    };
   }
 
   async listLedgerBalances(
     userId: string,
     ledgerId: string,
   ): Promise<LedgerBalancesView> {
-    if (!(await this.repository.hasJoinedMembership(userId, ledgerId))) {
-      throw new NotFoundException('Ledger not found.');
-    }
+    await this.ledgers.requireJoinedMembership(ledgerId, userId);
     return {
       ledgerId,
       members: await this.repository.listLedgerBalances(userId, ledgerId),
-    };
-  }
-
-  private groupUserBalances(rows: UserBalanceRow[]): UserBalancesView {
-    const ledgers = rows.map((row) => ({
-      ledgerId: row.ledgerId,
-      ledgerType: row.ledgerType,
-      ledgerStatus: row.ledgerStatus,
-      netMinor: row.netMinor,
-    }));
-    return {
-      totalNetMinor: rows
-        .reduce((total, row) => total + BigInt(row.netMinor), 0n)
-        .toString(),
-      ledgers,
     };
   }
 }

@@ -34,7 +34,10 @@ export class AccountController {
   constructor(private readonly account: AccountService) {}
 
   @Get('export')
-  @Header('Content-Disposition', 'attachment; filename="hissab-export.json"')
+  @Header(
+    'Content-Disposition',
+    'attachment; filename="tally-stick-export.json"',
+  )
   @ApiProduces('application/json')
   @ApiOkResponse({ type: AccountExportDto })
   async exportAccount(

@@ -1,5 +1,10 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
+import {
+  DISPLAY_CURRENCIES,
+  type DisplayCurrency,
+} from '../../common/display-currency';
+
 export const HOME_RECENT_KINDS = [
   'PERSONAL_INCOME',
   'PERSONAL_EXPENSE',
@@ -86,8 +91,8 @@ export class HomeSharedSummaryDto {
 }
 
 export class HomeDto {
-  @ApiProperty({ enum: ['PKR', 'USD', 'GBP', 'EUR', 'AED', 'SAR'] })
-  currency!: string;
+  @ApiProperty({ enum: DISPLAY_CURRENCIES })
+  currency!: DisplayCurrency;
 
   @ApiProperty({ type: HomePersonalSummaryDto })
   personal!: HomePersonalSummaryDto;

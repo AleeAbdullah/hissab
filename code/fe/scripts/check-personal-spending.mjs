@@ -1,10 +1,19 @@
 import assert from 'node:assert/strict';
-import {
-  spendingPoints,
-  spendingRange,
-  spendingRatio,
-  spendingSegments
-} from '../src/features/personal/spending.ts';
+import { registerHooks } from 'node:module';
+
+registerHooks({
+  resolve(specifier, context, nextResolve) {
+    return nextResolve(
+      specifier.startsWith('@/')
+        ? new URL(`../src/${specifier.slice(2)}.ts`, import.meta.url).href
+        : specifier,
+      context
+    );
+  }
+});
+
+const { spendingPoints, spendingRange, spendingRatio, spendingSegments } =
+  await import('../src/features/personal/spending.ts');
 
 const now = new Date('2026-01-01T23:30:00-05:00');
 assert.deepEqual(spendingRange('1M', now), {

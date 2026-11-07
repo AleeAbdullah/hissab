@@ -1,5 +1,5 @@
-import { PieChart } from 'react-native-gifted-charts';
 import { View } from 'react-native';
+import { PieChart } from 'react-native-gifted-charts';
 
 import { Text } from '@/components/ui/text';
 import { SpendingPlotFrame } from '@/features/personal/components/spending-chart';

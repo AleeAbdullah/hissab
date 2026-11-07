@@ -35,8 +35,14 @@ import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { AmountRangeSlider } from '@/features/personal/components/amount-range-slider';
+import {
+  currentPeriodDates,
+  formatDate,
+  localDateKey,
+  localPickerDate
+} from '@/lib/dates';
+import { formatMinorAmount } from '@/lib/money';
 import { THEME_VARIABLES, useThemeVariable } from '@/lib/theme';
-import { formatMinorAmount } from '@/lib/utils';
 
 export type TransactionFilters = {
   type?: PersonalTransactionType;
@@ -67,24 +73,9 @@ const CATEGORY_ICONS: Record<PersonalCategoryCode, LucideIcon> = {
   OTHER_INCOME: CircleDollarSign
 };
 
-function dateKey(date: Date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-}
-
-function pickerDate(value?: string) {
-  if (!value) return new Date();
-  const [year, month, day] = value.split('-').map(Number);
-  return new Date(year, month - 1, day, 12);
-}
-
 function dateLabel(value?: string) {
   if (!value) return 'Any date';
-  return new Intl.DateTimeFormat(undefined, {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    timeZone: 'UTC'
-  }).format(new Date(`${value}T12:00:00.000Z`));
+  return formatDate(value);
 }
 
 export function TransactionFilterSheet({
@@ -105,6 +96,16 @@ export function TransactionFilterSheet({
   visible: boolean;
 }) {
   const primaryColor = useThemeVariable(THEME_VARIABLES.primary);
+  const amountMaximum = [
+    amountLimitMinor,
+    filters.minAmountMinor,
+    filters.maxAmountMinor
+  ].reduce((maximum, value) => {
+    const amount = BigInt(value ?? '0');
+    return amount > maximum ? amount : maximum;
+  }, 0n);
+  const sliderMaximum =
+    amountMaximum > 0n ? amountMaximum.toString() : undefined;
   const [draftCategoryCode, setDraftCategoryCode] = useState(
     filters.categoryCode
   );
@@ -114,10 +115,13 @@ export function TransactionFilterSheet({
     filters.minAmountMinor ?? '0'
   );
   const [draftMaximum, setDraftMaximum] = useState(
-    filters.maxAmountMinor ?? amountLimitMinor ?? '0'
+    filters.maxAmountMinor ?? sliderMaximum ?? '0'
+  );
+  const [draftUpperLimited, setDraftUpperLimited] = useState(
+    filters.maxAmountMinor !== undefined
   );
   const [expanded, setExpanded] = useState<FilterSection | null>(
-    amountLimitMinor ? 'AMOUNT' : null
+    sliderMaximum ? 'AMOUNT' : null
   );
   const [pickingDate, setPickingDate] = useState<'from' | 'to' | null>(null);
 
@@ -127,10 +131,7 @@ export function TransactionFilterSheet({
   const selectedCategory = categories.find(
     (category) => category.code === draftCategoryCode
   );
-  const amountActive = amountLimitMinor
-    ? BigInt(draftMinimum) > 0n ||
-      BigInt(draftMaximum) < BigInt(amountLimitMinor)
-    : false;
+  const amountActive = BigInt(draftMinimum) > 0n || draftUpperLimited;
   const datesActive = Boolean(draftFromDate || draftToDate);
   const activeCount =
     Number(Boolean(draftCategoryCode)) +
@@ -192,8 +193,8 @@ export function TransactionFilterSheet({
               Filters
             </Text>
             <Button
+              className="w-12 px-0"
               variant="ghost"
-              size="icon"
               accessibilityLabel="Close filters"
               onPress={onClose}
             >
@@ -215,7 +216,7 @@ export function TransactionFilterSheet({
             )}
             {expanded === 'AMOUNT' ? (
               <View className="gap-3 py-4">
-                {amountLimitMinor ? (
+                {sliderMaximum ? (
                   <>
                     <Text className="text-center text-base text-foreground">
                       {formatMinorAmount(draftMinimum, displayCurrency)} –{' '}
@@ -223,19 +224,20 @@ export function TransactionFilterSheet({
                     </Text>
                     <AmountRangeSlider
                       displayCurrency={displayCurrency}
-                      maximumMinor={amountLimitMinor}
+                      maximumMinor={sliderMaximum}
                       minimumMinor={draftMinimum}
                       upperMinor={draftMaximum}
                       onChange={(minimum, maximum) => {
                         setDraftMinimum(minimum);
                         setDraftMaximum(maximum);
+                        setDraftUpperLimited(BigInt(maximum) < amountMaximum);
                       }}
                     />
                   </>
                 ) : (
                   <Text className="text-sm text-muted-foreground">
                     {amountLimitMinor === null
-                      ? 'Add a personal transaction to use the amount slider.'
+                      ? 'No positive amounts are available for this selection.'
                       : 'Amount range is temporarily unavailable.'}
                   </Text>
                 )}
@@ -294,6 +296,31 @@ export function TransactionFilterSheet({
             )}
             {expanded === 'DATE' ? (
               <View className="gap-3 py-4">
+                <View className="flex-row flex-wrap gap-2">
+                  {(['This month', 'Last month', 'This year'] as const).map(
+                    (period) => {
+                      const dates = currentPeriodDates(period);
+                      return (
+                        <Button
+                          key={period}
+                          size="compact"
+                          variant="outline"
+                          accessibilityState={{
+                            selected:
+                              draftFromDate === dates.fromDate &&
+                              draftToDate === dates.toDate
+                          }}
+                          onPress={() => {
+                            setDraftFromDate(dates.fromDate);
+                            setDraftToDate(dates.toDate);
+                          }}
+                        >
+                          <Text>{period}</Text>
+                        </Button>
+                      );
+                    }
+                  )}
+                </View>
                 <View className="flex-row gap-3">
                   {(['from', 'to'] as const).map((side) => (
                     <Button
@@ -349,12 +376,7 @@ export function TransactionFilterSheet({
                     amountActive && BigInt(draftMinimum) > 0n
                       ? draftMinimum
                       : undefined,
-                  maxAmountMinor:
-                    amountActive &&
-                    amountLimitMinor &&
-                    BigInt(draftMaximum) < BigInt(amountLimitMinor)
-                      ? draftMaximum
-                      : undefined
+                  maxAmountMinor: draftUpperLimited ? draftMaximum : undefined
                 })
               }
             >
@@ -369,7 +391,8 @@ export function TransactionFilterSheet({
                 setDraftFromDate(undefined);
                 setDraftToDate(undefined);
                 setDraftMinimum('0');
-                setDraftMaximum(amountLimitMinor ?? '0');
+                setDraftMaximum(sliderMaximum ?? '0');
+                setDraftUpperLimited(false);
               }}
             >
               <Text className="text-primary">
@@ -383,23 +406,23 @@ export function TransactionFilterSheet({
         <DateTimePicker
           mode="date"
           presentation="dialog"
-          value={pickerDate(
+          value={localPickerDate(
             pickingDate === 'from' ? draftFromDate : draftToDate
           )}
           accentColor={primaryColor}
           minimumDate={
             pickingDate === 'to' && draftFromDate
-              ? pickerDate(draftFromDate)
+              ? localPickerDate(draftFromDate)
               : undefined
           }
           maximumDate={
             pickingDate === 'from' && draftToDate
-              ? pickerDate(draftToDate)
+              ? localPickerDate(draftToDate)
               : undefined
           }
           onValueChange={(_, date) => {
-            if (pickingDate === 'from') setDraftFromDate(dateKey(date));
-            else setDraftToDate(dateKey(date));
+            if (pickingDate === 'from') setDraftFromDate(localDateKey(date));
+            else setDraftToDate(localDateKey(date));
             setPickingDate(null);
           }}
           onDismiss={() => setPickingDate(null)}

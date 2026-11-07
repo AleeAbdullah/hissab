@@ -62,6 +62,8 @@ export type NotificationPage = {
   nextCursor: string | null;
 };
 
+export type NotificationUnreadCount = { unreadCount: number };
+
 export type NotificationDevice = {
   id: string;
   platform: 'IOS' | 'ANDROID';
@@ -82,6 +84,11 @@ export type Reminder = {
   requesterUserId: string;
   recipientUserId: string;
   owedMinor: string;
+  createdAt: string;
+};
+
+export type Report = {
+  id: string;
   createdAt: string;
 };
 

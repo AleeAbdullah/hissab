@@ -1,28 +1,29 @@
-import { Transform, Type } from 'class-transformer';
+import {
+  ApiExtraModels,
+  ApiProperty,
+  getSchemaPath,
+  IntersectionType,
+} from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 import {
   ArrayMinSize,
   ArrayUnique,
   IsArray,
   IsDefined,
   IsIn,
-  IsInt,
   IsISO8601,
   IsObject,
-  IsOptional,
   IsString,
   IsUUID,
   Matches,
-  Max,
-  Min,
   MinLength,
   ValidateNested,
 } from 'class-validator';
-import {
-  ApiExtraModels,
-  ApiProperty,
-  ApiPropertyOptional,
-  getSchemaPath,
-} from '@nestjs/swagger';
+
+import { CursorPageQueryDto } from '../../../common/dto/cursor-page-query.dto';
+import { ExpectedVersionDto } from '../../../common/dto/expected-version.dto';
+import { Trim } from '../../../common/dto/transforms';
+import { POSITIVE_MINOR_PATTERN } from '../../../common/minor-units';
 
 export const SHARED_EXPENSE_CATEGORY_CODES = [
   'FOOD_AND_DRINK',
@@ -35,8 +36,6 @@ export const SHARED_EXPENSE_CATEGORY_CODES = [
   'HEALTHCARE',
   'OTHER',
 ] as const;
-
-const POSITIVE_MINOR_PATTERN = '^[1-9][0-9]*$';
 
 export class ExpenseAllocationDto {
   @ApiProperty({ format: 'uuid' })
@@ -85,9 +84,7 @@ class MutableExpenseFieldsDto {
   categoryCode!: (typeof SHARED_EXPENSE_CATEGORY_CODES)[number];
 
   @ApiProperty({ example: 'Dinner' })
-  @Transform(({ value }: { value: unknown }) =>
-    typeof value === 'string' ? value.trim() : value,
-  )
+  @Trim()
   @IsString()
   @MinLength(1)
   description!: string;
@@ -142,33 +139,11 @@ class MutableExpenseFieldsDto {
 export class CreateExpenseDto extends MutableExpenseFieldsDto {}
 
 @ApiExtraModels(EqualExpenseSplitDto, ExactExpenseSplitDto)
-export class ReplaceExpenseDto extends MutableExpenseFieldsDto {
-  @ApiProperty({ minimum: 1 })
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  expectedVersion!: number;
-}
+export class ReplaceExpenseDto extends IntersectionType(
+  MutableExpenseFieldsDto,
+  ExpectedVersionDto,
+) {}
 
-export class ListExpensesDto {
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  cursor?: string;
+export class ListExpensesDto extends CursorPageQueryDto {}
 
-  @ApiPropertyOptional({ maximum: 100, minimum: 1 })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(100)
-  limit?: number;
-}
-
-export class DeleteExpenseDto {
-  @ApiProperty({ minimum: 1 })
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  expectedVersion!: number;
-}
+export class DeleteExpenseDto extends ExpectedVersionDto {}

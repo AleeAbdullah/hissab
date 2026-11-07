@@ -1,7 +1,8 @@
-import { Icons } from '@/components/icons';
-import { cn } from '@/lib/utils';
 import * as CheckboxPrimitive from '@rn-primitives/checkbox';
 import { Platform } from 'react-native';
+
+import { Icons } from '@/components/icons';
+import { cn } from '@/lib/utils';
 
 const DEFAULT_HIT_SLOP = 24;
 

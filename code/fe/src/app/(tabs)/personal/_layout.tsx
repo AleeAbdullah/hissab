@@ -5,12 +5,17 @@ export default function PersonalLayout() {
     <Stack
       screenOptions={{
         headerBackButtonDisplayMode: 'minimal',
+        headerTitleAlign: 'center',
         headerShadowVisible: false
       }}
     >
       <Stack.Screen
         name="index"
-        options={{ title: 'Personal', headerLargeTitle: true }}
+        options={{
+          title: 'Personal',
+          headerLargeTitle: true,
+          headerTitleAlign: 'left'
+        }}
       />
       <Stack.Screen name="transactions" options={{ title: 'History' }} />
       <Stack.Screen

@@ -1,17 +1,20 @@
+import { ActivityIndicator, View } from 'react-native';
+
 import type { GroupInvitation } from '@/api/contracts';
 import { Avatar, Card } from '@/components/ui';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
-import { ActivityIndicator, View } from 'react-native';
 
 export function GroupInvitationCard({
   invitation,
   loading,
+  disabled = loading,
   onAccept,
   onDecline
 }: {
   invitation: GroupInvitation;
   loading: boolean;
+  disabled?: boolean;
   onAccept: () => void;
   onDecline: () => void;
 }) {
@@ -35,8 +38,8 @@ export function GroupInvitationCard({
         <View className="flex-row gap-2">
           <View className="flex-1">
             <Button
-              disabled={loading}
-              accessibilityState={{ disabled: loading, busy: loading }}
+              disabled={disabled}
+              accessibilityState={{ disabled, busy: loading }}
               onPress={onAccept}
             >
               {loading ? (
@@ -49,7 +52,8 @@ export function GroupInvitationCard({
           <View className="flex-1">
             <Button
               variant="destructiveOutline"
-              disabled={loading}
+              disabled={disabled}
+              accessibilityState={{ disabled }}
               onPress={onDecline}
             >
               <Text>Decline</Text>

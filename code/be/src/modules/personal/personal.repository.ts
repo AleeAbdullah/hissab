@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import { and, desc, eq, inArray } from 'drizzle-orm';
 
+import type { OccurrenceCursor } from '../../common/cursor';
 import {
   DatabaseService,
   type DatabaseTransaction,
@@ -40,9 +41,8 @@ export interface PersonalTransactionView {
   createdAt: Date;
 }
 
-export interface PersonalTransactionCursor {
-  occurredAt: Date;
-  rootId: string;
+export interface PersonalCategory extends PersonalCategoryView {
+  id: string;
 }
 
 export interface PersonalTransactionFilters {
@@ -147,9 +147,8 @@ export class PersonalRepository {
 
   async findCategory(
     transaction: DatabaseTransaction,
-    code: string,
-    type: PersonalTransactionType,
-  ): Promise<(PersonalCategoryView & { id: string }) | undefined> {
+    key: { code: string; type: PersonalTransactionType } | { id: string },
+  ): Promise<PersonalCategory | undefined> {
     const [category] = await transaction
       .select({
         id: categories.id,
@@ -160,34 +159,9 @@ export class PersonalRepository {
       .from(categories)
       .where(
         and(
-          eq(categories.code, code),
-          eq(categories.kind, type),
-          eq(categories.isSystem, true),
-          inArray(categories.code, [...PERSONAL_CATEGORY_CODES]),
-        ),
-      )
-      .limit(1);
-    return category?.code &&
-      (category.kind === 'INCOME' || category.kind === 'EXPENSE')
-      ? { ...category, code: category.code, kind: category.kind }
-      : undefined;
-  }
-
-  async findCategoryById(
-    transaction: DatabaseTransaction,
-    categoryId: string,
-  ): Promise<(PersonalCategoryView & { id: string }) | undefined> {
-    const [category] = await transaction
-      .select({
-        id: categories.id,
-        code: categories.code,
-        name: categories.name,
-        kind: categories.kind,
-      })
-      .from(categories)
-      .where(
-        and(
-          eq(categories.id, categoryId),
+          'code' in key
+            ? and(eq(categories.code, key.code), eq(categories.kind, key.type))
+            : eq(categories.id, key.id),
           eq(categories.isSystem, true),
           inArray(categories.code, [...PERSONAL_CATEGORY_CODES]),
         ),
@@ -316,7 +290,7 @@ export class PersonalRepository {
   async listTransactions(
     userId: string,
     filters: PersonalTransactionFilters,
-    cursor: PersonalTransactionCursor | null,
+    cursor: OccurrenceCursor | null,
     limit: number,
   ): Promise<PersonalTransactionView[]> {
     const result = await this.database.pool.query<PersonalTransactionReadRow>(
@@ -419,7 +393,7 @@ export class PersonalRepository {
     filters: PersonalTransactionFilters,
     includeShared: boolean,
     bucket: 'DAY' | 'MONTH',
-    cursor: PersonalTransactionCursor | null,
+    cursor: OccurrenceCursor | null,
     limit: number,
   ): Promise<PersonalHistoryRead> {
     const result = await this.database.pool.query<PersonalHistoryRead>(

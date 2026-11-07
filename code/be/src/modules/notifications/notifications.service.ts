@@ -6,6 +6,11 @@ import {
 import { and, desc, eq, getTableColumns, isNull, ne, sql } from 'drizzle-orm';
 
 import {
+  decodeTimestampCursor,
+  encodeTimestampCursor,
+} from '../../common/cursor';
+import {
+  type AppDatabase,
   DatabaseService,
   type DatabaseTransaction,
 } from '../../database/database.service';
@@ -21,16 +26,8 @@ import type {
   UpdateNotificationPreferencesDto,
 } from './dto/notifications.dto';
 
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
 type NotificationRow = typeof notifications.$inferSelect;
 type DeviceRow = typeof deviceTokens.$inferSelect;
-
-interface NotificationCursor {
-  createdAt: string;
-  id: string;
-}
 
 export interface NotificationView {
   id: string;
@@ -72,12 +69,27 @@ export class NotificationsService {
     private readonly idempotency: IdempotencyService,
   ) {}
 
+  async getUnreadCount(userId: string): Promise<{ unreadCount: number }> {
+    const [result] = await this.database.db
+      .select({ unreadCount: sql<number>`count(*)::int` })
+      .from(notifications)
+      .where(
+        and(
+          eq(notifications.recipientUserId, userId),
+          isNull(notifications.readAt),
+        ),
+      );
+    return { unreadCount: result?.unreadCount ?? 0 };
+  }
+
   async listNotifications(
     userId: string,
     query: ListNotificationsDto,
   ): Promise<{ items: NotificationView[]; nextCursor: string | null }> {
     const limit = query.limit ?? 50;
-    const cursor = query.cursor ? this.decodeCursor(query.cursor) : null;
+    const cursor = query.cursor
+      ? decodeTimestampCursor(query.cursor, 'notification')
+      : null;
     const rows = await this.database.db
       .select({
         ...getTableColumns(notifications),
@@ -98,13 +110,12 @@ export class NotificationsService {
       )
       .orderBy(desc(notifications.createdAt), desc(notifications.id))
       .limit(limit + 1);
-    const items = rows.slice(0, limit).map((row) => this.toNotification(row));
+    const page = rows.slice(0, limit);
+    const last = page[page.length - 1];
     return {
-      items,
+      items: page.map((row) => this.toNotification(row)),
       nextCursor:
-        rows.length > limit && rows.length > 1
-          ? this.encodeCursor(rows[limit - 1])
-          : null,
+        rows.length > limit && last ? encodeTimestampCursor(last) : null,
     };
   }
 
@@ -209,21 +220,11 @@ export class NotificationsService {
         const [updated] = await transaction
           .update(notificationPreferences)
           .set({
-            ...(dto.pushEnabled === undefined
-              ? {}
-              : { pushEnabled: dto.pushEnabled }),
-            ...(dto.expenseActivityEnabled === undefined
-              ? {}
-              : { expenseActivityEnabled: dto.expenseActivityEnabled }),
-            ...(dto.settlementActivityEnabled === undefined
-              ? {}
-              : { paymentActivityEnabled: dto.settlementActivityEnabled }),
-            ...(dto.socialActivityEnabled === undefined
-              ? {}
-              : { socialActivityEnabled: dto.socialActivityEnabled }),
-            ...(dto.remindersEnabled === undefined
-              ? {}
-              : { remindersEnabled: dto.remindersEnabled }),
+            pushEnabled: dto.pushEnabled,
+            expenseActivityEnabled: dto.expenseActivityEnabled,
+            paymentActivityEnabled: dto.settlementActivityEnabled,
+            socialActivityEnabled: dto.socialActivityEnabled,
+            remindersEnabled: dto.remindersEnabled,
             updatedAt: new Date(),
           })
           .where(eq(notificationPreferences.userId, userId))
@@ -398,7 +399,7 @@ export class NotificationsService {
   }
 
   private findPreferences(
-    executor: typeof this.database.db | DatabaseTransaction,
+    executor: AppDatabase | DatabaseTransaction,
     userId: string,
   ) {
     return executor.query.notificationPreferences.findFirst({
@@ -445,45 +446,5 @@ export class NotificationsService {
       lastSeenAt: row.lastSeenAt,
       revokedAt: row.revokedAt,
     };
-  }
-
-  private encodeCursor(notification: {
-    cursorCreatedAt: string;
-    id: string;
-  }): string {
-    return Buffer.from(
-      JSON.stringify([notification.cursorCreatedAt, notification.id]),
-    ).toString('base64url');
-  }
-
-  private decodeCursor(cursor: string): NotificationCursor {
-    try {
-      const parsed: unknown = JSON.parse(
-        Buffer.from(cursor, 'base64url').toString('utf8'),
-      );
-      if (
-        !Array.isArray(parsed) ||
-        parsed.length !== 2 ||
-        typeof parsed[0] !== 'string' ||
-        typeof parsed[1] !== 'string' ||
-        !/^(?!0000)\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/.test(
-          parsed[0],
-        ) ||
-        !UUID_PATTERN.test(parsed[1])
-      ) {
-        throw new Error('invalid cursor');
-      }
-      const createdAt = new Date(parsed[0]);
-      const millisecondTimestamp = parsed[0].replace(/(\.\d{3})\d{3}Z$/, '$1Z');
-      if (
-        Number.isNaN(createdAt.getTime()) ||
-        createdAt.toISOString() !== millisecondTimestamp
-      ) {
-        throw new Error('invalid cursor date');
-      }
-      return { createdAt: parsed[0], id: parsed[1].toLowerCase() };
-    } catch {
-      throw new BadRequestException('Invalid notification cursor.');
-    }
   }
 }

@@ -30,9 +30,9 @@ export function configureApp(
 
   if (configService.getOrThrow('SWAGGER_ENABLED')) {
     const openApiConfig = new DocumentBuilder()
-      .setTitle('Hissab API')
+      .setTitle('Tally Stick API')
       .setDescription(
-        'REST API for Hissab shared expenses and personal finance tracking.',
+        'REST API for Tally Stick shared expenses and personal finance tracking.',
       )
       .setVersion('1.0')
       .addBearerAuth()

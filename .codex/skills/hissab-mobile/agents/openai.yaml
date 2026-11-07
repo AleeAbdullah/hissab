@@ -1,4 +1,4 @@
 interface:
-  display_name: "Hissab Mobile"
-  short_description: "Repo guidance for the Hissab Expo app"
-  default_prompt: "Use $hissab-mobile to make a safe, production-quality change in the Hissab Expo mobile app."
+  display_name: "Tally Stick Mobile"
+  short_description: "Repo guidance for the Tally Stick Expo app"
+  default_prompt: "Use $hissab-mobile to make a safe, production-quality change in the Tally Stick Expo mobile app."

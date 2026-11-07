@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
 import { Injectable } from '@nestjs/common';
-import { and, asc, desc, eq, gt, isNull, ne, sql } from 'drizzle-orm';
+import { and, desc, eq, isNull, ne, sql } from 'drizzle-orm';
 
 import {
   type AppDatabase,
@@ -43,10 +43,9 @@ export class AuthRepository {
   constructor(private readonly database: DatabaseService) {}
 
   async findPasswordAccountByEmail(
+    executor: DatabaseExecutor,
     email: string,
-    transaction?: DatabaseTransaction,
   ): Promise<PasswordAccount | undefined> {
-    const executor = this.executor(transaction);
     const [account] = await executor
       .select({
         id: users.id,
@@ -129,10 +128,9 @@ export class AuthRepository {
   }
 
   async findActiveAuthUserById(
+    executor: DatabaseExecutor,
     userId: string,
-    transaction?: DatabaseTransaction,
   ): Promise<AuthUser | undefined> {
-    const executor = this.executor(transaction);
     const [user] = await executor
       .select({
         id: users.id,
@@ -166,18 +164,16 @@ export class AuthRepository {
   }
 
   async findRefreshSessionByHash(
+    transaction: DatabaseTransaction,
     tokenHash: string,
-    transaction?: DatabaseTransaction,
     lock = false,
   ): Promise<RefreshSessionRecord | undefined> {
-    const executor = this.executor(transaction);
-    const query = executor
+    const query = transaction
       .select()
       .from(refreshSessions)
       .where(eq(refreshSessions.tokenHash, tokenHash))
       .limit(1);
-    const [session] =
-      lock && transaction ? await query.for('update') : await query;
+    const [session] = lock ? await query.for('update') : await query;
     return session;
   }
 
@@ -202,19 +198,6 @@ export class AuthRepository {
     );
   }
 
-  async findRefreshFamilyRoot(
-    transaction: DatabaseTransaction,
-    familyId: string,
-  ): Promise<RefreshSessionRecord | undefined> {
-    const [root] = await transaction
-      .select()
-      .from(refreshSessions)
-      .where(eq(refreshSessions.familyId, familyId))
-      .orderBy(asc(refreshSessions.createdAt))
-      .limit(1);
-    return root;
-  }
-
   async consumeRefreshSession(
     transaction: DatabaseTransaction,
     sessionId: string,
@@ -230,27 +213,6 @@ export class AuthRepository {
           isNull(refreshSessions.revokedAt),
         ),
       );
-  }
-
-  async isRefreshFamilyActive(
-    transaction: DatabaseTransaction,
-    familyId: string,
-    userId: string,
-  ): Promise<boolean> {
-    const [active] = await transaction
-      .select({ id: refreshSessions.id })
-      .from(refreshSessions)
-      .where(
-        and(
-          eq(refreshSessions.familyId, familyId),
-          eq(refreshSessions.userId, userId),
-          isNull(refreshSessions.consumedAt),
-          isNull(refreshSessions.revokedAt),
-          gt(refreshSessions.expiresAt, new Date()),
-        ),
-      )
-      .limit(1);
-    return Boolean(active);
   }
 
   async revokeRefreshFamily(
@@ -270,17 +232,6 @@ export class AuthRepository {
           isNull(refreshSessions.revokedAt),
         ),
       );
-  }
-
-  async revokeRefreshFamilyForReuse(familyId: string): Promise<void> {
-    await this.database.transaction(async (transaction) => {
-      await this.revokeRefreshFamily(
-        transaction,
-        familyId,
-        undefined,
-        'TOKEN_REUSE',
-      );
-    });
   }
 
   async revokeAllUserSessions(
@@ -407,16 +358,11 @@ export class AuthRepository {
       );
   }
 
-  private executor(transaction?: DatabaseTransaction): DatabaseExecutor {
-    return transaction ?? this.database.db;
-  }
-
   async findRefreshSessionById(
+    transaction: DatabaseTransaction,
     sessionId: string,
-    transaction?: DatabaseTransaction,
   ): Promise<RefreshSessionRecord | undefined> {
-    const executor = this.executor(transaction);
-    const [session] = await executor
+    const [session] = await transaction
       .select()
       .from(refreshSessions)
       .where(eq(refreshSessions.id, sessionId))

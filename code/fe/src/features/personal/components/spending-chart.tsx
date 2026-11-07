@@ -1,6 +1,6 @@
 import { useState, type PropsWithChildren } from 'react';
-import { BarChart, LineChart } from 'react-native-gifted-charts';
 import { View } from 'react-native';
+import { BarChart, LineChart } from 'react-native-gifted-charts';
 
 import type { DisplayCurrency, PersonalReportBucket } from '@/api/contracts';
 import { Text } from '@/components/ui/text';
@@ -14,8 +14,9 @@ import {
   spendingSeriesName,
   type SpendingBucket
 } from '@/features/personal/spending';
-import { cn, formatMinorAmount } from '@/lib/utils';
+import { formatMinorAmount } from '@/lib/money';
 import { THEME_VARIABLES, useThemeVariable } from '@/lib/theme';
+import { cn } from '@/lib/utils';
 
 const SCALE_STRIP_HEIGHT = 24;
 const AXIS_LABEL_WIDTH = 64;

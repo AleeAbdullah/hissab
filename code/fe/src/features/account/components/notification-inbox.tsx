@@ -1,177 +1,137 @@
+import { ChevronRight } from 'lucide-react-native';
 import { ActivityIndicator, View } from 'react-native';
 
 import type { InAppNotification } from '@/api/contracts';
-import { Card, ErrorMessage, SectionLabel } from '@/components/ui';
+import { ErrorMessage } from '@/components/ui';
 import { Button } from '@/components/ui/button';
+import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
+import { reminderLedgerHref } from '@/features/reminders/navigation';
+import { formatDateTime } from '@/lib/dates';
 import { cn } from '@/lib/utils';
 
 export function NotificationInbox({
   error,
   hasNextPage,
   isLoading,
-  isMarkingAll,
   isLoadingMore,
+  busy,
   items,
-  markingId,
   onLoadMore,
-  onMarkAllRead,
-  onOpen
+  onOpen,
+  onRetry
 }: {
   error: unknown;
   hasNextPage: boolean;
   isLoading: boolean;
-  isMarkingAll: boolean;
   isLoadingMore: boolean;
+  busy: boolean;
   items: InAppNotification[];
-  markingId?: string;
   onLoadMore: () => void;
-  onMarkAllRead: () => void;
   onOpen: (notification: InAppNotification) => void;
+  onRetry: () => void;
 }) {
-  const unreadCount = items.filter((item) => !item.readAt).length;
   return (
-    <View className="gap-2">
-      <View className="min-h-11 flex-row items-center justify-between gap-3">
-        <SectionLabel>
-          INBOX{unreadCount ? ` · ${unreadCount} UNREAD` : ''}
-        </SectionLabel>
-        {unreadCount ? (
-          <Button
-            variant="outline"
-            disabled={isMarkingAll}
-            accessibilityState={{ disabled: isMarkingAll, busy: isMarkingAll }}
-            onPress={onMarkAllRead}
-          >
-            {isMarkingAll ? (
-              <ActivityIndicator className="text-primary" />
-            ) : (
-              <Text>Mark all read</Text>
-            )}
+    <View>
+      {error ? (
+        <View className="gap-3 pb-4">
+          <ErrorMessage error={error} />
+          <Button variant="outline" onPress={onRetry}>
+            <Text>Try again</Text>
           </Button>
-        ) : null}
-      </View>
-      {error ? <ErrorMessage error={error} /> : null}
+        </View>
+      ) : null}
       {isLoading ? (
-        <NotificationLoading />
+        <ActivityIndicator
+          accessibilityLabel="Loading notifications"
+          className="text-primary"
+        />
       ) : items.length ? (
-        <Card>
-          {items.map((item) => (
-            <NotificationRow
+        items.map((item) => {
+          const unread = !item.readAt;
+          const linked = Boolean(
+            reminderLedgerHref({ ...item.details, ...item })
+          );
+          const content = (
+            <View className="w-full gap-1">
+              <View className="flex-row items-center gap-2">
+                {unread ? (
+                  <View className="size-2 rounded-full bg-primary" />
+                ) : null}
+                <Text
+                  className={cn(
+                    'flex-1 text-base leading-[22px]',
+                    unread ? 'font-semibold' : 'font-normal'
+                  )}
+                >
+                  {item.title}
+                </Text>
+                {linked ? (
+                  <Icon
+                    as={ChevronRight}
+                    size={20}
+                    className="text-muted-foreground"
+                  />
+                ) : null}
+              </View>
+              <Text
+                numberOfLines={2}
+                className="text-[15px] font-normal leading-[22px] text-muted-foreground"
+              >
+                {item.body}
+              </Text>
+              <Text className="text-[13px] font-normal leading-[18px] text-muted-foreground">
+                {formatDateTime(item.createdAt)}
+              </Text>
+            </View>
+          );
+          const label = `${unread ? 'Unread. ' : ''}${item.title}. ${item.body}. ${formatDateTime(item.createdAt)}`;
+          return unread || linked ? (
+            <Button
               key={item.id}
-              item={item}
-              loading={markingId === item.id || isMarkingAll}
-              onPress={onOpen}
-            />
-          ))}
-        </Card>
-      ) : (
-        <EmptyInbox />
-      )}
+              variant="ghost"
+              role={linked ? 'link' : 'button'}
+              disabled={busy}
+              accessibilityLabel={label}
+              onPress={() => onOpen(item)}
+              className="w-full rounded-none border-b border-border px-0 py-4"
+            >
+              {content}
+            </Button>
+          ) : (
+            <View
+              key={item.id}
+              accessible
+              accessibilityLabel={label}
+              className="border-b border-border py-4"
+            >
+              {content}
+            </View>
+          );
+        })
+      ) : !error ? (
+        <View className="gap-2 py-8">
+          <Text className="text-lg font-semibold">No notifications yet</Text>
+          <Text className="text-[15px] leading-[22px] text-muted-foreground">
+            Shared changes, invitations, connection requests and reminders
+            appear here.
+          </Text>
+        </View>
+      ) : null}
       {hasNextPage ? (
         <Button
           variant="outline"
           disabled={isLoadingMore}
-          accessibilityState={{ disabled: isLoadingMore, busy: isLoadingMore }}
           onPress={onLoadMore}
+          className="mt-4"
         >
           {isLoadingMore ? (
             <ActivityIndicator className="text-primary" />
           ) : (
-            <Text>Load more notifications</Text>
+            <Text>Load more</Text>
           )}
         </Button>
       ) : null}
     </View>
-  );
-}
-
-function NotificationRow({
-  item,
-  loading,
-  onPress
-}: {
-  item: InAppNotification;
-  loading: boolean;
-  onPress: (notification: InAppNotification) => void;
-}) {
-  const unread = !item.readAt;
-  const opensLedger = item.kind === 'REMINDER';
-  const content = (
-    <>
-      <View className="flex-row items-baseline gap-2">
-        <Text
-          selectable
-          className={cn(
-            'flex-1 text-base leading-[22px]',
-            unread ? 'font-bold' : 'font-semibold'
-          )}
-        >
-          {item.title}
-        </Text>
-        {unread ? (
-          <Text selectable className="text-xs font-bold leading-4 text-primary">
-            Unread
-          </Text>
-        ) : null}
-      </View>
-      <Text selectable className="text-sm leading-5 text-muted-foreground">
-        {item.body}
-      </Text>
-      <Text selectable className="text-xs leading-4 text-muted-foreground">
-        {notificationTime(item.createdAt)}
-      </Text>
-    </>
-  );
-  const className = cn(
-    'min-h-[72px] gap-1 border-b border-border p-3',
-    unread && 'bg-accent',
-    loading && 'opacity-[0.55]'
-  );
-  return unread || opensLedger ? (
-    <Button
-      variant="ghost"
-      accessibilityLabel={`${unread ? 'Unread. ' : ''}${item.title}. ${item.body}. ${notificationTime(item.createdAt)}${opensLedger ? '. Opens ledger' : ''}`}
-      accessibilityState={{ disabled: loading }}
-      disabled={loading}
-      onPress={() => onPress(item)}
-      className={cn('w-full flex-col items-stretch rounded-none', className)}
-    >
-      {content}
-    </Button>
-  ) : (
-    <View className={className}>{content}</View>
-  );
-}
-
-function NotificationLoading() {
-  return (
-    <Text
-      selectable
-      className="text-[15px] leading-[22px] text-muted-foreground"
-    >
-      Loading notifications…
-    </Text>
-  );
-}
-
-function EmptyInbox() {
-  return (
-    <Text
-      selectable
-      className="text-[15px] leading-[22px] text-muted-foreground"
-    >
-      You’re all caught up.
-    </Text>
-  );
-}
-
-function notificationTime(value: string) {
-  return (
-    new Intl.DateTimeFormat(undefined, {
-      dateStyle: 'medium',
-      timeStyle: 'short',
-      timeZone: 'UTC'
-    }).format(new Date(value)) + ' UTC'
   );
 }

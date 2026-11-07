@@ -1,6 +1,6 @@
-# Hissab
+# Tally Stick
 
-Hissab is a mobile app for tracking shared expenses and manual personal finances. It records who paid, who owes, and how people settle; it does not hold or transfer money.
+Tally Stick is a mobile app for tracking shared expenses and manual personal finances. It records who paid, who owes, and how people settle; it does not hold or transfer money.
 
 The repository contains an Expo mobile app and a NestJS API. The API implements authentication, profiles, sessions, connections and blocks, equal-privilege groups and invitations, immutable shared expenses, computed balances, external settlements, activity, notifications, manual reminders, realtime invalidation, Expo push delivery, manual personal finance, account export, and account deletion. Receipt attachments and password-reset email delivery are intentionally deferred.
 
@@ -58,9 +58,10 @@ All authenticated mutations require an `Idempotency-Key` header. Money is sent a
 | Activity         | `/v1/activity`                                                                                                             |
 | Notifications    | `/v1/notifications`, `/v1/notification-preferences`, `/v1/notification-devices`                                            |
 | Reminders        | `/v1/ledgers/:ledgerId/reminders`                                                                                          |
+| Reports          | `/v1/reports`                                                                                                              |
 | Account data     | `/v1/account/export`, `/v1/account/deletion`                                                                               |
 
-Expense, settlement, and personal-transaction edits use optimistic `expectedVersion` values and immutable replacement history. Deletions create auditable tombstones. Settlement records describe external payments; Hissab never moves money.
+Expense, settlement, and personal-transaction edits use optimistic `expectedVersion` values and immutable replacement history. Deletions create auditable tombstones. Settlement records describe external payments; Tally Stick never moves money.
 
 Personal reports default to the user's saved owed-share mode, can switch to cash out of pocket, combine manual transactions with shared-expense allocations, exclude settlements, and group calendar periods in the user's saved timezone.
 

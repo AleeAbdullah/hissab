@@ -1,4 +1,3 @@
-import { useDialog } from '@/components/ui/dialog';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { ActivityIndicator, View } from 'react-native';
 
@@ -13,6 +12,7 @@ import {
   SectionLabel
 } from '@/components/ui';
 import { Button } from '@/components/ui/button';
+import { useDialog } from '@/components/ui/dialog';
 import { Text } from '@/components/ui/text';
 import { blocksQuery, unblock } from '@/features/connections/api';
 import { homeQuery } from '@/features/home/api';

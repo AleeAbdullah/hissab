@@ -1,3 +1,4 @@
+import type { Settlement, SettlementPage } from '@/api/contracts';
 import {
   settlementsCreateSettlement,
   settlementsDeleteSettlement,
@@ -9,7 +10,6 @@ import type {
   CreateSettlementDto,
   ReplaceSettlementDto
 } from '@/api/generated/types.gen';
-import type { Settlement, SettlementPage } from '@/api/contracts';
 import { idempotencyKey, request } from '@/api/transport';
 
 export function listSettlements(ledgerId: string, cursor?: string) {

@@ -1,4 +1,4 @@
-# Hissab Mobile Repo Map
+# Tally Stick Mobile Repo Map
 
 Use `code/fe/package.json`, configuration, and current code as the source of truth for versions, dependencies, and scripts. The frontend uses `pnpm`, Expo Router, strict TypeScript, NativeWind, TanStack Query, generated OpenAPI code, Expo SecureStore, and Socket.IO.
 

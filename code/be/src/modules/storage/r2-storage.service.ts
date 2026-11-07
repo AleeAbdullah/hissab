@@ -19,7 +19,7 @@ export class R2StorageService {
   constructor(config: ConfigService<EnvironmentVariables, true>) {
     if (!config.getOrThrow('R2_ENABLED')) return;
 
-    const accountId = config.getOrThrow('R2_ACCOUNT_ID');
+    const accountId = config.getOrThrow<string>('R2_ACCOUNT_ID');
     this.bucket = config.getOrThrow('R2_BUCKET');
     this.client = new S3Client({
       region: 'auto',
@@ -96,6 +96,7 @@ function isMissingObject(error: unknown): boolean {
     $metadata?: { httpStatusCode?: unknown };
   };
   return (
-    candidate.name === 'NoSuchKey' || candidate.$metadata?.httpStatusCode === 404
+    candidate.name === 'NoSuchKey' ||
+    candidate.$metadata?.httpStatusCode === 404
   );
 }

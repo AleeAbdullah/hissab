@@ -26,6 +26,7 @@ export interface EnvironmentVariables extends Record<string, unknown> {
   TOKEN_HASH_SECRET: string;
   IDEMPOTENCY_HMAC_SECRET: string;
   IDEMPOTENCY_ENCRYPTION_KEY: string;
+  IDEMPOTENCY_KEY_ID: string;
   IDEMPOTENCY_TTL_SECONDS: number;
   OUTBOX_POLL_INTERVAL_MS: number;
   OUTBOX_BATCH_SIZE: number;
@@ -41,6 +42,11 @@ export interface EnvironmentVariables extends Record<string, unknown> {
   EXPO_PUSH_ACCESS_TOKEN?: string;
   EXPO_PUSH_SEND_URL: string;
   EXPO_PUSH_RECEIPTS_URL: string;
+  MAIL_ENABLED: boolean;
+  RESEND_API_KEY?: string;
+  MAIL_FROM?: string;
+  SUPPORT_EMAIL?: string;
+  PUBLIC_WEB_URL?: string;
   SWAGGER_ENABLED: boolean;
 }
 
@@ -183,6 +189,26 @@ export function validateEnvironment(
 ): EnvironmentVariables {
   const nodeEnvironment = parseNodeEnvironment(config.NODE_ENV);
   const r2Enabled = parseBoolean('R2_ENABLED', config.R2_ENABLED, false);
+  const outboxEnabled = parseBoolean(
+    'OUTBOX_ENABLED',
+    config.OUTBOX_ENABLED,
+    false,
+  );
+  const mailEnabled = parseBoolean('MAIL_ENABLED', config.MAIL_ENABLED, false);
+  if (nodeEnvironment === 'production' && outboxEnabled && !mailEnabled) {
+    // Without mail, password-reset links and reports would be silently dropped.
+    throw new Error(
+      'MAIL_ENABLED must be true when the production outbox runs.',
+    );
+  }
+  const mail = mailEnabled
+    ? {
+        RESEND_API_KEY: parseString('RESEND_API_KEY', config.RESEND_API_KEY),
+        MAIL_FROM: parseString('MAIL_FROM', config.MAIL_FROM),
+        SUPPORT_EMAIL: parseString('SUPPORT_EMAIL', config.SUPPORT_EMAIL),
+        PUBLIC_WEB_URL: parsePublicWebUrl(config.PUBLIC_WEB_URL),
+      }
+    : {};
 
   const r2 = r2Enabled
     ? {
@@ -261,6 +287,11 @@ export function validateEnvironment(
       config.IDEMPOTENCY_ENCRYPTION_KEY,
       nodeEnvironment,
     ),
+    IDEMPOTENCY_KEY_ID: parseString(
+      'IDEMPOTENCY_KEY_ID',
+      config.IDEMPOTENCY_KEY_ID,
+      'v1',
+    ),
     IDEMPOTENCY_TTL_SECONDS: parseInteger(
       'IDEMPOTENCY_TTL_SECONDS',
       config.IDEMPOTENCY_TTL_SECONDS,
@@ -296,11 +327,7 @@ export function validateEnvironment(
       1,
       100,
     ),
-    OUTBOX_ENABLED: parseBoolean(
-      'OUTBOX_ENABLED',
-      config.OUTBOX_ENABLED,
-      false,
-    ),
+    OUTBOX_ENABLED: outboxEnabled,
     R2_ENABLED: r2Enabled,
     ...r2,
     EXPO_PUSH_ENABLED: parseBoolean(
@@ -323,12 +350,28 @@ export function validateEnvironment(
       config.EXPO_PUSH_RECEIPTS_URL,
       'https://exp.host/--/api/v2/push/getReceipts',
     ),
+    MAIL_ENABLED: mailEnabled,
+    ...mail,
     SWAGGER_ENABLED: parseBoolean(
       'SWAGGER_ENABLED',
       config.SWAGGER_ENABLED,
       nodeEnvironment !== 'production',
     ),
   };
+}
+
+function parsePublicWebUrl(value: unknown): string {
+  const raw = parseString('PUBLIC_WEB_URL', value);
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    throw new Error('PUBLIC_WEB_URL must be a valid URL.');
+  }
+  if (url.protocol !== 'https:') {
+    throw new Error('PUBLIC_WEB_URL must use HTTPS.');
+  }
+  return url.origin;
 }
 
 function parseR2AccountId(value: unknown): string {

@@ -61,8 +61,8 @@ export default function FriendsScreen() {
               />
               <Link href="/groups/friends/requests" asChild>
                 <Button
+                  className="w-12 px-0"
                   variant="ghost"
-                  size="icon"
                   role="link"
                   accessibilityLabel={
                     incomingCount === undefined
@@ -87,8 +87,8 @@ export default function FriendsScreen() {
               </Link>
               <Link href="/connection-new" asChild>
                 <Button
+                  className="w-12 px-0"
                   variant="ghost"
-                  size="icon"
                   role="link"
                   accessibilityLabel="Add connection"
                 >
@@ -142,7 +142,10 @@ export default function FriendsScreen() {
                   }
                   href={{
                     pathname: '/groups/friends/[friendId]',
-                    params: { friendId: friend.userId }
+                    params: {
+                      friendId: friend.userId,
+                      ledgerId: friend.ledgerId
+                    }
                   }}
                   leading={<Avatar name={friend.displayName} />}
                 />

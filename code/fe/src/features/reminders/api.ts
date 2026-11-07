@@ -1,5 +1,5 @@
-import { remindersCreateReminder } from '@/api/generated/sdk.gen';
 import type { Reminder } from '@/api/contracts';
+import { remindersCreateReminder } from '@/api/generated/sdk.gen';
 import { idempotencyKey, request } from '@/api/transport';
 
 export function createReminder(ledgerId: string, recipientUserId: string) {

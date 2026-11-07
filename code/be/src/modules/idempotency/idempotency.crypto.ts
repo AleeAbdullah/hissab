@@ -26,7 +26,7 @@ export class IdempotencyCrypto {
       configService.getOrThrow<string>('IDEMPOTENCY_HMAC_SECRET'),
       'utf8',
     );
-    this.keyId = configService.get<string>('IDEMPOTENCY_KEY_ID') ?? 'v1';
+    this.keyId = configService.getOrThrow<string>('IDEMPOTENCY_KEY_ID');
   }
 
   actorFingerprint(actor: IdempotencyActor): string {

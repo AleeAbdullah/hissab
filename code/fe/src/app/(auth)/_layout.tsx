@@ -11,7 +11,7 @@ export default function AuthLayout() {
             selectable
             className="font-serif text-[21px] font-medium leading-6"
           >
-            Hissab
+            Tally Stick
           </Text>
         ),
         headerTitleAlign: 'center',

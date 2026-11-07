@@ -1,4 +1,3 @@
-import { useDialog } from '@/components/ui/dialog';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
@@ -8,6 +7,7 @@ import { queryClient } from '@/api/query-client';
 import { clearTokens } from '@/api/session-store';
 import { ErrorMessage, Field, Notice, Screen } from '@/components/ui';
 import { Button } from '@/components/ui/button';
+import { useDialog } from '@/components/ui/dialog';
 import { Text } from '@/components/ui/text';
 import { deleteAccount } from '@/features/account/api';
 
@@ -28,7 +28,7 @@ export default function DeleteAccountScreen() {
   const valid = password.length > 0 && confirmation === 'DELETE';
   const confirmDeletion = () => {
     dialog(
-      'Delete Hissab account?',
+      'Delete Tally Stick account?',
       'This is permanent. Your profile is anonymized and every device is signed out. Financial history remains for audit.',
       [
         { text: 'Cancel', style: 'cancel' },

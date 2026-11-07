@@ -2,7 +2,8 @@ import type { Href } from 'expo-router';
 
 import type { DisplayCurrency, PersonalHistoryItem } from '@/api/contracts';
 import { Row } from '@/components/ui';
-import { formatMinorAmount } from '@/lib/utils';
+import { formatDate } from '@/lib/dates';
+import { formatMinorAmount } from '@/lib/money';
 
 export function PersonalHistoryRow({
   displayCurrency,
@@ -11,15 +12,10 @@ export function PersonalHistoryRow({
   displayCurrency: DisplayCurrency;
   item: PersonalHistoryItem;
 }) {
-  const date = new Intl.DateTimeFormat(undefined, {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    timeZone: 'UTC'
-  }).format(new Date(item.occurredAt));
+  const date = formatDate(item.occurredAt);
   const shared = item.kind === 'SHARED';
   const subtitle = shared
-    ? `${date} · ${item.category.name} · ${item.ledgerName ?? 'Shared ledger'} · Full ${formatMinorAmount(item.totalMinor ?? '0', displayCurrency)} · Your share`
+    ? `${date} · ${item.category.name} · ${item.ledgerName ?? 'Shared ledger'} · Your share of ${formatMinorAmount(item.totalMinor ?? '0', displayCurrency)}`
     : `${date} · ${item.category.name}`;
   const href: Href = shared
     ? { pathname: '/expense/[expenseId]', params: { expenseId: item.id } }

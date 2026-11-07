@@ -15,7 +15,7 @@ import { Text } from '@/components/ui/text';
 import { profileQuery } from '@/features/account/api';
 import { ledgerBalancesQuery } from '@/features/balances/api';
 import { simplifyLedgerBalances } from '@/features/balances/simplify';
-import { formatMinorAmount } from '@/lib/utils';
+import { formatMinorAmount } from '@/lib/money';
 
 export default function SimplifiedDebtsScreen() {
   const { groupId } = useLocalSearchParams<{ groupId: string }>();
@@ -86,8 +86,8 @@ export default function SimplifiedDebtsScreen() {
         selectable
         className="text-[13px] leading-[18px] text-muted-foreground"
       >
-        Read-only. To act on a suggestion, record a settlement for it. Hissab
-        does not create payments.
+        Read-only. To act on a suggestion, record a settlement for it. Tally
+        Stick does not create payments.
       </Text>
     </Screen>
   );

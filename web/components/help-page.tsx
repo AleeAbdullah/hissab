@@ -17,7 +17,7 @@ export function HelpPage({ children }: { children: ReactNode }) {
       <header className="help-header">
         <p className="eyebrow">Help</p>
         <h1>Clear answers, from the record itself.</h1>
-        <p className="lead">How Hissab handles friends, groups, shared expenses, personal records, and your account.</p>
+        <p className="lead">How Tally Stick handles friends, groups, shared expenses, personal records, and your account.</p>
       </header>
       <div className="help-layout">
         <nav className="doc-index" aria-label="Help topics">

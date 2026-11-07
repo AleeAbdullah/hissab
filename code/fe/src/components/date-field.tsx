@@ -6,25 +6,25 @@ import { View } from 'react-native';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
-import { todayDate } from '@/features/expenses/form';
-import { dateLabel, shiftDate } from '@/features/personal/form';
+import {
+  dateLabel,
+  localDateKey,
+  localPickerDate,
+  shiftDate,
+  todayDate
+} from '@/lib/dates';
 import { THEME_VARIABLES, useThemeVariable } from '@/lib/theme';
 
-function dateKey(date: Date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-}
-
-function pickerDate(value: string) {
-  const [year, month, day] = value.split('-').map(Number);
-  return new Date(year, month - 1, day, 12);
-}
-
-export function TransactionDateField({
+export function DateField({
   error,
+  disabled = false,
+  allowFuture = false,
   onChange,
   value
 }: {
   error?: string;
+  disabled?: boolean;
+  allowFuture?: boolean;
   onChange: (value: string) => void;
   value: string;
 }) {
@@ -45,6 +45,8 @@ export function TransactionDateField({
         }
         accessibilityLabel={`Date, ${label}`}
         accessibilityHint="Opens the date picker"
+        disabled={disabled}
+        accessibilityState={{ disabled }}
         onPress={() => setPicking(true)}
       >
         <Icon as={CalendarDays} size={20} className="text-muted-foreground" />
@@ -62,21 +64,22 @@ export function TransactionDateField({
             <Button
               key={chip.label}
               variant="ghost"
-              hitSlop={8}
+              size="compact"
+              disabled={disabled}
               accessibilityLabel={chip.label}
-              accessibilityState={{ selected }}
+              accessibilityState={{ selected, disabled }}
               className={
                 selected
-                  ? 'min-h-8 rounded-full border border-primary bg-accent px-3 py-1'
-                  : 'min-h-8 rounded-full border border-border bg-card px-3 py-1'
+                  ? 'min-h-8 rounded-full border border-primary bg-accent px-3'
+                  : 'min-h-8 rounded-full border border-border bg-card px-3'
               }
               onPress={() => onChange(chip.date)}
             >
               <Text
                 className={
                   selected
-                    ? 'text-[13px] font-semibold leading-[18px] text-primary'
-                    : 'text-[13px] font-normal leading-[18px] text-foreground'
+                    ? 'text-[15px] font-semibold leading-5 text-primary'
+                    : 'text-[15px] font-semibold leading-5 text-foreground'
                 }
               >
                 {chip.label}
@@ -97,11 +100,11 @@ export function TransactionDateField({
         <DateTimePicker
           mode="date"
           presentation="dialog"
-          value={pickerDate(value)}
+          value={localPickerDate(value)}
           accentColor={primaryColor}
-          maximumDate={pickerDate(today)}
+          maximumDate={allowFuture ? undefined : localPickerDate(today)}
           onValueChange={(_, date) => {
-            onChange(dateKey(date));
+            if (!disabled) onChange(localDateKey(date));
             setPicking(false);
           }}
           onDismiss={() => setPicking(false)}

@@ -1,4 +1,4 @@
-# Hissab public website
+# Tally Stick public website
 
 Static Next.js marketing, Help, Privacy, and Terms site. It has no API or authenticated product surface.
 
@@ -18,7 +18,7 @@ pnpm lint
 - [ ] Add the approved current-app screenshot set described in `docs/public-website-design.md`.
 - [ ] Add App Store and Google Play listings, then replace pending controls with official store badges.
 - [x] Approve the canonical public HTTPS URLs for `/privacy/`, `/terms/`, `/help/`, and `/delete-account/`.
-- [x] Review the final copy against Hissab’s implemented data handling and account lifecycle.
+- [x] Review the final copy against Tally Stick’s implemented data handling and account lifecycle.
 - [x] Remove the Metadata API `noindex` directives and `X-Robots-Tag` header after owner approval.
 - [x] Set the Vercel project root to `web`, deploy, and verify routes, headers, mobile layouts, keyboard focus, dark mode, and reduced motion.
 - [x] Link approved Privacy and Terms URLs from the mobile registration and Account screens.

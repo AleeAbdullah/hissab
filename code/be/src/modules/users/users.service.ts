@@ -4,23 +4,22 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
-import type { DatabaseTransaction } from '../../database/database.service';
 import { activityEvents } from '../../database/schema';
+import { DatabaseService } from '../../database/database.service';
 import { IdempotencyService } from '../idempotency';
-import { OutboxService } from '../outbox';
 import type { UpdateProfileDto } from './dto/update-profile.dto';
 import { type UserProfile, UsersRepository } from './users.repository';
 
 @Injectable()
 export class UsersService {
   constructor(
+    private readonly database: DatabaseService,
     private readonly repository: UsersRepository,
     private readonly idempotency: IdempotencyService,
-    private readonly outbox: OutboxService,
   ) {}
 
   async getProfile(userId: string): Promise<UserProfile> {
-    const profile = await this.repository.findProfile(userId);
+    const profile = await this.repository.findProfile(this.database.db, userId);
     if (!profile) {
       throw new NotFoundException('User profile not found.');
     }
@@ -44,35 +43,23 @@ export class UsersService {
         routeScope: 'users:me:update',
       },
       async (transaction) => {
-        await this.repository.updateProfile(transaction, userId, dto);
-        await this.recordProfileUpdated(transaction, userId, Object.keys(dto));
-        const profile = await this.repository.findProfile(userId, transaction);
+        await this.repository.updateProfile(transaction, userId, {
+          displayName: dto.displayName,
+          displayCurrency: dto.displayCurrency,
+        });
+        await transaction.insert(activityEvents).values({
+          actorUserId: userId,
+          eventType: 'USER_PROFILE_UPDATED',
+          aggregateType: 'USER',
+          aggregateId: userId,
+          payload: { changedFields: Object.keys(dto) },
+        });
+        const profile = await this.repository.findProfile(transaction, userId);
         if (!profile) {
           throw new NotFoundException('User profile not found.');
         }
         return profile;
       },
     );
-  }
-
-  private async recordProfileUpdated(
-    transaction: DatabaseTransaction,
-    userId: string,
-    changedFields: string[],
-  ): Promise<void> {
-    const payload = { changedFields };
-    await transaction.insert(activityEvents).values({
-      actorUserId: userId,
-      eventType: 'USER_PROFILE_UPDATED',
-      aggregateType: 'USER',
-      aggregateId: userId,
-      payload,
-    });
-    await this.outbox.enqueue(transaction, {
-      eventType: 'user.profile_updated',
-      aggregateType: 'user',
-      aggregateId: userId,
-      payload,
-    });
   }
 }

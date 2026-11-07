@@ -8,9 +8,9 @@ import { Card, ErrorMessage, Screen } from '@/components/ui';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { signIn } from '@/features/auth/api';
-import { AuthPageHeader } from '@/features/auth/components/auth-page-header';
 import { AuthTextField } from '@/features/auth/components/auth-field';
 import { AuthLegalLinks } from '@/features/auth/components/auth-legal-links';
+import { AuthPageHeader } from '@/features/auth/components/auth-page-header';
 
 export default function SignInScreen() {
   const router = useRouter();
@@ -33,7 +33,7 @@ export default function SignInScreen() {
                 selectable
                 className="font-serif text-[48px] font-medium leading-[52px]"
               >
-                Hissab
+                Tally Stick
               </Text>
               <View className="h-px w-12 bg-primary" />
               <Text

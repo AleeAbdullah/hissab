@@ -20,16 +20,14 @@ const CACHE_ROOTS = new Set([
   'blocks',
   'connection-requests',
   'connections',
-  'expenses',
   'group-invitations',
   'groups',
   'home',
   'ledgers',
-  'notification-inbox',
+  'notifications',
   'notification-preferences',
   'personal',
   'profile',
-  'settlements',
   'shared-expense-categories'
 ]);
 

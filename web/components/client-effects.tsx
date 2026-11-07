@@ -28,7 +28,7 @@ export function StickyDownload() {
   if (dismissed || !visible) return null;
   return (
     <aside className="sticky-download" aria-label="App availability">
-      <a href="#download">Hissab · Coming soon</a>
+      <a href="#download">Tally Stick · Coming soon</a>
       <button type="button" aria-label="Dismiss app availability bar" onClick={() => setDismissed(true)}>×</button>
     </aside>
   );

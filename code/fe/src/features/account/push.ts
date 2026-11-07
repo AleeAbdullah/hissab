@@ -1,5 +1,5 @@
-// TODO: Restore physical-device detection when using a Hissab development build.
-// import * as Device from 'expo-device';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
+import * as Device from 'expo-device';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
@@ -7,22 +7,34 @@ import { registerNotificationDevice, revokeNotificationDevice } from './api';
 
 const installationKey = 'hissab.push.installation';
 const deviceKey = (userId: string) => `hissab.push.device.${userId}`;
+const projectId =
+  Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
 
 export function canRegisterPushNotifications() {
-  // TODO: Enable push registration when switching from Expo Go to a development build.
-  // return Device.isDevice && (Platform.OS === 'ios' || Platform.OS === 'android');
-  return false;
+  return (
+    Device.isDevice &&
+    Constants.executionEnvironment !== ExecutionEnvironment.StoreClient &&
+    (Platform.OS === 'ios' || Platform.OS === 'android') &&
+    typeof projectId === 'string' &&
+    projectId.length > 0
+  );
 }
 
 export async function registerForPushNotifications(userId: string) {
   if (!canRegisterPushNotifications()) {
     throw new Error(
-      'Push notifications are disabled until the Hissab development build is ready.'
+      'Push notifications require a Tally Stick build linked to Expo on a physical device.'
     );
   }
 
   // Load only after push is enabled; importing this at startup crashes Expo Go.
   const Notifications = await import('expo-notifications');
+  if (Platform.OS === 'android') {
+    await Notifications.setNotificationChannelAsync('default', {
+      name: 'Tally Stick notifications',
+      importance: Notifications.AndroidImportance.DEFAULT
+    });
+  }
   const current = await Notifications.getPermissionsAsync();
   const permission = current.granted
     ? current
@@ -33,7 +45,7 @@ export async function registerForPushNotifications(userId: string) {
     );
   }
 
-  const token = await Notifications.getExpoPushTokenAsync();
+  const token = await Notifications.getExpoPushTokenAsync({ projectId });
   const device = await registerNotificationDevice({
     token: token.data,
     platform: Platform.OS === 'ios' ? 'IOS' : 'ANDROID',

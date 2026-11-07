@@ -8,8 +8,8 @@ import {
 } from 'react';
 import type { PropsWithChildren } from 'react';
 
-import { getSessionUserId } from '@/api/session-store';
 import type { DisplayCurrency } from '@/api/contracts';
+import { getSessionUserId } from '@/api/session-store';
 import { useSession } from '@/features/auth/session';
 import {
   readLocalValue,
@@ -25,6 +25,7 @@ export type LedgerDraft = {
   members: LedgerDraftMember[];
   currentUserId: string;
   displayCurrency: DisplayCurrency;
+  settlement?: { amount: string; fromUserId: string; toUserId: string };
 };
 
 type LedgerDraftContextValue = {
