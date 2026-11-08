@@ -12,6 +12,8 @@ export function configureApp(
   configService: ConfigService<EnvironmentVariables, true>,
 ): void {
   app.enableShutdownHooks();
+  // Railway's edge proxy is one hop; read the client IP from X-Forwarded-For.
+  app.set('trust proxy', 1);
   app.use(helmet());
   app.setGlobalPrefix('v1', {
     exclude: [
