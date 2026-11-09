@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -458,7 +459,7 @@ export class AuthService {
             account.passwordHash,
           ))
         ) {
-          throw new UnauthorizedException('Current password is incorrect.');
+          throw new ForbiddenException('Current password is incorrect.');
         }
         const passwordHash = await this.passwordHasher.hash(dto.newPassword);
         await this.repository.updatePasswordHash(

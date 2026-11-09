@@ -1,7 +1,9 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
+import { useNavigation, usePreventRemove } from 'expo-router/react-navigation';
+import { Stack } from 'expo-router/stack';
 import { X } from 'lucide-react-native';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { View } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
@@ -35,6 +37,8 @@ export default function PersonalTransactionScreen() {
     },
     [saveDraft]
   );
+  const navigation = useNavigation();
+  const allowExit = useRef(false);
   const create = useMutation({
     mutationFn: createPersonalTransaction,
     onSuccess: async () => {
@@ -43,8 +47,13 @@ export default function PersonalTransactionScreen() {
         queryClient.invalidateQueries({ queryKey: homeQuery.queryKey })
       ]);
       persistedDraft.clear();
+      allowExit.current = true;
       router.back();
     }
+  });
+  // Keep the sheet open while saving so the result can't navigate another screen.
+  usePreventRemove(create.isPending, ({ data }) => {
+    if (allowExit.current) navigation.dispatch(data.action);
   });
   const discard = () =>
     dialog(
@@ -64,6 +73,7 @@ export default function PersonalTransactionScreen() {
     );
   return (
     <View className="flex-1 bg-background">
+      <Stack.Screen options={{ gestureEnabled: !create.isPending }} />
       <View className="gap-1 px-5 pb-2 pt-5">
         <View className="relative min-h-12 justify-center">
           <Text
@@ -75,6 +85,7 @@ export default function PersonalTransactionScreen() {
           <Button
             variant="ghost"
             className="absolute right-0 w-12 px-0"
+            disabled={create.isPending}
             accessibilityLabel="Close add transaction"
             onPress={() => router.back()}
           >

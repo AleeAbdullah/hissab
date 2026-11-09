@@ -12,6 +12,7 @@ import {
   Req,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import type { Request } from 'express';
 
 import type { AuthPrincipal } from '../../common/auth/auth-principal';
@@ -29,11 +30,15 @@ import {
   SignInDto,
 } from './dto';
 
+// Public credential endpoints get a tighter per-IP limit than the global 120/min.
+const credentialThrottle = { default: { limit: 10, ttl: 60_000 } };
+
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly auth: AuthService) {}
 
+  @Throttle(credentialThrottle)
   @Public()
   @Post('register')
   register(
@@ -48,6 +53,7 @@ export class AuthController {
     );
   }
 
+  @Throttle(credentialThrottle)
   @Public()
   @Post('sign-in')
   @HttpCode(HttpStatus.OK)
@@ -117,6 +123,7 @@ export class AuthController {
     return this.auth.revokeSession(principal.userId, sessionId, idempotencyKey);
   }
 
+  @Throttle(credentialThrottle)
   @Public()
   @Post('password/forgot')
   @HttpCode(HttpStatus.ACCEPTED)
@@ -128,6 +135,7 @@ export class AuthController {
     return this.auth.forgotPassword(idempotencyKey, dto, metadata(request));
   }
 
+  @Throttle(credentialThrottle)
   @Public()
   @Post('password/reset')
   @HttpCode(HttpStatus.OK)

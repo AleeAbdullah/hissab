@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   HttpException,
   HttpStatus,
   Injectable,
@@ -22,6 +23,7 @@ import {
 } from '../../database/schema';
 import { IdempotencyService } from '../idempotency';
 import { OutboxService } from '../outbox';
+import { UsersRepository } from '../users/users.repository';
 import type { CreateReminderDto } from './dto/create-reminder.dto';
 
 const COOLDOWN_MS = 24 * 60 * 60 * 1_000;
@@ -43,6 +45,7 @@ export class RemindersService {
     private readonly database: DatabaseService,
     private readonly idempotency: IdempotencyService,
     private readonly outbox: OutboxService,
+    private readonly users: UsersRepository,
   ) {}
 
   createReminder(
@@ -77,6 +80,16 @@ export class RemindersService {
           requesterUserId,
           recipientUserId,
         );
+        // A block in either direction stops reminders, which reach the lock screen.
+        if (
+          await this.users.isEitherUserBlocked(
+            transaction,
+            requesterUserId,
+            recipientUserId,
+          )
+        ) {
+          throw new ForbiddenException('You cannot remind this person.');
+        }
         await this.requireCooldownElapsed(
           transaction,
           ledgerId,

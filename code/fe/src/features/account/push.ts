@@ -58,6 +58,11 @@ export async function hasRegisteredPushDevice(userId: string) {
   return Boolean(await SecureStore.getItemAsync(deviceKey(userId)));
 }
 
+// The server already disabled this device (e.g. password change); drop the local record.
+export function forgetPushDevice(userId: string) {
+  return SecureStore.deleteItemAsync(deviceKey(userId));
+}
+
 export async function revokePushNotifications(userId: string) {
   const deviceId = await SecureStore.getItemAsync(deviceKey(userId));
   if (!deviceId) return;

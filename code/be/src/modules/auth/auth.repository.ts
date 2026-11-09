@@ -9,6 +9,7 @@ import {
   type DatabaseTransaction,
 } from '../../database/database.service';
 import {
+  deviceTokens,
   passwordResetTokens,
   personalLedgers,
   refreshSessions,
@@ -246,6 +247,14 @@ export class AuthRepository {
           eq(refreshSessions.userId, userId),
           isNull(refreshSessions.revokedAt),
         ),
+      );
+    // A credential change also stops push to devices registered by old sessions.
+    const now = new Date();
+    await transaction
+      .update(deviceTokens)
+      .set({ enabled: false, revokedAt: now, updatedAt: now })
+      .where(
+        and(eq(deviceTokens.userId, userId), isNull(deviceTokens.revokedAt)),
       );
   }
 

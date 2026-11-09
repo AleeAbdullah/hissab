@@ -8,6 +8,8 @@ import { useDialog } from '@/components/ui/dialog';
 import { Text } from '@/components/ui/text';
 import {
   acceptRequest,
+  block,
+  blocksQuery,
   cancelRequest,
   connectionsQuery,
   declineRequest,
@@ -22,22 +24,27 @@ export default function RequestsScreen() {
   const mutation = useMutation({
     mutationFn: ({
       action,
-      id
+      id,
+      userId
     }: {
-      action: 'accept' | 'decline' | 'cancel';
+      action: 'accept' | 'decline' | 'cancel' | 'block';
       id: string;
+      userId?: string;
     }) =>
       action === 'accept'
         ? acceptRequest(id)
         : action === 'decline'
           ? declineRequest(id)
-          : cancelRequest(id),
+          : action === 'block'
+            ? block(userId!)
+            : cancelRequest(id),
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: pendingRequestsQuery.queryKey
         }),
         queryClient.invalidateQueries({ queryKey: connectionsQuery.queryKey }),
+        queryClient.invalidateQueries({ queryKey: blocksQuery.queryKey }),
         queryClient.invalidateQueries({ queryKey: homeQuery.queryKey })
       ]);
     }
@@ -87,6 +94,25 @@ export default function RequestsScreen() {
           onAccept={() => mutation.mutate({ action: 'accept', id: item.id })}
           onDecline={() => confirm(item, 'decline')}
           onCancel={() => confirm(item, 'cancel')}
+          onBlock={() =>
+            dialog(
+              `Block ${item.personDisplayName}?`,
+              'This declines the request and stops them from sending new ones. You can unblock them later in Account.',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Block person',
+                  style: 'destructive',
+                  onPress: () =>
+                    mutation.mutate({
+                      action: 'block',
+                      id: item.id,
+                      userId: item.personUserId
+                    })
+                }
+              ]
+            )
+          }
           onReport={() =>
             router.push({
               pathname: '/report',

@@ -129,6 +129,8 @@ export class SettlementsService {
           dto.expectedVersion,
         );
         const prepared = this.prepare(dto);
+        // An edit reverses the current effect, so its parties must be active too.
+        await this.requireActiveParties(transaction, latest.ledgerId, latest);
         await this.requireActiveParties(transaction, latest.ledgerId, prepared);
         await this.reverseEffect(transaction, userId, latest);
         const revision = await this.repository.insertRevision(transaction, {

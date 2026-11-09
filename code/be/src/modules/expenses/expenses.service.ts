@@ -153,6 +153,17 @@ export class ExpensesService {
           dto.expectedVersion,
         );
         const prepared = this.prepareExpense(dto);
+        // An edit reverses the current effect, so its parties must be active too.
+        const current = await this.repository.getRevisionAllocations(
+          transaction,
+          latest.id,
+        );
+        await this.requireActiveMembers(transaction, latest.ledgerId, {
+          description: latest.description,
+          totalMinor: latest.totalMinor,
+          occurredAt: latest.occurredAt,
+          ...current,
+        });
         await this.requireActiveMembers(transaction, latest.ledgerId, prepared);
         const category = await this.requireCategory(
           transaction,
