@@ -12,7 +12,8 @@ export function ConnectionRequestCard({
   onAccept,
   onDecline,
   onCancel,
-  onReport
+  onReport,
+  onBlock
 }: {
   request: ConnectionRequest;
   disabled: boolean;
@@ -21,6 +22,7 @@ export function ConnectionRequestCard({
   onDecline: () => void;
   onCancel: () => void;
   onReport?: () => void;
+  onBlock?: () => void;
 }) {
   const incoming = request.direction === 'incoming';
   return (
@@ -41,16 +43,29 @@ export function ConnectionRequestCard({
                 : 'Connection request sent'}
             </Text>
           </View>
-          {incoming && onReport ? (
-            <View className="shrink-0">
-              <Button
-                size="compact"
-                variant="outline"
-                accessibilityLabel={`Report ${request.personDisplayName}`}
-                onPress={onReport}
-              >
-                <Text>Report</Text>
-              </Button>
+          {incoming && (onReport || onBlock) ? (
+            <View className="shrink-0 flex-row gap-2">
+              {onReport ? (
+                <Button
+                  size="compact"
+                  variant="outline"
+                  accessibilityLabel={`Report ${request.personDisplayName}`}
+                  onPress={onReport}
+                >
+                  <Text>Report</Text>
+                </Button>
+              ) : null}
+              {onBlock ? (
+                <Button
+                  size="compact"
+                  variant="destructiveOutline"
+                  disabled={disabled}
+                  accessibilityLabel={`Block ${request.personDisplayName}`}
+                  onPress={onBlock}
+                >
+                  <Text>Block</Text>
+                </Button>
+              ) : null}
             </View>
           ) : null}
         </View>

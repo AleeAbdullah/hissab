@@ -1,8 +1,8 @@
-let refreshing: Promise<boolean> | undefined;
+let refreshing: Promise<unknown> | undefined;
 
-export function runSingleRefresh(refresh: () => Promise<boolean>) {
+export function runSingleRefresh<T>(refresh: () => Promise<T>): Promise<T> {
   refreshing ??= refresh().finally(() => {
     refreshing = undefined;
   });
-  return refreshing;
+  return refreshing as Promise<T>;
 }

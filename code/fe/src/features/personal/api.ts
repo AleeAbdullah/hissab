@@ -19,6 +19,7 @@ import type {
   CreatePersonalTransactionDto,
   ReplacePersonalTransactionDto
 } from '@/api/generated/types.gen';
+import { retryableSubmission } from '@/api/retryable-submission';
 import { idempotencyKey, request } from '@/api/transport';
 
 export type PersonalFilters = {
@@ -74,12 +75,16 @@ export function personalReportQuery(filters: PersonalFilters) {
   };
 }
 
+const submitPersonalTransaction = retryableSubmission(idempotencyKey);
+
 export function createPersonalTransaction(body: CreatePersonalTransactionDto) {
-  return request<PersonalTransaction>(() =>
-    personalCreateTransaction({
-      body,
-      headers: { 'Idempotency-Key': idempotencyKey() }
-    })
+  return submitPersonalTransaction(body, (key) =>
+    request<PersonalTransaction>(() =>
+      personalCreateTransaction({
+        body,
+        headers: { 'Idempotency-Key': key }
+      })
+    )
   );
 }
 

@@ -26,13 +26,14 @@ export async function hydrateTokens() {
 }
 
 export async function setTokens(tokens: AuthTokens) {
+  // Persist first so a killed app never loses a rotated refresh token.
+  await SecureStore.setItemAsync(KEY, JSON.stringify(tokens));
   const previousUserId = getSessionUserId(current);
   current = tokens;
   const nextUserId = getSessionUserId(tokens);
   if (previousUserId && previousUserId !== nextUserId)
     clearLocalUserData(previousUserId);
   publish();
-  await SecureStore.setItemAsync(KEY, JSON.stringify(tokens));
 }
 
 export async function clearTokens() {

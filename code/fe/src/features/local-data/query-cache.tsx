@@ -50,6 +50,13 @@ function persistQueries(userId: string) {
   });
 }
 
+// Recovery from a crash: drop cached reads so the retry refetches from the server.
+export function discardPersistedQueries() {
+  queryClient.clear();
+  const userId = getSessionUserId(getTokens());
+  if (userId) removeLocalValue(userId, CACHE_KEY);
+}
+
 export function PersistedQueryProvider({ children }: PropsWithChildren) {
   const session = useSession();
   const userId = getSessionUserId(session);
@@ -62,16 +69,23 @@ export function PersistedQueryProvider({ children }: PropsWithChildren) {
     let active = true;
     queryClient.clear();
     void (async () => {
-      if (userId) {
-        const snapshot = await readLocalValue<QueryCacheSnapshot>(
-          userId,
-          CACHE_KEY
-        );
-        if (snapshot && Date.now() - snapshot.savedAt <= MAX_AGE_MS && active)
-          hydrate(queryClient, snapshot.state);
-        else if (snapshot) removeLocalValue(userId, CACHE_KEY);
+      try {
+        if (userId) {
+          const snapshot = await readLocalValue<QueryCacheSnapshot>(
+            userId,
+            CACHE_KEY
+          );
+          if (snapshot && Date.now() - snapshot.savedAt <= MAX_AGE_MS && active)
+            hydrate(queryClient, snapshot.state);
+          else if (snapshot) removeLocalValue(userId, CACHE_KEY);
+        }
+      } catch {
+        // A corrupt snapshot must never block startup: drop it and load fresh.
+        queryClient.clear();
+        if (userId) removeLocalValue(userId, CACHE_KEY);
+      } finally {
+        if (active) setReadyUserId(userId);
       }
-      if (active) setReadyUserId(userId);
     })();
     return () => {
       active = false;

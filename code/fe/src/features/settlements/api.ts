@@ -10,6 +10,7 @@ import type {
   CreateSettlementDto,
   ReplaceSettlementDto
 } from '@/api/generated/types.gen';
+import { retryableSubmission } from '@/api/retryable-submission';
 import { idempotencyKey, request } from '@/api/transport';
 
 export function listSettlements(ledgerId: string, cursor?: string) {
@@ -28,13 +29,17 @@ export function settlementQuery(settlementId: string) {
   };
 }
 
+const submitSettlement = retryableSubmission(idempotencyKey);
+
 export function createSettlement(ledgerId: string, body: CreateSettlementDto) {
-  return request<Settlement>(() =>
-    settlementsCreateSettlement({
-      path: { ledgerId },
-      body,
-      headers: { 'Idempotency-Key': idempotencyKey() }
-    })
+  return submitSettlement({ ledgerId, body }, (key) =>
+    request<Settlement>(() =>
+      settlementsCreateSettlement({
+        path: { ledgerId },
+        body,
+        headers: { 'Idempotency-Key': key }
+      })
+    )
   );
 }
 

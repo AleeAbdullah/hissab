@@ -1,7 +1,7 @@
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
-  UnauthorizedException,
 } from '@nestjs/common';
 
 import { PasswordHasher } from '../auth/password-hasher';
@@ -48,10 +48,10 @@ export class AccountService {
         if (
           !(await this.passwordHasher.verify(dto.currentPassword, passwordHash))
         ) {
-          throw new UnauthorizedException('Current password is incorrect.');
+          throw new ForbiddenException('Current password is incorrect.');
         }
         if (!account?.email) {
-          throw new UnauthorizedException('Current password is incorrect.');
+          throw new ForbiddenException('Current password is incorrect.');
         }
         await this.repository.lockRelevantLedgers(transaction, userId);
         if (await this.repository.hasNonzeroBalance(transaction, userId)) {

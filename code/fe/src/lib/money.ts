@@ -28,9 +28,10 @@ export function absMinor(minor: bigint | string) {
   return (amount < 0n ? -amount : amount).toString();
 }
 
-// "12.34" -> "1234"; null when the text is not a two-decimal amount.
+// "12.34" or "12,34" -> "1234"; null when the text is not a two-decimal amount.
+// Comma-locale decimal pads type ",", so accept it as the decimal separator.
 export function parseMinorAmount(value: string) {
-  const match = value.trim().match(/^(\d+)(?:\.(\d{1,2}))?$/);
+  const match = value.trim().match(/^(\d+)(?:[.,](\d{1,2}))?$/);
   if (!match) return null;
   const whole = BigInt(match[1]);
   const fraction = (match[2] ?? '').padEnd(2, '0');

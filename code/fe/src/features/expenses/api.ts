@@ -15,6 +15,7 @@ import type {
   CreateExpenseDto,
   ReplaceExpenseDto
 } from '@/api/generated/types.gen';
+import { retryableSubmission } from '@/api/retryable-submission';
 import { idempotencyKey, request } from '@/api/transport';
 
 export const expenseCategoriesQuery = {
@@ -37,13 +38,17 @@ export function expenseQuery(expenseId: string) {
   };
 }
 
+const submitExpense = retryableSubmission(idempotencyKey);
+
 export function createExpense(ledgerId: string, body: CreateExpenseDto) {
-  return request<SharedExpense>(() =>
-    expensesCreateExpense({
-      path: { ledgerId },
-      body,
-      headers: { 'Idempotency-Key': idempotencyKey() }
-    })
+  return submitExpense({ ledgerId, body }, (key) =>
+    request<SharedExpense>(() =>
+      expensesCreateExpense({
+        path: { ledgerId },
+        body,
+        headers: { 'Idempotency-Key': key }
+      })
+    )
   );
 }
 
