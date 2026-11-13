@@ -1,0 +1,38 @@
+{
+  "configVersion": 0,
+  "apple": {
+    "categories": [
+      "FINANCE"
+    ],
+    "info": {
+      "en-US": {
+        "title": "Tally Stick: Split Bills",
+        "subtitle": "Shared expenses & IOU tracker",
+        "promoText": "Split bills with friends and housemates, see exactly who owes whom, and record settlements however you pay.",
+        "keywords": [
+          "group",
+          "debt",
+          "owe",
+          "roommate",
+          "trip",
+          "settle",
+          "splitter",
+          "rent",
+          "friends",
+          "money",
+          "udhar",
+          "khata",
+          "hisab",
+          "ledger",
+          "travel",
+          "lend"
+        ],
+        "description": "Dinner with friends, rent with housemates, a weekend away. Tally Stick keeps one clear record of who paid and who owes, so nobody has to work it out from memory.\n\nSPLIT BILLS YOUR WAY\n• Split a bill equally, or enter an exact amount for each person\n• One person can pay or several, and the payers don’t have to be the people sharing the cost\n• Every split adds up to the total, with nothing lost to rounding\n\nGROUPS AND FRIENDS\n• Start a group for a home, a trip or a regular dinner and keep its shared expenses in one place\n• Keep a separate one-to-one ledger with a friend for the everyday “I’ll get this” moments\n• Groups have no admins. Everyone who joins has the same say\n\nSEE WHO OWES WHOM\n• Each ledger shows one exact balance per person\n• Balances come from the recorded expenses and settlements, and every edit keeps its history\n• Send a balance reminder to someone who owes you\n\nSETTLE UP HOWEVER YOU PAY\n• Pay in cash, by bank transfer, or any way you already use\n• Record the settlement and everyone’s balance updates\n• Tally Stick is a record. It never holds, sends or converts money\n\nA PRIVATE EXPENSE TRACKER TOO\n• Record your own income and expenses in a personal ledger only you can see\n• Reports show your spending by category and can include your share of shared expenses\n• You add every entry yourself, with no bank account to link\n\nCLEAR FROM THE START\n• Notifications when an expense, settlement or invitation involves you\n• Choose your currency symbol: PKR, USD, GBP, EUR, AED or SAR. Amounts are never converted\n• Export your records, review signed-in devices, or delete your account from the app\n• Light and dark appearance\n\nFor ages 16 and over.\n\nHelp: https://hissabapp.vercel.app/help/\nPrivacy: https://hissabapp.vercel.app/privacy/\nTerms: https://hissabapp.vercel.app/terms/",
+        "marketingUrl": "https://hissabapp.vercel.app/",
+        "supportUrl": "https://hissabapp.vercel.app/help/",
+        "privacyPolicyUrl": "https://hissabapp.vercel.app/privacy/",
+        "privacyChoicesUrl": "https://hissabapp.vercel.app/delete-account/"
+      }
+    }
+  }
+}
