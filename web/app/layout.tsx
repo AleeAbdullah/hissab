@@ -23,6 +23,8 @@ export const metadata: Metadata = {
       { url: '/brand/icon-light.svg', type: 'image/svg+xml', media: '(prefers-color-scheme: dark)' }
     ]
   },
+  // Safari's install banner; it stays hidden until the app is live on the App Store.
+  itunes: { appId: '6831827291' },
   robots: { index: true, follow: true }
 };
 
