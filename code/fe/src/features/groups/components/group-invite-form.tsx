@@ -154,15 +154,17 @@ export function GroupInviteForm({ groupId }: { groupId: string }) {
     );
     return (
       <View key={person.userId}>
-        <View className="min-h-14 flex-row items-start gap-3 py-2.5">
+        <View className="min-h-14 flex-row items-center gap-3 py-2.5">
           <Avatar name={person.displayName} />
           <View className="flex-1 gap-1">
             <Text className="text-base font-medium leading-[22px]">
               {person.displayName}
             </Text>
-            <Text className="text-[13px] leading-[18px] text-muted-foreground">
-              {lookupResult ? normalizedEmail : 'Connected'}
-            </Text>
+            {lookupResult ? (
+              <Text className="text-[13px] leading-[18px] text-muted-foreground">
+                {normalizedEmail}
+              </Text>
+            ) : null}
             {fontScale >= 1.3 ? (
               <View className="items-start">{action}</View>
             ) : null}
@@ -246,17 +248,17 @@ export function GroupInviteForm({ groupId }: { groupId: string }) {
           </Button>
         </>
       ) : null}
-      <SectionLabel>YOUR CONNECTIONS</SectionLabel>
+      <SectionLabel>YOUR FRIENDS</SectionLabel>
       {connections.isLoading ? (
         <ActivityIndicator
-          accessibilityLabel="Loading connections"
+          accessibilityLabel="Loading friends"
           className="text-primary"
         />
       ) : connections.error ? (
         <>
           <ErrorMessage error={connections.error} />
           <Button variant="outline" onPress={() => void connections.refetch()}>
-            <Text>Retry connections</Text>
+            <Text>Retry friends</Text>
           </Button>
         </>
       ) : connections.data?.length ? (
@@ -266,7 +268,7 @@ export function GroupInviteForm({ groupId }: { groupId: string }) {
           selectable
           className="text-[15px] leading-[22px] text-muted-foreground"
         >
-          No connections yet. You can still invite someone by email.
+          No friends yet. You can still invite someone by email.
         </Text>
       )}
     </Screen>

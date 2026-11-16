@@ -1,14 +1,16 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Link, router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Stack } from 'expo-router/stack';
 import { useRef, useState } from 'react';
 import { View } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
 import {
+  Card,
   ErrorMessage,
   Field,
   Loading,
+  Row,
   Screen,
   SectionLabel
 } from '@/components/ui';
@@ -176,73 +178,56 @@ export default function GroupSettingsScreen() {
           update.mutate(name);
         }}
       />
+      <Card>
+        <Row
+          title="Balance details"
+          href={{ pathname: '/groups/[groupId]/balances', params: { groupId } }}
+        />
+        <Row
+          title="Report group"
+          href={{
+            pathname: '/report',
+            params: {
+              targetType: 'GROUP',
+              targetId: groupId,
+              name: group.data.name
+            }
+          }}
+        />
+      </Card>
       <SectionLabel>MEMBERSHIP</SectionLabel>
-      <Button
-        variant="destructiveOutline"
-        disabled={pending || leaveBlocked}
-        accessibilityState={{
-          disabled: pending || leaveBlocked,
-          busy: leave.isPending
-        }}
-        onPress={() => confirm('leave')}
-      >
-        <Text>Leave group</Text>
-      </Button>
-      <Text
-        selectable
-        className="text-[15px] leading-[22px] text-muted-foreground"
-      >
-        {own === undefined
-          ? 'Balance eligibility is unavailable.'
-          : own === 0n
-            ? `Your balance is settled.${lastMember ? ' Leaving also archives the group because you are the last active member.' : ''}`
-            : `You can leave once your own balance is settled. ${own < 0n ? 'You owe' : "You're owed"} ${formatMinorAmount((own < 0n ? -own : own).toString(), profile.data.displayCurrency)}.`}
-      </Text>
-      <Button
-        variant="destructiveOutline"
-        disabled={pending || archiveBlocked}
-        accessibilityState={{
-          disabled: pending || archiveBlocked,
-          busy: archive.isPending
-        }}
-        onPress={() => confirm('archive')}
-      >
-        <Text>Archive group</Text>
-      </Button>
-      <Text
-        selectable
-        className="text-[15px] leading-[22px] text-muted-foreground"
-      >
-        Archives {group.data.name} for everyone.{' '}
-        {unsettled === undefined
-          ? 'Balance eligibility is unavailable.'
-          : unsettled
-            ? `Every member must be settled; ${unsettled} ${unsettled === 1 ? 'member has' : 'members have'} open balances.`
-            : 'Every member is settled.'}
-      </Text>
-      <Link
-        href={{ pathname: '/groups/[groupId]/balances', params: { groupId } }}
-        asChild
-      >
-        <Button variant="outline" role="link">
-          <Text>Balance details</Text>
-        </Button>
-      </Link>
-      <Link
-        href={{
-          pathname: '/report',
-          params: {
-            targetType: 'GROUP',
-            targetId: groupId,
-            name: group.data.name
+      <Card>
+        <Row
+          title="Leave group"
+          destructive
+          disabled={pending || leaveBlocked}
+          detail={leave.isPending ? 'Leaving…' : undefined}
+          subtitle={
+            own === undefined
+              ? 'Balance eligibility is unavailable.'
+              : own === 0n
+                ? lastMember
+                  ? 'You are the last member, so this also archives the group.'
+                  : 'Your balance is settled.'
+                : `Settle your balance first. ${own < 0n ? 'You owe' : "You're owed"} ${formatMinorAmount((own < 0n ? -own : own).toString(), profile.data.displayCurrency)}.`
           }
-        }}
-        asChild
-      >
-        <Button variant="outline" role="link">
-          <Text>Report group</Text>
-        </Button>
-      </Link>
+          onPress={() => confirm('leave')}
+        />
+        <Row
+          title="Archive group"
+          destructive
+          disabled={pending || archiveBlocked}
+          detail={archive.isPending ? 'Archiving…' : undefined}
+          subtitle={
+            unsettled === undefined
+              ? 'Balance eligibility is unavailable.'
+              : unsettled
+                ? `Everyone must be settled first. ${unsettled} ${unsettled === 1 ? 'member has' : 'members have'} open balances.`
+                : 'Everyone is settled. Archives the group for all members.'
+          }
+          onPress={() => confirm('archive')}
+        />
+      </Card>
       {balances.error || members.error ? (
         <Button
           variant="outline"

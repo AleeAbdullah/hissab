@@ -1,6 +1,5 @@
 import { View } from 'react-native';
 
-import { AuthField } from './components/auth-field';
 import type { DisplayCurrency } from '@/api/contracts';
 import {
   Select,
@@ -11,6 +10,7 @@ import {
   SelectValue,
   type Option
 } from '@/components/ui/select';
+import { Text } from '@/components/ui/text';
 
 const displayCurrencies: DisplayCurrency[] = [
   'PKR',
@@ -23,12 +23,10 @@ const displayCurrencies: DisplayCurrency[] = [
 
 export function CurrencyPicker({
   value,
-  onChange,
-  first
+  onChange
 }: {
   value?: DisplayCurrency;
   onChange: (value: DisplayCurrency) => void;
-  first?: boolean;
 }) {
   const selected = value ? { value, label: value } : undefined;
   const change = (option: Option) => {
@@ -36,26 +34,24 @@ export function CurrencyPicker({
   };
 
   return (
-    <AuthField first={first} label="Display currency">
-      <View>
-        <Select value={selected} onValueChange={change}>
-          <SelectTrigger
-            accessibilityLabel="Choose display currency"
-            className="w-full border-0 px-0"
-          >
-            <SelectValue placeholder="Choose a currency" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              {displayCurrencies.map((code) => (
-                <SelectItem key={code} label={code} value={code}>
-                  {code}
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          </SelectContent>
-        </Select>
-      </View>
-    </AuthField>
+    <View className="gap-1.5">
+      <Text selectable className="text-[13px] text-muted-foreground">
+        Display currency
+      </Text>
+      <Select value={selected} onValueChange={change}>
+        <SelectTrigger accessibilityLabel="Display currency" className="w-full">
+          <SelectValue placeholder="Choose a currency" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectGroup>
+            {displayCurrencies.map((code) => (
+              <SelectItem key={code} label={code} value={code}>
+                {code}
+              </SelectItem>
+            ))}
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+    </View>
   );
 }

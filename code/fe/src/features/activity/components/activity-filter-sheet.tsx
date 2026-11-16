@@ -31,11 +31,11 @@ export const activityAreas: {
   value?: ActivityArea;
   icon: LucideIcon;
 }[] = [
-  { label: 'All activity', icon: Layers },
+  { label: 'All', icon: Layers },
   { label: 'Expenses', value: 'EXPENSE', icon: FileText },
   { label: 'Payments', value: 'SETTLEMENT', icon: ArrowLeftRight },
   { label: 'Groups', value: 'GROUP', icon: UsersRound },
-  { label: 'Connections', value: 'CONNECTION', icon: UserRound }
+  { label: 'Friends', value: 'CONNECTION', icon: UserRound }
 ];
 export type ActivityFilters = { area?: ActivityArea; ledgerId?: string };
 export type ActivityLedgerChoice = {
@@ -62,12 +62,12 @@ export function ActivityFilterSheet({
   onClose: () => void;
   onApply: (filters: ActivityFilters) => void;
 }) {
-  const [area, setArea] = useState(filters.area);
+  const area = filters.area;
   const [ledgerId, setLedgerId] = useState(filters.ledgerId);
-  const [expanded, setExpanded] = useState<'area' | 'ledger' | null>('area');
+  const [expanded, setExpanded] = useState<'ledger' | null>('ledger');
   const heading = useRef<View>(null);
-  const count = Number(Boolean(area)) + Number(Boolean(ledgerId));
-  const section = (id: 'area' | 'ledger', title: string, summary?: string) => (
+  const count = Number(Boolean(ledgerId));
+  const section = (id: 'ledger', title: string, summary?: string) => (
     <Button
       variant="ghost"
       accessibilityLabel={`${title}, ${summary ?? ''}`}
@@ -177,32 +177,18 @@ export function ActivityFilterSheet({
               </View>
             ) : null}
             {section(
-              'area',
-              'Area',
-              activityAreas.find((item) => item.value === area)?.label
-            )}
-            {expanded === 'area'
-              ? activityAreas.map((item) =>
-                  choice(
-                    item.value ?? 'all',
-                    item.label,
-                    area === item.value,
-                    () => setArea(item.value),
-                    undefined,
-                    item.icon
-                  )
-                )
-              : null}
-            {section(
               'ledger',
-              'Ledger',
+              'Group or friend',
               ledgers.find((item) => item.id === ledgerId)?.name ??
-                'All ledgers'
+                'All groups and friends'
             )}
             {expanded === 'ledger' ? (
               <>
-                {choice('all-ledgers', 'All ledgers', !ledgerId, () =>
-                  setLedgerId(undefined)
+                {choice(
+                  'all-ledgers',
+                  'All groups and friends',
+                  !ledgerId,
+                  () => setLedgerId(undefined)
                 )}
                 {loading ? <Text>Loading ledgers…</Text> : null}
                 {[undefined, 'GROUP', 'DIRECT'].map((type) => {
@@ -216,7 +202,7 @@ export function ActivityFilterSheet({
                         {type === 'GROUP'
                           ? 'Groups'
                           : type === 'DIRECT'
-                            ? 'Direct ledgers'
+                            ? 'Friends'
                             : 'Selected history'}
                       </Text>
                       {choices.map((item) =>
@@ -235,19 +221,13 @@ export function ActivityFilterSheet({
             ) : null}
           </ScrollView>
           <View className="gap-2 border-t border-border px-5 py-3">
-            <Button
-              className="rounded-full"
-              onPress={() => onApply({ area, ledgerId })}
-            >
+            <Button onPress={() => onApply({ area, ledgerId })}>
               <Text>See results</Text>
             </Button>
             <Button
               variant="ghost"
               disabled={!count}
-              onPress={() => {
-                setArea(undefined);
-                setLedgerId(undefined);
-              }}
+              onPress={() => setLedgerId(undefined)}
             >
               <Text className="text-primary">Clear filters ({count})</Text>
             </Button>

@@ -1,32 +1,58 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { Link } from 'expo-router';
-import { FileText, ChevronRight } from 'lucide-react-native';
+import type { Href } from 'expo-router';
+import { ArrowLeftRight, ChevronRight } from 'lucide-react-native';
+import type { LucideIcon } from 'lucide-react-native';
 import { useState } from 'react';
-import { ActivityIndicator, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 
 import type { DisplayCurrency } from '@/api/contracts';
-import { ErrorMessage, Row } from '@/components/ui';
+import {
+  DayHeading,
+  ErrorMessage,
+  IconTile,
+  ListRow,
+  SectionLabel,
+  SegmentedControl
+} from '@/components/ui';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
+import { groupByDay } from '@/features/activity/presentation';
 import { listExpenses } from '@/features/expenses/api';
 import type { LedgerDraftMember } from '@/features/ledger/draft';
+import { CATEGORY_ICONS } from '@/features/personal/components/category-picker';
 import { listSettlements } from '@/features/settlements/api';
-import { formatDate } from '@/lib/dates';
 import { formatMinorAmount } from '@/lib/money';
+
+type RecordItem = {
+  id: string;
+  occurredAt: string;
+  title: string;
+  subtitle: string;
+  amount: string;
+  icon: LucideIcon;
+  href: Href;
+};
+
+const RECORD_TABS = [
+  { value: 'expenses', label: 'Expenses' },
+  { value: 'payments', label: 'Payments' }
+] as const;
 
 export function LedgerActivity({
   displayCurrency,
   ledgerId,
   ledgerName,
-  members
+  members,
+  currentUserId
 }: {
   displayCurrency: DisplayCurrency;
   ledgerId: string;
   ledgerName?: string;
   members: LedgerDraftMember[];
+  currentUserId: string;
 }) {
-  const { fontScale } = useWindowDimensions();
   const [tab, setTab] = useState<'expenses' | 'payments'>('expenses');
   const expenses = useInfiniteQuery({
     queryKey: ['ledgers', ledgerId, 'expenses'],
@@ -43,37 +69,53 @@ export function LedgerActivity({
   const names = new Map(
     members.map((member) => [member.userId, member.displayName])
   );
+  const name = (userId: string, fallback: string) =>
+    userId === currentUserId ? 'You' : (names.get(userId) ?? fallback);
   const expenseItems = expenses.data?.pages.flatMap((page) => page.items) ?? [];
   const settlementItems =
     settlements.data?.pages.flatMap((page) => page.items) ?? [];
   const selected = tab === 'expenses' ? expenses : settlements;
-  const empty =
-    tab === 'expenses' ? !expenseItems.length : !settlementItems.length;
+  const records: RecordItem[] =
+    tab === 'expenses'
+      ? expenseItems.map((expense) => {
+          const payer =
+            expense.payers.length === 1 && expense.payers[0]
+              ? name(expense.payers[0].userId, 'A member')
+              : `${expense.payers.length} people`;
+          return {
+            id: expense.id,
+            occurredAt: expense.occurredAt,
+            title: expense.description,
+            subtitle: `${expense.status === 'DELETED' ? 'Deleted' : `${payer} paid`} · ${expense.category.name}`,
+            amount: formatMinorAmount(expense.totalMinor, displayCurrency),
+            icon: CATEGORY_ICONS[expense.category.code],
+            href: {
+              pathname: '/expense/[expenseId]',
+              params: { expenseId: expense.id }
+            }
+          };
+        })
+      : settlementItems.map((settlement) => {
+          const to = name(settlement.toUserId, 'member');
+          return {
+            id: settlement.id,
+            occurredAt: settlement.occurredAt,
+            title: `${name(settlement.fromUserId, 'Member')} paid ${to === 'You' ? 'you' : to}`,
+            subtitle:
+              settlement.status === 'DELETED' ? 'Payment deleted' : 'Payment',
+            amount: formatMinorAmount(settlement.amountMinor, displayCurrency),
+            icon: ArrowLeftRight,
+            href: {
+              pathname: '/payment/[paymentId]',
+              params: { paymentId: settlement.id }
+            }
+          };
+        });
+  const empty = !records.length;
   return (
     <View className="gap-3">
-      <Text accessibilityRole="header" className="text-xl font-semibold">
-        Records
-      </Text>
-      <View className="flex-row rounded-xl bg-muted p-1">
-        {(['expenses', 'payments'] as const).map((value) => (
-          <Button
-            key={value}
-            variant="ghost"
-            role="tab"
-            className={tab === value ? 'flex-1 bg-card px-2' : 'flex-1 px-2'}
-            accessibilityState={{ selected: tab === value }}
-            onPress={() => setTab(value)}
-          >
-            <Text
-              className={
-                tab === value ? 'text-primary' : 'text-muted-foreground'
-              }
-            >
-              {value === 'expenses' ? 'Expenses' : 'Payments'}
-            </Text>
-          </Button>
-        ))}
-      </View>
+      <SectionLabel>RECORDS</SectionLabel>
+      <SegmentedControl options={RECORD_TABS} value={tab} onChange={setTab} />
       {selected.error ? (
         <>
           <ErrorMessage error={selected.error} />
@@ -85,57 +127,33 @@ export function LedgerActivity({
       {selected.isLoading ? (
         <ActivityIndicator className="text-primary" />
       ) : empty && selected.isSuccess ? (
-        <View className="items-center gap-2 py-8">
-          <Icon as={FileText} size={28} className="text-muted-foreground" />
-          <Text selectable className="text-lg font-semibold">
-            No {tab === 'expenses' ? 'expenses' : 'payments'} yet
-          </Text>
-          <Text selectable className="text-center text-muted-foreground">
-            Shared expenses and external payments
-            {ledgerName ? ` in ${ledgerName}` : ''} appear here.
-          </Text>
-        </View>
-      ) : empty ? null : tab === 'expenses' ? (
-        expenseItems.map((expense) => (
-          <Row
-            className="px-0"
-            detailClassName="text-foreground"
-            key={expense.id}
-            title={
-              fontScale >= 1.3
-                ? `${expense.description}\n${formatMinorAmount(expense.totalMinor, displayCurrency)}`
-                : expense.description
-            }
-            subtitle={`${expense.category.name} · ${formatDate(expense.occurredAt)}${expense.status === 'DELETED' ? ' · Deleted' : ''}`}
-            detail={
-              fontScale >= 1.3
-                ? undefined
-                : formatMinorAmount(expense.totalMinor, displayCurrency)
-            }
-            href={{
-              pathname: '/expense/[expenseId]',
-              params: { expenseId: expense.id }
-            }}
-          />
-        ))
-      ) : (
-        settlementItems.map((settlement) => (
-          <Row
-            className="px-0"
-            detailClassName="text-foreground"
-            key={settlement.id}
-            title={`${names.get(settlement.fromUserId) ?? 'Member'} paid ${names.get(settlement.toUserId) ?? 'member'}${fontScale >= 1.3 ? `\n${formatMinorAmount(settlement.amountMinor, displayCurrency)}` : ''}`}
-            subtitle={`${formatDate(settlement.occurredAt)}${settlement.status === 'DELETED' ? ' · Deleted' : ''}`}
-            detail={
-              fontScale >= 1.3
-                ? undefined
-                : formatMinorAmount(settlement.amountMinor, displayCurrency)
-            }
-            href={{
-              pathname: '/payment/[paymentId]',
-              params: { paymentId: settlement.id }
-            }}
-          />
+        <Text selectable className="py-6 text-center text-muted-foreground">
+          No {tab} yet.
+        </Text>
+      ) : empty ? null : (
+        groupByDay(records).map((day) => (
+          <View key={day.title}>
+            <DayHeading>{day.title}</DayHeading>
+            {day.items.map((record, index) => (
+              <ListRow
+                key={record.id}
+                href={record.href}
+                title={record.title}
+                subtitle={record.subtitle}
+                divided={index > 0}
+                accessibilityLabel={`${record.title}. ${record.subtitle}. ${record.amount}`}
+                leading={<IconTile icon={record.icon} />}
+                trailing={
+                  <Text
+                    selectable
+                    className="text-base font-semibold tabular-nums leading-[22px]"
+                  >
+                    {record.amount}
+                  </Text>
+                }
+              />
+            ))}
+          </View>
         ))
       )}
       {selected.hasNextPage ? (

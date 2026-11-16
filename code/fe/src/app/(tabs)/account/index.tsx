@@ -1,5 +1,6 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import Constants from 'expo-constants';
+import { ExternalLink } from 'lucide-react-native';
 import { ActivityIndicator, View } from 'react-native';
 
 import {
@@ -13,6 +14,7 @@ import {
 } from '@/components/ui';
 import { Button } from '@/components/ui/button';
 import { useDialog } from '@/components/ui/dialog';
+import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import {
   notificationPreferencesQuery,
@@ -21,7 +23,12 @@ import {
 } from '@/features/account/api';
 import { ExportAccountRow } from '@/features/account/components/export-account-row';
 import { canRegisterPushNotifications } from '@/features/account/push';
+import { isActiveSession } from '@/features/account/sessions';
 import { signOut } from '@/features/auth/api';
+
+const externalIcon = (
+  <Icon as={ExternalLink} size={18} className="text-muted-foreground" />
+);
 
 export default function AccountScreen() {
   const dialog = useDialog();
@@ -55,13 +62,13 @@ export default function AccountScreen() {
         />
         <Row
           title="Notifications"
-          subtitle={
+          detail={
             !canRegisterPushNotifications()
-              ? 'Push unavailable'
+              ? 'Unavailable'
               : notifications.data?.pushEnabled
                 ? 'On'
                 : notifications.data
-                  ? 'Push off'
+                  ? 'Off'
                   : undefined
           }
           href="/account/notifications"
@@ -73,7 +80,11 @@ export default function AccountScreen() {
         <Row title="Blocked people" href="/account/blocked-people" />
         <Row
           title="Devices and sessions"
-          detail={sessions.data ? `${sessions.data.length} active` : undefined}
+          detail={
+            sessions.data
+              ? `${sessions.data.filter((session) => isActiveSession(session)).length} active`
+              : undefined
+          }
           href="/account/sessions"
         />
       </Card>
@@ -91,10 +102,12 @@ export default function AccountScreen() {
         <Row
           title="Privacy policy"
           href="https://hissabapp.vercel.app/privacy/"
+          trailing={externalIcon}
         />
         <Row
           title="Terms and conditions"
           href="https://hissabapp.vercel.app/terms/"
+          trailing={externalIcon}
         />
       </Card>
       <View className="gap-2">
@@ -122,8 +135,7 @@ export default function AccountScreen() {
           selectable
           className="text-center text-[13px] text-muted-foreground"
         >
-          Tally Stick {Constants.expoConfig?.version ?? '1.0'} · Other sessions
-          stay signed in.
+          Tally Stick {Constants.expoConfig?.version ?? '1.0'}
         </Text>
       </View>
     </Screen>

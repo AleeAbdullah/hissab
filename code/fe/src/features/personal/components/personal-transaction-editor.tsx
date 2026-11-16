@@ -6,7 +6,6 @@ import {
   Keyboard,
   Platform,
   ScrollView,
-  TextInput,
   View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,8 +17,9 @@ import type {
   PersonalTransactionType
 } from '@/api/contracts';
 import type { CreatePersonalTransactionDto } from '@/api/generated/types.gen';
+import { AmountField } from '@/components/amount-field';
 import { DateField } from '@/components/date-field';
-import { ErrorMessage, Field } from '@/components/ui';
+import { ErrorMessage, Field, SegmentedControl } from '@/components/ui';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
@@ -31,7 +31,6 @@ import {
   type PersonalTransactionField
 } from '@/features/personal/form';
 import { todayDate } from '@/lib/dates';
-import { formatMinorAmount } from '@/lib/money';
 
 export type PersonalTransactionFormDraft = {
   amount: string;
@@ -49,12 +48,6 @@ const TYPES: { label: string; value: PersonalTransactionType }[] = [
   { label: 'Expense', value: 'EXPENSE' },
   { label: 'Income', value: 'INCOME' }
 ];
-
-function currencySymbol(displayCurrency: DisplayCurrency) {
-  return formatMinorAmount('0', displayCurrency)
-    .replace(/0\.00$/, '')
-    .trim();
-}
 
 export function PersonalTransactionEditor({
   displayCurrency,
@@ -191,7 +184,11 @@ export function PersonalTransactionEditor({
       : 'Save expense';
 
   return (
-    <View className="flex-1" style={{ paddingBottom: keyboardPadding }}>
+    <View
+      collapsable={false}
+      className="flex-1"
+      style={{ paddingBottom: keyboardPadding }}
+    >
       <ScrollView
         ref={scrollRef}
         className="flex-1"
@@ -201,74 +198,48 @@ export function PersonalTransactionEditor({
         keyboardDismissMode="on-drag"
       >
         <View className="gap-2">
-          <View className="flex-row rounded-2xl bg-secondary p-1">
-            {TYPES.map((choice) => {
-              const selected = choice.value === type;
-              return (
-                <Button
-                  key={choice.value}
-                  variant="ghost"
-                  className={
-                    selected ? 'flex-1 rounded-xl bg-card' : 'flex-1 rounded-xl'
-                  }
-                  accessibilityLabel={choice.label}
-                  accessibilityState={{ selected }}
-                  onPress={() => changeType(choice.value)}
-                >
-                  <Text
-                    className={
-                      selected ? 'text-primary' : 'text-muted-foreground'
-                    }
-                  >
-                    {choice.label}
-                  </Text>
-                </Button>
-              );
-            })}
-          </View>
+          <SegmentedControl
+            options={TYPES}
+            value={type}
+            onChange={changeType}
+          />
           <Text className="text-[13px] leading-[18px] text-muted-foreground">
             Only you can see this.
           </Text>
         </View>
 
         <View
-          className="items-center gap-1.5"
           onLayout={(event) => {
             fieldY.current.amount = event.nativeEvent.layout.y;
           }}
         >
-          <Text className="text-[13px] text-muted-foreground">Amount</Text>
-          <View className="min-h-14 flex-row items-center justify-center gap-2 self-stretch">
-            <Text
-              className={
-                amount
-                  ? 'text-[40px] font-semibold leading-[48px] text-foreground'
-                  : 'text-[40px] font-semibold leading-[48px] text-muted-foreground'
-              }
-            >
-              {currencySymbol(displayCurrency)}
-            </Text>
-            <TextInput
-              accessibilityLabel={`Amount in ${displayCurrency}`}
-              autoFocus={!transaction}
-              keyboardType="decimal-pad"
-              placeholder="0"
-              value={amount}
-              onChangeText={(value) => {
-                setAmount(value);
-                clearError('amount');
-              }}
-              className="min-w-6 shrink py-0 text-[40px] font-semibold leading-[48px] text-foreground placeholder:text-muted-foreground"
-            />
-          </View>
-          {fieldErrors.amount ? (
-            <Text
-              selectable
-              className="text-center text-[13px] leading-[18px] text-destructive"
-            >
-              {fieldErrors.amount}
-            </Text>
-          ) : null}
+          <AmountField
+            displayCurrency={displayCurrency}
+            autoFocus={!transaction}
+            value={amount}
+            onChangeText={(value) => {
+              setAmount(value);
+              clearError('amount');
+            }}
+            error={fieldErrors.amount}
+          />
+        </View>
+
+        <View
+          onLayout={(event) => {
+            fieldY.current.description = event.nativeEvent.layout.y;
+          }}
+        >
+          <Field
+            label="What was it for?"
+            placeholder={type === 'INCOME' ? 'e.g. Salary' : 'e.g. Groceries'}
+            value={description}
+            error={fieldErrors.description}
+            onChangeText={(value) => {
+              setDescription(value);
+              clearError('description');
+            }}
+          />
         </View>
 
         <View
@@ -296,23 +267,6 @@ export function PersonalTransactionEditor({
               {fieldErrors.category}
             </Text>
           ) : null}
-        </View>
-
-        <View
-          onLayout={(event) => {
-            fieldY.current.description = event.nativeEvent.layout.y;
-          }}
-        >
-          <Field
-            label="Description"
-            placeholder={type === 'INCOME' ? 'e.g. Salary' : 'e.g. Groceries'}
-            value={description}
-            error={fieldErrors.description}
-            onChangeText={(value) => {
-              setDescription(value);
-              clearError('description');
-            }}
-          />
         </View>
 
         <View

@@ -31,7 +31,20 @@ export function spendingBucket(period: SpendingPeriod): SpendingBucket {
   return period === '6M' || period === '1Y' ? 'MONTH' : 'DAY';
 }
 
-export function spendingRange(period: SpendingPeriod, now = new Date()) {
+export function spendingRange(
+  period: SpendingPeriod,
+  now = new Date(),
+  monthOffset = 0
+) {
+  // An earlier month covers the whole month; the current one runs to today.
+  if (period === '1M' && monthOffset < 0) {
+    const year = now.getUTCFullYear();
+    const month = now.getUTCMonth() + monthOffset;
+    return {
+      from: new Date(Date.UTC(year, month, 1)).toISOString(),
+      to: new Date(Date.UTC(year, month + 1, 1)).toISOString()
+    };
+  }
   const from = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
   const to = new Date(
     Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1)

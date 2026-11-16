@@ -10,6 +10,7 @@ import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { profileQuery } from '@/features/account/api';
 import { ledgerBalancesQuery } from '@/features/balances/api';
+import { FriendGroupBalances } from '@/features/balances/components/friend-group-balances';
 import { connectionsQuery } from '@/features/connections/api';
 import { LedgerActions } from '@/features/ledger/components/ledger-actions';
 import { LedgerActivity } from '@/features/ledger/components/ledger-activity';
@@ -94,11 +95,13 @@ export default function FriendDetailScreen() {
     ]
   };
   return (
-    <Screen footer={<LedgerActions draft={draft} />}>
+    <Screen
+      footer={<LedgerActions draft={draft} balances={balances.data} direct />}
+    >
       <Stack.Screen
         options={{
           title: friend.displayName,
-          headerTitleAlign: 'center',
+          headerTitle: () => <View />,
           headerRight: () => (
             <Link
               href={{
@@ -119,20 +122,25 @@ export default function FriendDetailScreen() {
           )
         }}
       />
-      <View className="items-center gap-2 py-4">
-        <Avatar name={friend.displayName} hero />
-        <Text
-          selectable
-          className="text-center text-2xl font-semibold leading-[30px]"
-        >
-          {friend.displayName}
-        </Text>
-        <Text
-          selectable
-          className="text-center text-[15px] leading-[22px] text-muted-foreground"
-        >
-          Direct ledger · Connected
-        </Text>
+      <View className="flex-row items-center gap-4 py-2">
+        <Avatar name={friend.displayName} large />
+        <View className="min-w-0 flex-1 gap-1">
+          <Text
+            selectable
+            accessibilityRole="header"
+            className="text-[32px] font-semibold leading-[38px]"
+          >
+            {friend.displayName}
+          </Text>
+          {friend.email ? (
+            <Text
+              selectable
+              className="text-[15px] leading-[22px] text-muted-foreground"
+            >
+              {friend.email}
+            </Text>
+          ) : null}
+        </View>
       </View>
       <LedgerBalancePanel
         balances={balances.data}
@@ -140,11 +148,18 @@ export default function FriendDetailScreen() {
         canRecord
         direct
       />
+      <FriendGroupBalances
+        friendId={friend.userId}
+        friendName={friend.displayName}
+        viewerId={profile.data.id}
+        displayCurrency={profile.data.displayCurrency}
+      />
       <LedgerActivity
         displayCurrency={profile.data.displayCurrency}
         ledgerId={friend.ledgerId}
         ledgerName={friend.displayName}
         members={draft.members}
+        currentUserId={profile.data.id}
       />
     </Screen>
   );

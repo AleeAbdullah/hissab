@@ -4,7 +4,7 @@ import { ThemeProvider } from 'expo-router/react-navigation';
 import { Stack } from 'expo-router/stack';
 import { StatusBar } from 'expo-status-bar';
 import { lazy, Suspense } from 'react';
-import { useColorScheme, View } from 'react-native';
+import { Platform, useColorScheme, View } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
 import { DialogProvider } from '@/components/ui/dialog';
@@ -13,6 +13,7 @@ import { SessionProvider } from '@/features/auth/session';
 import { LedgerDraftProvider } from '@/features/ledger/draft';
 import { PersistedQueryProvider } from '@/features/local-data/query-cache';
 import { RealtimeProvider } from '@/features/realtime/provider';
+import { useLargeText } from '@/lib/text-scale';
 import { useNavigationTheme } from '@/lib/theme';
 
 import '../../global.css';
@@ -26,6 +27,7 @@ const NotificationResponseHandler = lazy(
 function Navigation() {
   const colorScheme = useColorScheme();
   const navigationTheme = useNavigationTheme();
+  const largeText = useLargeText();
   return (
     <ThemeProvider value={navigationTheme}>
       {canRegisterPushNotifications() ? (
@@ -46,12 +48,15 @@ function Navigation() {
               name="group-new"
               options={{
                 title: 'New group',
-                headerShown: true,
+                // Sheet header visibility is fixed when the sheet is presented, so it is set here.
+                // react-native-screens attaches a native toolbar to iOS form sheets only.
+                headerShown: Platform.OS === 'ios',
                 headerTitleAlign: 'center',
                 headerBackVisible: false,
                 headerShadowVisible: false,
                 presentation: 'formSheet',
-                sheetAllowedDetents: 'fitToContents',
+                sheetAllowedDetents: [0.45, 1],
+                sheetInitialDetentIndex: largeText ? 1 : 0,
                 sheetGrabberVisible: true,
                 sheetCornerRadius: 20,
                 contentStyle: {
@@ -62,6 +67,9 @@ function Navigation() {
             <Stack.Screen
               name="personal-transaction"
               options={{
+                // Fixed at presentation; iOS form sheets alone get a native toolbar.
+                headerShown: Platform.OS === 'ios',
+                title: 'Add expense',
                 presentation: 'formSheet',
                 sheetAllowedDetents: [0.85, 1],
                 sheetGrabberVisible: true,

@@ -1,4 +1,5 @@
 import { Stack } from 'expo-router/stack';
+import { Platform } from 'react-native';
 
 export default function ModalLayout() {
   return (
@@ -11,7 +12,9 @@ export default function ModalLayout() {
       <Stack.Screen
         name="connection-new"
         options={{
-          title: 'Add connection',
+          title: 'Add friend',
+          // Fixed at presentation; iOS form sheets alone get a native toolbar.
+          headerShown: Platform.OS === 'ios',
           presentation: 'formSheet',
           sheetGrabberVisible: true
         }}

@@ -2,34 +2,34 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link } from 'expo-router';
 import { Stack } from 'expo-router/stack';
 import { UsersRound } from 'lucide-react-native';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { View } from 'react-native';
 
+import type { DisplayCurrency, Group, UserBalances } from '@/api/contracts';
 import { queryClient } from '@/api/query-client';
 import { Icons } from '@/components/icons';
 import {
   Avatar,
-  Card,
   ErrorMessage,
+  IconTile,
+  ListRow,
   Loading,
-  Row,
   Screen,
   SectionLabel
 } from '@/components/ui';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
-import {
-  ListSearchButton,
-  ListSearchField,
-  useListSearch
-} from '@/components/ui/list-search';
 import { Text } from '@/components/ui/text';
 import {
   notificationInboxQueryKey,
   profileQuery
 } from '@/features/account/api';
 import { userBalancesQuery } from '@/features/balances/api';
-import { ledgerBalanceDescriptions } from '@/features/balances/format';
+import {
+  NetBalance,
+  netBalanceLabel
+} from '@/features/balances/components/net-balance';
+import { connectionsQuery } from '@/features/connections/api';
 import {
   acceptGroupInvitation,
   declineGroupInvitation,
@@ -40,11 +40,13 @@ import { GroupInvitationCard } from '@/features/groups/components/group-invitati
 import { homeQuery } from '@/features/home/api';
 
 export default function GroupsScreen() {
-  const { search, setSearch, isOpen, toggle } = useListSearch();
+  const [search, setSearch] = useState('');
+  const query = search.trim().toLowerCase();
   const groups = useQuery(groupsQuery);
   const invitations = useQuery(incomingGroupInvitationsQuery);
   const balances = useQuery(userBalancesQuery);
   const profile = useQuery(profileQuery);
+  const connections = useQuery(connectionsQuery);
   const resolving = useRef(false);
   const resolveInvitation = useMutation({
     mutationFn: ({
@@ -79,42 +81,46 @@ export default function GroupsScreen() {
     resolveInvitation.mutate({ groupId, response });
   };
   const filtered = (groups.data ?? []).filter((group) =>
-    group.name.toLowerCase().includes(search.trim().toLowerCase())
+    group.name.toLowerCase().includes(query)
   );
+  const past = filtered.filter(
+    (group) => group.status === 'ARCHIVED' || group.membershipStatus === 'LEFT'
+  );
+  const active = filtered.filter((group) => !past.includes(group));
+  const friendCount = connections.data?.length;
+  const groupRows = (list: Group[]) =>
+    list.map((group, index) => (
+      <GroupRow
+        key={group.id}
+        group={group}
+        balances={balances.data}
+        currency={profile.data?.displayCurrency}
+        divided={index > 0}
+      />
+    ));
 
   return (
     <>
       <Stack.Screen
         options={{
+          headerSearchBarOptions: {
+            placeholder: 'Search groups',
+            placement: 'stacked',
+            hideWhenScrolling: false,
+            autoCapitalize: 'none',
+            onChangeText: (event) => setSearch(event.nativeEvent.text)
+          },
           headerRight: () => (
-            <View className="flex-row items-center">
-              <ListSearchButton
-                subject="groups"
-                isOpen={isOpen}
-                onPress={toggle}
-                disabled={groups.isLoading}
-              />
-              <Link href="/groups/friends" asChild>
-                <Button
-                  className="w-12 px-0"
-                  variant="ghost"
-                  role="link"
-                  accessibilityLabel="Friends"
-                >
-                  <Icon as={UsersRound} size={24} className="text-primary" />
-                </Button>
-              </Link>
-              <Link href="/group-new" asChild>
-                <Button
-                  className="w-12 px-0"
-                  variant="ghost"
-                  role="link"
-                  accessibilityLabel="Create group"
-                >
-                  <Icon as={Icons.add} size={24} className="text-primary" />
-                </Button>
-              </Link>
-            </View>
+            <Link href="/group-new" asChild>
+              <Button
+                className="w-12 px-0"
+                variant="ghost"
+                role="link"
+                accessibilityLabel="Create group"
+              >
+                <Icon as={Icons.add} size={24} className="text-primary" />
+              </Button>
+            </Link>
           )
         }}
       />
@@ -137,13 +143,22 @@ export default function GroupsScreen() {
               }
             />
           ) : null}
-          {isOpen ? (
-            <ListSearchField
-              label="Search groups"
-              value={search}
-              onChangeText={setSearch}
-            />
-          ) : null}
+          {/* Stays visible while searching, so people are still one tap away. */}
+          <ListRow
+            href="/groups/friends"
+            title="Friends"
+            subtitle={
+              friendCount === undefined
+                ? undefined
+                : `${friendCount} ${friendCount === 1 ? 'friend' : 'friends'}`
+            }
+            accessibilityLabel={
+              friendCount === undefined
+                ? 'Friends'
+                : `Friends, ${friendCount} ${friendCount === 1 ? 'friend' : 'friends'}`
+            }
+            leading={<IconTile icon={UsersRound} />}
+          />
           {invitations.data?.length ? (
             <View className="gap-3">
               <SectionLabel>INVITATIONS</SectionLabel>
@@ -163,27 +178,20 @@ export default function GroupsScreen() {
             </View>
           ) : null}
           {filtered.length ? (
-            <Card>
-              {filtered.map((group) => (
-                <Row
-                  key={group.id}
-                  title={group.name}
-                  leading={<Avatar name={group.name} />}
-                  subtitle={`${group.memberCount} ${group.memberCount === 1 ? 'member' : 'members'} · ${balances.isLoading || profile.isLoading ? 'Loading balance…' : balances.error || profile.error || !profile.data ? 'Balance unavailable' : ledgerBalanceDescriptions(balances.data, group.id, profile.data.displayCurrency).join(' · ') || 'No recorded balance'}`}
-                  detail={
-                    group.status === 'ARCHIVED'
-                      ? 'Archived'
-                      : group.membershipStatus === 'LEFT'
-                        ? 'Left'
-                        : undefined
-                  }
-                  href={{
-                    pathname: '/groups/[groupId]',
-                    params: { groupId: group.id }
-                  }}
-                />
-              ))}
-            </Card>
+            <>
+              {active.length ? (
+                <View className="gap-1">
+                  <SectionLabel>GROUPS</SectionLabel>
+                  <View>{groupRows(active)}</View>
+                </View>
+              ) : null}
+              {past.length ? (
+                <View className="gap-1">
+                  <SectionLabel>PAST GROUPS</SectionLabel>
+                  <View>{groupRows(past)}</View>
+                </View>
+              ) : null}
+            </>
           ) : groups.isSuccess ? (
             <View className="py-6">
               <Text
@@ -206,5 +214,45 @@ export default function GroupsScreen() {
         </Screen>
       )}
     </>
+  );
+}
+
+function GroupRow({
+  group,
+  balances,
+  currency,
+  divided
+}: {
+  group: Group;
+  balances?: UserBalances;
+  currency?: DisplayCurrency;
+  divided: boolean;
+}) {
+  const netMinor = balances?.ledgers.find(
+    (ledger) => ledger.ledgerId === group.id
+  )?.netMinor;
+  const subtitle = `${group.memberCount} ${group.memberCount === 1 ? 'member' : 'members'}${
+    group.status === 'ARCHIVED'
+      ? ' · Archived'
+      : group.membershipStatus === 'LEFT'
+        ? ' · You left'
+        : ''
+  }`;
+  return (
+    <ListRow
+      href={{ pathname: '/groups/[groupId]', params: { groupId: group.id } }}
+      title={group.name}
+      subtitle={subtitle}
+      divided={divided}
+      accessibilityLabel={[
+        group.name,
+        subtitle,
+        netBalanceLabel(netMinor, currency)
+      ]
+        .filter(Boolean)
+        .join(', ')}
+      leading={<Avatar name={group.name} />}
+      trailing={<NetBalance netMinor={netMinor} currency={currency} />}
+    />
   );
 }

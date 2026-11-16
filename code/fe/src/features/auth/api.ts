@@ -11,11 +11,7 @@ import {
 } from '@/api/generated/sdk.gen';
 import type { RegisterDto, SignInDto } from '@/api/generated/types.gen';
 import { queryClient } from '@/api/query-client';
-import {
-  clearTokens,
-  getSessionUserId,
-  setTokens
-} from '@/api/session-store';
+import { clearTokens, getSessionUserId, setTokens } from '@/api/session-store';
 import { idempotencyKey, publicRequest, request } from '@/api/transport';
 import {
   forgetPushDevice,

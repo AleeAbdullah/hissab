@@ -34,6 +34,14 @@ export type HomeRecentItemDto = {
     kind: 'PERSONAL_INCOME' | 'PERSONAL_EXPENSE' | 'SHARED_EXPENSE' | 'SHARED_SETTLEMENT';
     id: string;
     amountMinor: string;
+    /**
+     * Shared expenses: the viewer's owed share at this revision, 0 when they are not in the split.
+     */
+    shareMinor: string | null;
+    /**
+     * Shared items: the activity event type, such as EXPENSE_DELETED.
+     */
+    eventType: string | null;
     ledger: HomeLedgerDto | null;
     actor: HomeUserDto | null;
     category: HomeCategoryDto | null;
@@ -62,6 +70,10 @@ export type ExpenseActivityDetailsDto = {
     description: string;
     category: ActivityCategoryDto;
     occurredAt: string;
+    /**
+     * The viewer's paid minus owed amount in this expense revision, in minor units.
+     */
+    viewerNetMinor: string;
 };
 
 export type ActivityUserDto = {

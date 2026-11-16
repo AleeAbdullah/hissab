@@ -74,6 +74,12 @@ export default function SharedExpenseScreen() {
     );
   const discard = () => {
     if (submitting.current || busy) return;
+    if (!persistedDraft.hasContent()) {
+      allowExit.current = true;
+      clearDraft();
+      router.back();
+      return;
+    }
     dialog(
       'Discard draft?',
       'This removes the saved expense details from this device.',

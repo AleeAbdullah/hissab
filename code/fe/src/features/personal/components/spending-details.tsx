@@ -1,10 +1,27 @@
 import { keepPreviousData, useQueries, useQuery } from '@tanstack/react-query';
-import { ChartColumn, ChartLine, ChartPie } from 'lucide-react-native';
+import {
+  ChartColumn,
+  ChartLine,
+  ChartPie,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp
+} from 'lucide-react-native';
 import { useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
 import type { DisplayCurrency } from '@/api/contracts';
-import { Card, ErrorMessage, Row, SectionLabel } from '@/components/ui';
+import {
+  AmountText,
+  Card,
+  ErrorMessage,
+  IconTile,
+  ListRow,
+  Row,
+  SectionLabel,
+  SegmentedControl
+} from '@/components/ui';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
@@ -12,15 +29,13 @@ import {
   personalCategoriesQuery,
   personalReportQuery
 } from '@/features/personal/api';
+import { CATEGORY_ICONS } from '@/features/personal/components/category-picker';
 import { IncludeSharedSwitch } from '@/features/personal/components/include-shared-switch';
 import {
   SpendingChart,
   SpendingPlotFrame
 } from '@/features/personal/components/spending-chart';
-import {
-  CategorySwatch,
-  SpendingDonut
-} from '@/features/personal/components/spending-donut';
+import { SpendingDonut } from '@/features/personal/components/spending-donut';
 import { periodLabel } from '@/features/personal/form';
 import {
   SPENDING_PERIOD_NAMES,
@@ -28,7 +43,6 @@ import {
   spendingBucket,
   spendingRange,
   spendingRangeLabel,
-  spendingRatio,
   spendingSeriesName,
   spendingShareLabel,
   type SpendingPeriod
@@ -45,7 +59,8 @@ export function SpendingDetails({
   const [graph, setGraph] = useState<'line' | 'bar' | 'donut'>('line');
   const [showAmounts, setShowAmounts] = useState(false);
   const [includeShared, setIncludeShared] = useState(true);
-  const range = spendingRange(period);
+  const [monthOffset, setMonthOffset] = useState(0);
+  const range = spendingRange(period, undefined, monthOffset);
   const filters = {
     ...range,
     includeShared: includeShared ? ('true' as const) : ('false' as const),
@@ -58,10 +73,14 @@ export function SpendingDetails({
   });
   // While the next period loads, keep drawing the previous one so the dimmed
   // placeholder data is never read against the wrong range or bucket.
-  const [shownPeriod, setShownPeriod] = useState(period);
-  if (!report.isPlaceholderData && shownPeriod !== period)
-    setShownPeriod(period);
-  const shownRange = spendingRange(shownPeriod);
+  const [shown, setShown] = useState({ period, monthOffset });
+  if (
+    !report.isPlaceholderData &&
+    (shown.period !== period || shown.monthOffset !== monthOffset)
+  )
+    setShown({ period, monthOffset });
+  const shownPeriod = shown.period;
+  const shownRange = spendingRange(shownPeriod, undefined, shown.monthOffset);
   const shownBucket = spendingBucket(shownPeriod);
   const refreshing = report.isPlaceholderData;
   const hasSpending = Boolean(
@@ -101,9 +120,9 @@ export function SpendingDetails({
       <View className={cn('gap-1', refreshing && 'opacity-50')}>
         <Text className="text-base text-muted-foreground">Spent</Text>
         {report.data ? (
-          <Text selectable className="text-[32px] font-semibold leading-[38px]">
+          <AmountText className="text-[32px] font-semibold leading-[38px]">
             {formatMinorAmount(report.data.expenseMinor, displayCurrency)}
-          </Text>
+          </AmountText>
         ) : (
           <Text
             accessibilityLabel="Spending amount is loading"
@@ -112,12 +131,49 @@ export function SpendingDetails({
             —
           </Text>
         )}
-        <Text className="text-[15px] leading-[22px] text-muted-foreground">
-          {SPENDING_PERIOD_NAMES[shownPeriod]} ·{' '}
-          {spendingRangeLabel(shownRange)}
-        </Text>
+        {period === '1M' ? (
+          <View className="-ml-3 flex-row items-center">
+            <Button
+              variant="ghost"
+              className="w-11 px-0"
+              accessibilityLabel="Previous month"
+              onPress={() => setMonthOffset(monthOffset - 1)}
+            >
+              <Icon as={ChevronLeft} size={20} className="text-primary" />
+            </Button>
+            <Text className="text-[15px] leading-[22px] text-muted-foreground">
+              {shown.monthOffset
+                ? spendingRangeLabel(shownRange)
+                : `${SPENDING_PERIOD_NAMES[shownPeriod]} · ${spendingRangeLabel(shownRange)}`}
+            </Text>
+            <Button
+              variant="ghost"
+              className="w-11 px-0"
+              accessibilityLabel="Next month"
+              disabled={monthOffset === 0}
+              onPress={() => setMonthOffset(monthOffset + 1)}
+            >
+              <Icon
+                as={ChevronRight}
+                size={20}
+                className={
+                  monthOffset === 0 ? 'text-muted-foreground' : 'text-primary'
+                }
+              />
+            </Button>
+          </View>
+        ) : (
+          <Text className="text-[15px] leading-[22px] text-muted-foreground">
+            {SPENDING_PERIOD_NAMES[shownPeriod]} ·{' '}
+            {spendingRangeLabel(shownRange)}
+          </Text>
+        )}
       </View>
-      <View className="gap-3 rounded-2xl border border-border bg-card p-4">
+      <IncludeSharedSwitch
+        value={includeShared}
+        onValueChange={setIncludeShared}
+      />
+      <Card className="gap-3 p-4">
         <View className="flex-row items-center justify-between gap-3">
           <View className="min-w-0 flex-1 flex-row items-center gap-2">
             <Text className="shrink text-[15px] leading-[22px] text-muted-foreground">
@@ -132,51 +188,24 @@ export function SpendingDetails({
               />
             ) : null}
           </View>
-          <View className="flex-row rounded-full bg-secondary p-0.5">
-            {(
-              [
-                {
-                  value: 'line',
-                  icon: ChartLine,
-                  label: 'Cumulative line graph'
-                },
-                {
-                  value: 'bar',
-                  icon: ChartColumn,
-                  label: `${spendingSeriesName('bar', shownBucket)} bar graph`
-                },
-                {
-                  value: 'donut',
-                  icon: ChartPie,
-                  label: 'Category donut graph'
-                }
-              ] as const
-            ).map((option) => (
-              <Button
-                key={option.value}
-                variant="ghost"
-                size="compact"
-                className={
-                  graph === option.value
-                    ? 'rounded-full bg-card'
-                    : 'rounded-full'
-                }
-                accessibilityLabel={option.label}
-                accessibilityState={{ selected: graph === option.value }}
-                onPress={() => setGraph(option.value)}
-              >
-                <Icon
-                  as={option.icon}
-                  size={18}
-                  className={
-                    graph === option.value
-                      ? 'text-primary'
-                      : 'text-muted-foreground'
-                  }
-                />
-              </Button>
-            ))}
-          </View>
+          <SegmentedControl
+            compact
+            value={graph}
+            onChange={setGraph}
+            options={[
+              {
+                value: 'line',
+                icon: ChartLine,
+                label: 'Cumulative line graph'
+              },
+              {
+                value: 'bar',
+                icon: ChartColumn,
+                label: `${spendingSeriesName('bar', shownBucket)} bar graph`
+              },
+              { value: 'donut', icon: ChartPie, label: 'Category donut graph' }
+            ]}
+          />
         </View>
         <View className={cn(refreshing && 'opacity-50')}>
           {report.isLoading ? (
@@ -225,38 +254,22 @@ export function SpendingDetails({
             />
           )}
         </View>
-      </View>
-      <View className="flex-row flex-wrap rounded-2xl bg-secondary p-1">
-        {SPENDING_PERIODS.map((value) => (
-          <Button
-            key={value}
-            variant="ghost"
-            className={
-              value === period
-                ? 'min-w-16 flex-1 rounded-xl bg-card'
-                : 'min-w-16 flex-1 rounded-xl'
-            }
-            accessibilityLabel={SPENDING_PERIOD_NAMES[value]}
-            accessibilityState={{ selected: value === period }}
-            onPress={() => setPeriod(value)}
-          >
-            <Text
-              className={
-                value === period ? 'text-primary' : 'text-muted-foreground'
-              }
-            >
-              {value}
-            </Text>
-          </Button>
-        ))}
-      </View>
-      <IncludeSharedSwitch
-        value={includeShared}
-        onValueChange={setIncludeShared}
+      </Card>
+      <SegmentedControl
+        options={SPENDING_PERIODS.map((value) => ({
+          value,
+          label: value,
+          accessibilityLabel: SPENDING_PERIOD_NAMES[value]
+        }))}
+        value={period}
+        onChange={(value) => {
+          setPeriod(value);
+          setMonthOffset(0);
+        }}
       />
       {report.data && !report.error && hasSpending ? (
         <View className="mt-4 gap-3">
-          <SectionLabel>BY CATEGORY</SectionLabel>
+          <SectionLabel>CATEGORIES</SectionLabel>
           {categoryError ? (
             <View className="gap-2">
               <ErrorMessage error={categoryError} />
@@ -275,38 +288,62 @@ export function SpendingDetails({
           ) : categoriesLoading ? (
             <Text>Loading categories…</Text>
           ) : (
-            <Card>
-              {categoryRows.map((category, rank) => (
-                <CategoryRow
-                  key={category.code}
-                  rank={rank}
-                  name={category.name}
-                  share={spendingShareLabel(
-                    category.amountMinor,
-                    report.data.expenseMinor
-                  )}
-                  ratio={spendingRatio(
-                    category.amountMinor,
-                    report.data.expenseMinor
-                  )}
-                  amount={formatMinorAmount(
-                    category.amountMinor,
-                    displayCurrency
-                  )}
-                />
-              ))}
-            </Card>
+            <View>
+              {categoryRows.map((category, rank) => {
+                const share = spendingShareLabel(
+                  category.amountMinor,
+                  report.data.expenseMinor
+                );
+                const amount = formatMinorAmount(
+                  category.amountMinor,
+                  displayCurrency
+                );
+                return (
+                  <ListRow
+                    key={category.code}
+                    divided={rank > 0}
+                    accessibilityLabel={`${category.name}, ${amount}, ${share} of spending. Show transactions.`}
+                    href={{
+                      pathname: '/personal/transactions',
+                      params: {
+                        categoryCode: category.code,
+                        from: shownRange.from.slice(0, 10),
+                        to: lastDay(shownRange.to),
+                        includeShared: includeShared ? 'true' : 'false'
+                      }
+                    }}
+                    leading={<IconTile icon={CATEGORY_ICONS[category.code]} />}
+                    title={category.name}
+                    subtitle={`${share} of spending`}
+                    trailing={
+                      <Text
+                        selectable
+                        className="text-base font-semibold tabular-nums leading-[22px]"
+                      >
+                        {amount}
+                      </Text>
+                    }
+                  />
+                );
+              })}
+            </View>
           )}
           <Button
-            variant="ghost"
-            className="self-start px-0"
+            variant="link"
+            size="compact"
+            className="justify-start self-start px-0"
             accessibilityState={{ expanded: showAmounts }}
             onPress={() => setShowAmounts(!showAmounts)}
           >
-            <Text className="text-primary">
-              {showAmounts ? 'Hide' : 'Show'}{' '}
-              {shownBucket === 'MONTH' ? 'monthly' : 'daily'} amounts
+            <Text>
+              {showAmounts ? 'Hide' : 'Show'} amounts by{' '}
+              {shownBucket === 'MONTH' ? 'month' : 'day'}
             </Text>
+            <Icon
+              as={showAmounts ? ChevronUp : ChevronDown}
+              size={20}
+              className="text-primary"
+            />
           </Button>
           {showAmounts ? (
             <Card>
@@ -330,50 +367,9 @@ export function SpendingDetails({
   );
 }
 
-// Mirrors Row's layout, adding the swatch and proportional bar a plain Row cannot hold.
-function CategoryRow({
-  rank,
-  name,
-  share,
-  ratio,
-  amount
-}: {
-  rank: number;
-  name: string;
-  share: string;
-  ratio: number;
-  amount: string;
-}) {
-  return (
-    <View className="min-h-[52px] flex-row items-center gap-3 border-b border-border p-3">
-      <CategorySwatch rank={rank} />
-      <View className="min-w-0 flex-1 gap-1">
-        <Text selectable className="text-[17px] leading-[23px]">
-          {name}
-        </Text>
-        <Text
-          selectable
-          className="text-[13px] leading-[18px] text-muted-foreground"
-        >
-          {share} of spending
-        </Text>
-        <View
-          accessibilityElementsHidden
-          importantForAccessibility="no-hide-descendants"
-          className="h-1 overflow-hidden rounded-full bg-secondary"
-        >
-          <View
-            className="h-1 rounded-full bg-primary"
-            style={{ width: `${Math.max(ratio * 100, 2)}%` }}
-          />
-        </View>
-      </View>
-      <Text
-        selectable
-        className="max-w-[42%] text-right text-[15px] leading-5 text-muted-foreground"
-      >
-        {amount}
-      </Text>
-    </View>
-  );
+// Report ranges end at an exclusive instant; history filters take the last included day.
+function lastDay(exclusiveTo: string) {
+  return new Date(new Date(exclusiveTo).getTime() - 86400000)
+    .toISOString()
+    .slice(0, 10);
 }

@@ -1,6 +1,10 @@
 import { Stack } from 'expo-router/stack';
+import { Platform } from 'react-native';
+
+import { useLargeText } from '@/lib/text-scale';
 
 export default function GroupsLayout() {
+  const largeText = useLargeText();
   return (
     <Stack
       screenOptions={{
@@ -31,9 +35,13 @@ export default function GroupsLayout() {
         name="[groupId]/invite"
         options={{
           title: 'Invite members',
+          // Sheet header visibility is fixed when the sheet is presented, so it is set here.
+          // react-native-screens attaches a native toolbar to iOS form sheets only.
+          headerShown: Platform.OS === 'ios',
           headerTitleAlign: 'center',
           presentation: 'formSheet',
           sheetAllowedDetents: [0.65, 1],
+          sheetInitialDetentIndex: largeText ? 1 : 0,
           sheetGrabberVisible: true,
           sheetCornerRadius: 20
         }}
@@ -52,7 +60,7 @@ export default function GroupsLayout() {
       />
       <Stack.Screen
         name="friends/requests"
-        options={{ title: 'Connection requests' }}
+        options={{ title: 'Friend requests' }}
       />
       <Stack.Screen
         name="friends/blocked"

@@ -4,7 +4,7 @@ import { useNavigation, usePreventRemove } from 'expo-router/react-navigation';
 import { Stack } from 'expo-router/stack';
 import { X } from 'lucide-react-native';
 import { useCallback, useRef, useState } from 'react';
-import { View } from 'react-native';
+import { Platform, View } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
 import { ErrorMessage, Loading } from '@/components/ui';
@@ -20,6 +20,7 @@ import {
   PersonalTransactionEditor,
   type PersonalTransactionFormDraft
 } from '@/features/personal/components/personal-transaction-editor';
+import { LARGE_TEXT_SCALE } from '@/lib/text-scale';
 
 export default function PersonalTransactionScreen() {
   const dialog = useDialog();
@@ -73,40 +74,78 @@ export default function PersonalTransactionScreen() {
     );
   return (
     <View className="flex-1 bg-background">
-      <Stack.Screen options={{ gestureEnabled: !create.isPending }} />
-      <View className="gap-1 px-5 pb-2 pt-5">
-        <View className="relative min-h-12 justify-center">
-          <Text
-            accessibilityRole="header"
-            className="px-14 text-center text-xl font-semibold"
-          >
-            {liveDraft?.type === 'INCOME' ? 'Add income' : 'Add expense'}
-          </Text>
-          <Button
-            variant="ghost"
-            className="absolute right-0 w-12 px-0"
-            disabled={create.isPending}
-            accessibilityLabel="Close add transaction"
-            onPress={() => router.back()}
-          >
-            <Icon as={X} size={24} />
-          </Button>
-        </View>
-        {liveDraft ? (
-          <View className="items-start">
+      <Stack.Screen
+        options={{
+          title: liveDraft?.type === 'INCOME' ? 'Add income' : 'Add expense',
+          headerTitleAlign: 'center',
+          headerShadowVisible: false,
+          gestureEnabled: !create.isPending,
+          headerLeft: () =>
+            liveDraft ? (
+              <Button
+                variant="ghost"
+                size="compact"
+                disabled={create.isPending}
+                accessibilityLabel="Discard draft"
+                onPress={discard}
+              >
+                {/* The native toolbar has a fixed height, so its label stops growing at large text. */}
+                <Text
+                  maxFontSizeMultiplier={LARGE_TEXT_SCALE}
+                  className="text-destructive"
+                >
+                  Discard draft
+                </Text>
+              </Button>
+            ) : null,
+          headerRight: () => (
             <Button
               variant="ghost"
-              size="compact"
-              className="px-0"
+              className="w-12 px-0"
               disabled={create.isPending}
-              accessibilityLabel="Discard draft"
-              onPress={discard}
+              accessibilityLabel="Close add transaction"
+              onPress={() => router.back()}
             >
-              <Text className="text-destructive">Discard draft</Text>
+              <Icon as={X} size={24} />
+            </Button>
+          )
+        }}
+      />
+      {Platform.OS === 'android' ? (
+        <View className="gap-1 px-5 pb-2 pt-5">
+          <View className="relative min-h-12 justify-center">
+            <Text
+              accessibilityRole="header"
+              className="px-14 text-center text-xl font-semibold"
+            >
+              {liveDraft?.type === 'INCOME' ? 'Add income' : 'Add expense'}
+            </Text>
+            <Button
+              variant="ghost"
+              className="absolute right-0 w-12 px-0"
+              disabled={create.isPending}
+              accessibilityLabel="Close add transaction"
+              onPress={() => router.back()}
+            >
+              <Icon as={X} size={24} />
             </Button>
           </View>
-        ) : null}
-      </View>
+          {liveDraft ? (
+            <View className="items-start">
+              <Button
+                variant="ghost"
+                size="compact"
+                className="px-0"
+                disabled={create.isPending}
+                accessibilityLabel="Discard draft"
+                onPress={discard}
+              >
+                <Text className="text-destructive">Discard draft</Text>
+              </Button>
+            </View>
+          ) : null}
+        </View>
+      ) : null}
       {profile.isLoading || !persistedDraft.ready ? (
         <Loading />
       ) : profile.error || !profile.data ? (

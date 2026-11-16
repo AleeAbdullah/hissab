@@ -4,11 +4,12 @@ import { ActivityIndicator, View } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
 import {
-  Card,
+  Avatar,
+  DetailHero,
   ErrorMessage,
+  ListRow,
   Loading,
   Notice,
-  Row,
   Screen,
   SectionLabel
 } from '@/components/ui';
@@ -22,6 +23,8 @@ import {
 } from '@/features/balances/api';
 import { deleteExpense, expenseQuery } from '@/features/expenses/api';
 import { homeQuery } from '@/features/home/api';
+import { useLedgerName } from '@/features/ledger/use-ledger-name';
+import { CATEGORY_ICONS } from '@/features/personal/components/category-picker';
 import { formatDate } from '@/lib/dates';
 import { formatMinorAmount } from '@/lib/money';
 
@@ -30,6 +33,7 @@ export default function ExpenseDetailScreen() {
   const { expenseId } = useLocalSearchParams<{ expenseId: string }>();
   const expense = useQuery(expenseQuery(expenseId));
   const profile = useQuery(profileQuery);
+  const ledgerName = useLedgerName(expense.data?.ledgerId);
   const balances = useQuery({
     ...ledgerBalancesQuery(expense.data?.ledgerId ?? ''),
     enabled: Boolean(expense.data)
@@ -43,6 +47,7 @@ export default function ExpenseDetailScreen() {
         }),
         queryClient.invalidateQueries({ queryKey: userBalancesQuery.queryKey }),
         queryClient.invalidateQueries({ queryKey: ['personal'] }),
+        queryClient.invalidateQueries({ queryKey: ['activity'] }),
         queryClient.invalidateQueries({ queryKey: homeQuery.queryKey })
       ]);
       router.back();
@@ -71,17 +76,35 @@ export default function ExpenseDetailScreen() {
       {remove.error || balances.error ? (
         <ErrorMessage error={remove.error ?? balances.error} />
       ) : null}
-      <SectionLabel>{expense.data.category.name.toUpperCase()}</SectionLabel>
-      <Card>
-        <Row
-          title={expense.data.description}
-          subtitle={formatDate(expense.data.occurredAt)}
-          detail={formatMinorAmount(
-            expense.data.totalMinor,
+      <DetailHero
+        icon={CATEGORY_ICONS[expense.data.category.code]}
+        title={expense.data.description}
+        amount={formatMinorAmount(
+          expense.data.totalMinor,
+          profile.data.displayCurrency
+        )}
+        meta={[
+          expense.data.category.name,
+          ledgerName,
+          formatDate(expense.data.occurredAt)
+        ]
+          .filter(Boolean)
+          .join(' · ')}
+        deleted={expense.data.status === 'DELETED'}
+      />
+      {expense.data.status === 'ACTIVE' ? (
+        <Text
+          selectable
+          className="text-center text-[15px] font-semibold leading-[22px]"
+        >
+          {viewerEffect(
+            expense.data.payers,
+            expense.data.participants,
+            profile.data.id,
             profile.data.displayCurrency
           )}
-        />
-      </Card>
+        </Text>
+      ) : null}
       {expense.data.status === 'DELETED' ? (
         <Notice title="Deleted expense">
           This record remains in Tally Stick’s audit history and no longer
@@ -93,15 +116,17 @@ export default function ExpenseDetailScreen() {
         items={expense.data.payers}
         displayCurrency={profile.data.displayCurrency}
         name={name}
+        viewerId={profile.data.id}
       />
       <Allocations
-        title="OWED BY"
+        title="SPLIT BETWEEN"
         items={expense.data.participants.map((item) => ({
           userId: item.userId,
           amountMinor: item.owedMinor
         }))}
         displayCurrency={profile.data.displayCurrency}
         name={name}
+        viewerId={profile.data.id}
       />
       {editable ? (
         <View className="gap-3">
@@ -126,7 +151,7 @@ export default function ExpenseDetailScreen() {
             onPress={() =>
               dialog(
                 'Delete expense?',
-                'It stops counting in balances; its history stays visible.',
+                `Delete “${expense.data.description}” (${formatMinorAmount(expense.data.totalMinor, profile.data.displayCurrency)})${ledgerName ? ` in ${ledgerName}` : ''}? It stops counting in balances; its history stays visible.`,
                 [
                   { text: 'Keep expense', style: 'cancel' },
                   {
@@ -154,25 +179,63 @@ function Allocations({
   displayCurrency,
   items,
   name,
-  title
+  title,
+  viewerId
 }: {
   displayCurrency: Parameters<typeof formatMinorAmount>[1];
   items: { userId: string; amountMinor: string }[];
   name: (userId: string) => string;
   title: string;
+  viewerId: string;
 }) {
   return (
-    <View className="gap-2">
+    <View>
       <SectionLabel>{title}</SectionLabel>
-      <Card>
-        {items.map((item) => (
-          <Row
+      {[...items]
+        .sort(
+          (a, b) =>
+            Number(b.userId === viewerId) - Number(a.userId === viewerId)
+        )
+        .map((item, index) => (
+          <ListRow
             key={item.userId}
-            title={name(item.userId)}
-            detail={formatMinorAmount(item.amountMinor, displayCurrency)}
+            divided={index > 0}
+            leading={<Avatar name={name(item.userId)} />}
+            title={item.userId === viewerId ? 'You' : name(item.userId)}
+            trailing={
+              <Text
+                selectable
+                className="text-base font-semibold tabular-nums leading-[22px]"
+              >
+                {formatMinorAmount(item.amountMinor, displayCurrency)}
+              </Text>
+            }
           />
         ))}
-      </Card>
     </View>
   );
+}
+
+// What this one expense means for the viewer, like Splitwise's "You lent".
+function viewerEffect(
+  payers: { userId: string; amountMinor: string }[],
+  participants: { userId: string; owedMinor: string }[],
+  viewerId: string,
+  displayCurrency: Parameters<typeof formatMinorAmount>[1]
+) {
+  const paid = BigInt(
+    payers.find((payer) => payer.userId === viewerId)?.amountMinor ?? '0'
+  );
+  const owed = BigInt(
+    participants.find((item) => item.userId === viewerId)?.owedMinor ?? '0'
+  );
+  const net = paid - owed;
+  const amount = formatMinorAmount(
+    (net < 0n ? -net : net).toString(),
+    displayCurrency
+  );
+  if (paid === 0n && owed === 0n) return "You're not part of this expense";
+  if (net > 0n) return `You lent ${amount}`;
+  if (net < 0n) return `You borrowed ${amount}`;
+  return 'You paid your share';
 }

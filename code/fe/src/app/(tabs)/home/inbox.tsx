@@ -18,6 +18,7 @@ import {
 } from '@/features/account/api';
 import { NotificationInbox } from '@/features/account/components/notification-inbox';
 import { reminderLedgerHref } from '@/features/reminders/navigation';
+import { usePullToRefresh } from '@/lib/pull-to-refresh';
 import { THEME_VARIABLES, useThemeVariable } from '@/lib/theme';
 
 export default function InboxScreen() {
@@ -27,6 +28,7 @@ export default function InboxScreen() {
   const pending = useRef(false);
   const refresh = () =>
     queryClient.invalidateQueries({ queryKey: notificationInboxQueryKey });
+  const pull = usePullToRefresh(refresh);
   const mutation = useMutation({
     mutationFn: (id: string | null) =>
       id ? markNotificationRead(id) : markAllNotificationsRead(),
@@ -51,12 +53,7 @@ export default function InboxScreen() {
   return (
     <Screen
       refreshControl={
-        <RefreshControl
-          refreshing={inbox.isRefetching && !inbox.isFetchingNextPage}
-          onRefresh={refresh}
-          tintColor={primary}
-          colors={[primary]}
-        />
+        <RefreshControl {...pull} tintColor={primary} colors={[primary]} />
       }
     >
       <Stack.Screen

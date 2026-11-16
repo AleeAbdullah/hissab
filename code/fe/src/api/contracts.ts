@@ -288,6 +288,7 @@ export type ActivityExpenseDetails = {
   description: string;
   category: SharedExpenseCategory;
   occurredAt: string;
+  viewerNetMinor: string;
 };
 
 export type ActivitySettlementDetails = {
@@ -341,6 +342,8 @@ export type HomeRecentItem = {
   kind: HomeRecentKind;
   id: string;
   amountMinor: string;
+  shareMinor: string | null;
+  eventType: string | null;
   ledger: Pick<ActivityLedger, 'id' | 'type' | 'name'> | null;
   actor: ActivityUser | null;
   category: SharedExpenseCategory | null;

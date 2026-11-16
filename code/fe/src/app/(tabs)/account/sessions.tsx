@@ -1,10 +1,12 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { Smartphone } from 'lucide-react-native';
 import { ActivityIndicator, View } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
 import {
-  Card,
   ErrorMessage,
+  IconTile,
+  ListRow,
   Loading,
   Screen,
   SectionLabel
@@ -17,10 +19,11 @@ import {
   revokeSession,
   sessionsQuery
 } from '@/features/account/api';
-import { formatDateTime } from '@/lib/dates';
-
-const date = (value: string | null) =>
-  value ? formatDateTime(value) : 'Not yet';
+import {
+  isActiveSession,
+  sessionDeviceLabel
+} from '@/features/account/sessions';
+import { formatDate, formatDateTime } from '@/lib/dates';
 
 export default function SessionsScreen() {
   const dialog = useDialog();
@@ -33,25 +36,24 @@ export default function SessionsScreen() {
   });
   if (query.isLoading) return <Loading />;
   const current = query.data?.find((session) => session.current);
-  const others = query.data?.filter((session) => !session.current) ?? [];
+  const others =
+    query.data?.filter(
+      (session) => !session.current && isActiveSession(session)
+    ) ?? [];
 
-  const sessionCard = (session: NonNullable<typeof current>) => (
-    <Card key={session.id}>
-      <View className="gap-2 p-3">
-        <Text selectable className="text-[17px] font-semibold">
-          {session.deviceName ?? session.userAgent ?? 'Unknown device'}
-          {session.current ? ' · Current' : ''}
-        </Text>
-        <Text
-          selectable
-          className="text-[13px] leading-[18px] text-muted-foreground"
-        >
-          Signed in {date(session.createdAt)} · Last used{' '}
-          {date(session.lastUsedAt)} · Expires {date(session.expiresAt)}
-        </Text>
-        {!session.current ? (
+  const sessionRow = (session: NonNullable<typeof current>, index: number) => (
+    <ListRow
+      key={session.id}
+      divided={index > 0}
+      leading={<IconTile icon={Smartphone} />}
+      title={sessionDeviceLabel(session)}
+      subtitle={`Active ${formatDateTime(session.lastUsedAt ?? session.createdAt)}`}
+      trailing={
+        session.current ? undefined : (
           <Button
             variant="destructiveOutline"
+            size="compact"
+            accessibilityLabel={`Revoke ${sessionDeviceLabel(session)}`}
             disabled={mutation.isPending}
             accessibilityState={{
               disabled: mutation.isPending,
@@ -78,9 +80,20 @@ export default function SessionsScreen() {
               <Text>Revoke</Text>
             )}
           </Button>
-        ) : null}
-      </View>
-    </Card>
+        )
+      }
+    >
+      <Text
+        selectable
+        className="text-[13px] leading-[18px] text-muted-foreground"
+      >
+        Signed in {formatDate(session.createdAt, false)} · Expires{' '}
+        {formatDate(session.expiresAt, false)}
+        {session.deviceName || !session.userAgent
+          ? ''
+          : `\n${session.userAgent}`}
+      </Text>
+    </ListRow>
   );
 
   return (
@@ -91,11 +104,11 @@ export default function SessionsScreen() {
       {current ? (
         <>
           <SectionLabel>THIS DEVICE</SectionLabel>
-          {sessionCard(current)}
+          <View>{sessionRow(current, 0)}</View>
         </>
       ) : null}
       <SectionLabel>OTHER SESSIONS · {others.length}</SectionLabel>
-      {others.map(sessionCard)}
+      {others.length ? <View>{others.map(sessionRow)}</View> : null}
       {others.length ? (
         <Button
           variant="destructiveOutline"

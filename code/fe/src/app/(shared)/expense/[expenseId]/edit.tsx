@@ -22,6 +22,7 @@ import {
   type ExpenseFormDraft
 } from '@/features/expenses/components/expense-editor';
 import { homeQuery } from '@/features/home/api';
+import { useLedgerName } from '@/features/ledger/use-ledger-name';
 
 export default function EditExpenseScreen() {
   const { expenseId } = useLocalSearchParams<{ expenseId: string }>();
@@ -44,6 +45,7 @@ export default function EditExpenseScreen() {
     setDirty(serialized !== baseline.current);
   }, []);
   const profile = useQuery(profileQuery);
+  const ledgerName = useLedgerName(expense.data?.ledgerId);
   const balances = useQuery({
     ...ledgerBalancesQuery(expense.data?.ledgerId ?? ''),
     enabled: Boolean(expense.data)
@@ -189,6 +191,7 @@ export default function EditExpenseScreen() {
         currentUserId={profile.data.id}
         displayCurrency={profile.data.displayCurrency}
         expense={snapshot ?? expense.data}
+        ledgerName={ledgerName ?? ''}
         members={members}
         saving={busy}
         onDraftChange={onDraftChange}

@@ -65,8 +65,9 @@ export function currentPeriodDates(
   };
 }
 
+// The phone's calendar day, matching the date picker; reports still group by UTC day.
 export function todayDate() {
-  return new Date().toISOString().slice(0, 10);
+  return localDateKey(new Date());
 }
 
 // "YYYY-MM-DD" -> ISO midnight UTC, or null when not a real calendar date.

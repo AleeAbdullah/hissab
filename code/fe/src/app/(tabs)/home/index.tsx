@@ -1,33 +1,52 @@
 import { useQuery } from '@tanstack/react-query';
 import type { Href } from 'expo-router';
-import { Link, router } from 'expo-router';
-import { RefreshControl, useWindowDimensions, View } from 'react-native';
+import { Link } from 'expo-router';
+import { ArrowLeftRight, Shapes } from 'lucide-react-native';
+import { RefreshControl, View } from 'react-native';
 
 import type { Home, HomeRecentItem } from '@/api/contracts';
-import { StackedCards } from '@/components/stacked-cards';
+import { Icons } from '@/components/icons';
 import {
+  AmountText,
   Card,
+  DayHeading,
   ErrorMessage,
+  IconTile,
+  ListRow,
   Loading,
   Screen,
   SectionLabel
 } from '@/components/ui';
 import { Button } from '@/components/ui/button';
-import { useDialog } from '@/components/ui/dialog';
+import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
+import { profileQuery } from '@/features/account/api';
+import { groupByDay } from '@/features/activity/presentation';
 import { homeQuery } from '@/features/home/api';
-import { formatDate } from '@/lib/dates';
-import { formatMinorAmount } from '@/lib/money';
+import { CATEGORY_ICONS } from '@/features/personal/components/category-picker';
+import { absMinor, formatMinorAmount } from '@/lib/money';
+import { usePullToRefresh } from '@/lib/pull-to-refresh';
+import { useLargeText } from '@/lib/text-scale';
 import { THEME_VARIABLES, useThemeVariable } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 
 type AmountTone = 'positive' | 'negative' | 'neutral';
 
+const toneClass: Record<AmountTone, string> = {
+  positive: 'text-positive',
+  negative: 'text-destructive',
+  neutral: 'text-foreground'
+};
+
+const amountTone = (net: bigint): AmountTone =>
+  net > 0n ? 'positive' : net < 0n ? 'negative' : 'neutral';
+
 export default function HomeScreen() {
-  const dialog = useDialog();
-  const { fontScale } = useWindowDimensions();
   const primary = useThemeVariable(THEME_VARIABLES.primaryText);
   const home = useQuery(homeQuery);
+  const profile = useQuery(profileQuery);
+  const pull = usePullToRefresh(() => home.refetch());
+  const largeText = useLargeText();
   if (home.isLoading) return <Loading />;
   if (!home.data)
     return (
@@ -43,212 +62,66 @@ export default function HomeScreen() {
       </Screen>
     );
 
-  const sharedNet = BigInt(home.data.shared.totalNetMinor);
-  const sharedAmount =
-    sharedNet < 0n ? (-sharedNet).toString() : home.data.shared.totalNetMinor;
-  const personalNet = BigInt(home.data.personal.monthNetMinor);
-  const personalTone: AmountTone =
-    personalNet > 0n ? 'positive' : personalNet < 0n ? 'negative' : 'neutral';
-  const sharedTone: AmountTone =
-    sharedNet > 0n ? 'positive' : sharedNet < 0n ? 'negative' : 'neutral';
-  const personalAmount = formatMinorAmount(
-    home.data.personal.monthNetMinor,
-    home.data.currency
-  );
-  const sharedAmountLabel = formatMinorAmount(sharedAmount, home.data.currency);
+  const { currency, personal, shared, recent } = home.data;
+  const sharedNet = BigInt(shared.totalNetMinor);
+  const personalNet = BigInt(personal.monthNetMinor);
+  const ledgers = shared.unsettledLedgerCount;
   const sharedDirection =
-    sharedNet > 0n ? 'You’re owed' : sharedNet < 0n ? 'You owe' : 'Settled';
-  const settleUp = () =>
-    dialog(
-      'Settle a balance',
-      'Open the friend or group where you need to record the payment.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Open Friends',
-          style: 'choice',
-          onPress: () => router.push('/groups/friends')
-        },
-        {
-          text: 'Open Groups',
-          style: 'choice',
-          onPress: () => router.push('/groups')
-        }
-      ]
-    );
+    sharedNet > 0n
+      ? 'You’re owed'
+      : sharedNet < 0n
+        ? 'You owe'
+        : ledgers
+          ? 'Evens out'
+          : 'All settled';
 
   return (
     <Screen
       refreshControl={
-        <RefreshControl
-          refreshing={home.isRefetching}
-          onRefresh={() => home.refetch()}
-          tintColor={primary}
-          colors={[primary]}
-        />
+        <RefreshControl {...pull} tintColor={primary} colors={[primary]} />
       }
     >
       {home.error ? <ErrorMessage error={home.error} /> : null}
-      <StackedCards
-        cards={[
-          {
-            id: 'personal',
-            frontContent: (
-              <View className="flex-1 p-4">
-                <View
-                  className={
-                    fontScale >= 1.3
-                      ? 'gap-2'
-                      : 'flex-row items-start justify-between gap-3'
-                  }
-                >
-                  <Text
-                    selectable
-                    className="flex-1 text-xl font-bold leading-[26px]"
-                  >
-                    Personal · this month
-                  </Text>
-                  <Text
-                    selectable
-                    className={cn(
-                      'text-[28px] font-bold tabular-nums leading-[34px]',
-                      fontScale >= 1.3 ? 'w-full' : 'max-w-[58%] text-right',
-                      personalTone === 'positive'
-                        ? 'text-positive'
-                        : personalTone === 'negative'
-                          ? 'text-destructive'
-                          : 'text-foreground'
-                    )}
-                  >
-                    {personalAmount}
-                  </Text>
-                </View>
-                <View className="mt-auto flex-row flex-wrap gap-2 pr-[52px]">
-                  <CardAction href="/personal-transaction" title="Add entry" />
-                  <CardAction href="/personal" title="View personal" />
-                </View>
-              </View>
-            ),
-            backContent: (
-              <View
-                className={
-                  fontScale >= 1.3
-                    ? 'gap-2 px-4 py-3'
-                    : 'min-h-14 flex-row items-center justify-between gap-3 px-4'
-                }
-              >
-                <Text selectable className="flex-1 text-lg font-bold">
-                  Personal · this month
-                </Text>
-                <Text
-                  selectable
-                  className={cn(
-                    'flex-1 text-right text-xl font-bold tabular-nums',
-                    personalTone === 'positive'
-                      ? 'text-positive'
-                      : personalTone === 'negative'
-                        ? 'text-destructive'
-                        : 'text-foreground'
-                  )}
-                >
-                  {personalAmount}
-                </Text>
-              </View>
-            ),
-            accessibilityLabel: 'Bring Personal card to front',
-            className: 'border border-border bg-card'
-          },
-          {
-            id: 'shared',
-            frontContent: (
-              <View className="flex-1 p-4">
-                <View
-                  className={
-                    fontScale >= 1.3
-                      ? 'gap-2'
-                      : 'flex-row items-start justify-between gap-3'
-                  }
-                >
-                  <Text
-                    selectable
-                    className="flex-1 text-xl font-bold leading-[26px]"
-                  >
-                    {sharedDirection}
-                  </Text>
-                  <Text
-                    selectable
-                    className={cn(
-                      'text-[28px] font-bold tabular-nums leading-[34px]',
-                      fontScale >= 1.3 ? 'w-full' : 'max-w-[58%] text-right',
-                      sharedTone === 'positive'
-                        ? 'text-positive'
-                        : sharedTone === 'negative'
-                          ? 'text-destructive'
-                          : 'text-foreground'
-                    )}
-                  >
-                    {sharedAmountLabel}
-                  </Text>
-                </View>
-                <View className="mt-auto flex-row flex-wrap gap-2 pr-[52px]">
-                  {sharedNet < 0n ? (
-                    <CardAction onPress={settleUp} title="Settle up" />
-                  ) : (
-                    <CardAction href="/activity" title="View" />
-                  )}
-                </View>
-              </View>
-            ),
-            backContent: (
-              <View
-                className={
-                  fontScale >= 1.3
-                    ? 'gap-2 px-4 py-3'
-                    : 'min-h-14 flex-row items-center justify-between gap-3 px-4'
-                }
-              >
-                <Text selectable className="flex-1 text-lg font-bold">
-                  {sharedDirection}
-                </Text>
-                <Text
-                  selectable
-                  className={cn(
-                    'flex-1 text-right text-xl font-bold tabular-nums',
-                    sharedTone === 'positive'
-                      ? 'text-positive'
-                      : sharedTone === 'negative'
-                        ? 'text-destructive'
-                        : 'text-foreground'
-                  )}
-                >
-                  {sharedAmountLabel}
-                </Text>
-              </View>
-            ),
-            accessibilityLabel: 'Bring balance card to front',
-            className: 'border border-border bg-card'
-          }
-        ]}
-      />
-      <View className="gap-2">
-        <View className="flex-row flex-wrap items-center justify-between gap-x-3">
-          <SectionLabel>RECENT ACTIVITY</SectionLabel>
-          <Link href="/activity" asChild>
-            <Button variant="link" size="compact" role="link" className="px-0">
-              <Text>View all</Text>
-            </Button>
-          </Link>
+      <Card>
+        <View className={largeText ? undefined : 'flex-row'}>
+          <SummaryHalf
+            href="/groups"
+            label="Shared"
+            amount={formatMinorAmount(absMinor(sharedNet), currency)}
+            tone={amountTone(sharedNet)}
+            caption={
+              ledgers
+                ? `${sharedDirection} · ${ledgers} ${ledgers === 1 ? 'balance' : 'balances'}`
+                : sharedDirection
+            }
+          />
+          <SummaryHalf
+            href="/personal"
+            label="This month"
+            amount={formatMinorAmount(absMinor(personalNet), currency)}
+            tone={amountTone(personalNet)}
+            caption={personalNet < 0n ? 'Overspent' : 'Left over'}
+            divided
+          />
         </View>
-        {home.data.recent.length ? (
-          <Card>
-            {home.data.recent.map((item) => (
-              <RecentRow
-                key={`${item.kind}-${item.id}-${item.createdAt}`}
-                item={item}
-                currency={home.data.currency}
-              />
-            ))}
-          </Card>
+      </Card>
+      <View className="gap-2">
+        <SectionLabel>RECENT</SectionLabel>
+        {recent.length ? (
+          groupByDay(recent).map((day) => (
+            <View key={day.title}>
+              <DayHeading>{day.title}</DayHeading>
+              {day.items.map((item, index) => (
+                <RecentRow
+                  key={`${item.kind}-${item.id}-${item.createdAt}`}
+                  item={item}
+                  currency={currency}
+                  viewerId={profile.data?.id}
+                  divided={index > 0}
+                />
+              ))}
+            </View>
+          ))
         ) : (
           <Text selectable className="leading-6 text-muted-foreground">
             No recent activity yet.
@@ -259,134 +132,158 @@ export default function HomeScreen() {
   );
 }
 
-function CardAction({
+function SummaryHalf({
   href,
-  onPress,
-  title
+  label,
+  amount,
+  tone,
+  caption,
+  divided
 }: {
-  href?: Href;
-  onPress?: () => void;
-  title: string;
+  href: Href;
+  label: string;
+  amount: string;
+  tone: AmountTone;
+  caption: string;
+  divided?: boolean;
 }) {
-  const action = (
-    <Button
-      variant="secondary"
-      size="compact"
-      role={href ? 'link' : 'button'}
-      onPress={onPress}
-    >
-      <Text className="text-primary">{title}</Text>
-    </Button>
-  );
-  return href ? (
-    <Link href={href} asChild>
-      {action}
-    </Link>
-  ) : (
-    action
-  );
-}
-
-function RecentRow({
-  item,
-  currency
-}: {
-  item: HomeRecentItem;
-  currency: Home['currency'];
-}) {
-  const { content, href } = recentPresentation(item);
-  const { fontScale } = useWindowDimensions();
-  const stackedAmount = Math.round(fontScale * 100) >= 130;
-  const amountLabel = formatMinorAmount(item.amountMinor, currency).replace(
-    /\s*(?=\d)/,
-    '\u00a0'
-  );
-  const amount = (
-    <Text
-      selectable
-      className="shrink-0 text-[15px] font-semibold tabular-nums leading-6 text-foreground"
-    >
-      {amountLabel}
-    </Text>
-  );
+  const largeText = useLargeText();
   return (
     <Link href={href} asChild>
       <Button
         variant="ghost"
         role="link"
-        accessibilityLabel={`${content.title}. ${content.tag}. ${content.subtitle}. ${amountLabel}`}
-        className="min-h-[68px] w-full flex-col items-stretch justify-start gap-0 rounded-none border-b border-border p-4"
+        accessibilityLabel={`${label}. ${caption}. ${amount}`}
+        className={cn(
+          'h-auto flex-1 flex-col items-stretch justify-start gap-0.5 rounded-none p-4',
+          divided && (largeText ? 'border-t' : 'border-l'),
+          'border-border'
+        )}
       >
-        <View className="flex-row items-start gap-3">
-          <Text
-            selectable
-            numberOfLines={3}
-            className="flex-1 text-base font-semibold leading-6"
-          >
-            {content.title}
+        <View className="flex-row items-center justify-between gap-1">
+          <Text className="text-[13px] font-normal leading-[18px] text-muted-foreground">
+            {label}
           </Text>
-          {stackedAmount ? null : amount}
+          <Icon
+            as={Icons.chevronRight}
+            size={16}
+            className="text-muted-foreground"
+          />
         </View>
-        <Text
-          selectable
-          className="mt-1 text-[15px] font-normal leading-[22px] text-muted-foreground"
+        <AmountText
+          className={cn(
+            'text-[22px] font-semibold tabular-nums leading-7',
+            toneClass[tone]
+          )}
         >
-          {content.tag} · {content.subtitle}
+          {amount}
+        </AmountText>
+        <Text className="text-[13px] font-normal leading-[18px] text-muted-foreground">
+          {caption}
         </Text>
-        {stackedAmount ? (
-          <View className="mt-1 items-start">{amount}</View>
-        ) : null}
       </Button>
     </Link>
   );
 }
 
-function recentPresentation(item: HomeRecentItem): {
-  content: { tag: string; title: string; subtitle: string };
+function RecentRow({
+  item,
+  currency,
+  viewerId,
+  divided
+}: {
+  item: HomeRecentItem;
+  currency: Home['currency'];
+  viewerId?: string;
+  divided: boolean;
+}) {
+  const { title, subtitle, amount, tone, href } = recentPresentation(
+    item,
+    currency,
+    viewerId
+  );
+  return (
+    <ListRow
+      href={href}
+      title={title}
+      subtitle={subtitle}
+      divided={divided}
+      accessibilityLabel={[title, subtitle, amount].filter(Boolean).join('. ')}
+      leading={
+        <IconTile
+          icon={
+            item.kind === 'SHARED_SETTLEMENT'
+              ? ArrowLeftRight
+              : item.category
+                ? CATEGORY_ICONS[item.category.code]
+                : Shapes
+          }
+        />
+      }
+      trailing={
+        amount ? (
+          <Text
+            selectable
+            className={cn(
+              'text-base font-semibold tabular-nums leading-[22px]',
+              toneClass[tone]
+            )}
+          >
+            {amount}
+          </Text>
+        ) : null
+      }
+    />
+  );
+}
+
+function recentPresentation(
+  item: HomeRecentItem,
+  currency: Home['currency'],
+  viewerId?: string
+): {
+  title: string;
+  subtitle: string;
+  amount: string | null;
+  tone: AmountTone;
   href: Href;
 } {
-  const date = formatDate(item.occurredAt);
-  if (item.kind === 'PERSONAL_INCOME')
+  const where = item.ledger?.name ?? 'Shared ledger';
+  const deleted = item.eventType?.endsWith('_DELETED') ?? false;
+  const edited = item.eventType?.endsWith('_REPLACED') ? ' · edited' : '';
+  const money = (minor: string) => formatMinorAmount(minor, currency);
+  if (item.kind === 'PERSONAL_INCOME' || item.kind === 'PERSONAL_EXPENSE') {
+    const income = item.kind === 'PERSONAL_INCOME';
+    const tag = income ? 'Income' : 'Expense';
     return {
-      content: {
-        tag: 'Income',
-        title: item.description ?? item.category?.name ?? 'Income',
-        subtitle: `${date} · ${item.category?.name ?? 'Income'}`
-      },
+      title: item.description ?? item.category?.name ?? tag,
+      subtitle: item.category?.name ?? tag,
+      amount: income ? `+${money(item.amountMinor)}` : money(item.amountMinor),
+      tone: income ? 'positive' : 'neutral',
       href: {
         pathname: '/personal/[transactionId]',
         params: { transactionId: item.id }
       }
     };
-  if (item.kind === 'PERSONAL_EXPENSE')
-    return {
-      content: {
-        tag: 'Expense',
-        title: item.description ?? item.category?.name ?? 'Expense',
-        subtitle: `${date} · ${item.category?.name ?? 'Expense'}`
-      },
-      href: {
-        pathname: '/personal/[transactionId]',
-        params: { transactionId: item.id }
-      }
-    };
+  }
   if (item.kind === 'SHARED_EXPENSE')
     return {
-      content: {
-        tag: 'Shared',
-        title: item.actor
-          ? `${item.actor.displayName} added ${item.description ?? 'an expense'}`
-          : (item.description ?? 'Shared expense'),
-        subtitle: `${date} · ${item.ledger?.name ?? 'Shared ledger'}`
-      },
+      title: item.description ?? 'Shared expense',
+      subtitle: `${deleted ? 'Deleted' : 'Your share'} · ${where}${edited}`,
+      // A snapshot saved before shareMinor existed shows no amount until the refetch lands.
+      amount:
+        deleted || item.shareMinor == null ? null : money(item.shareMinor),
+      tone: 'neutral',
       href: { pathname: '/expense/[expenseId]', params: { expenseId: item.id } }
     };
+  const name = (user: HomeRecentItem['from'], fallback: string) =>
+    !user ? fallback : user.userId === viewerId ? 'You' : user.displayName;
+  const to = name(item.to, 'member');
   return {
-    content: {
-      tag: 'Shared',
-      title: `${item.from?.displayName ?? 'Member'} paid ${item.to?.displayName ?? 'member'}`,
-      subtitle: `${date} · ${item.ledger?.name ?? 'Shared ledger'}`
-    },
+    title: `${name(item.from, 'Member')} paid ${to === 'You' ? 'you' : to}`,
+    subtitle: `${deleted ? 'Payment deleted' : 'Payment'} · ${where}${edited}`,
+    amount: deleted ? null : money(item.amountMinor),
+    tone: 'neutral',
     href: { pathname: '/payment/[paymentId]', params: { paymentId: item.id } }
   };
 }

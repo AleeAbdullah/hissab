@@ -113,7 +113,11 @@ function Button({
   const bodyClass = cn(
     buttonVariants({ variant, size }),
     className,
-    disabledFill && 'bg-muted'
+    disabledFill && 'bg-muted',
+    // Outlines have no fill to grey out, so they dim instead; ghost rows dim themselves.
+    props.disabled &&
+      (variant === 'outline' || variant === 'destructiveOutline') &&
+      'opacity-50'
   );
   return (
     <TextClassContext.Provider

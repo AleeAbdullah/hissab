@@ -152,6 +152,10 @@ export class ActivityService {
         name: this.requireString(row.expenseCategoryName),
       },
       occurredAt: this.requireDate(row.expenseOccurredAt),
+      viewerNetMinor: (
+        BigInt(row.expenseViewerPaidMinor ?? '0') -
+        BigInt(row.expenseViewerOwedMinor ?? '0')
+      ).toString(),
     };
   }
 

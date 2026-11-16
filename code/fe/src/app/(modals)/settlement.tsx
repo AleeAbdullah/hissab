@@ -71,6 +71,12 @@ export default function SettlementScreen() {
     );
   const discard = () => {
     if (submitting.current || busy) return;
+    if (!persistedDraft.hasContent()) {
+      allowExit.current = true;
+      clearDraft();
+      router.back();
+      return;
+    }
     dialog(
       'Discard draft?',
       'This removes the saved payment details from this device.',
@@ -93,7 +99,7 @@ export default function SettlementScreen() {
     <>
       <Stack.Screen
         options={{
-          title: 'External payment',
+          title: 'Record payment',
           gestureEnabled: !busy,
           headerRight: () => (
             <Button

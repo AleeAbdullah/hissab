@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { ChevronDown, ChevronUp } from 'lucide-react-native';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ActivityIndicator, ScrollView, TextInput, View } from 'react-native';
 
@@ -8,9 +9,11 @@ import type {
   SharedExpenseCategoryCode
 } from '@/api/contracts';
 import type { CreateExpenseDto } from '@/api/generated/types.gen';
+import { AmountField } from '@/components/amount-field';
 import { DateField } from '@/components/date-field';
-import { ErrorMessage, Field, Screen, Row } from '@/components/ui';
+import { ErrorMessage, Field, Screen, SegmentedControl } from '@/components/ui';
 import { Button } from '@/components/ui/button';
+import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { expenseCategoriesQuery } from '@/features/expenses/api';
 import { MemberAmounts } from '@/features/expenses/components/member-amounts';
@@ -20,6 +23,7 @@ import {
   equalAllocations
 } from '@/features/expenses/form';
 import type { LedgerDraftMember } from '@/features/ledger/draft';
+import { CategoryPicker } from '@/features/personal/components/category-picker';
 import { todayDate } from '@/lib/dates';
 import { parseMinorAmount, minorToInput, formatMinorAmount } from '@/lib/money';
 
@@ -34,6 +38,11 @@ export type ExpenseFormDraft = {
   splitMethod: 'EQUAL' | 'EXACT';
   exactAmounts: Record<string, string>;
 };
+
+const SPLIT_METHODS = [
+  { value: 'EQUAL', label: 'Equal' },
+  { value: 'EXACT', label: 'Exact' }
+] as const;
 
 export function ExpenseEditor({
   currentUserId,
@@ -255,7 +264,11 @@ export function ExpenseEditor({
           {detail}
         </Text>
       </View>
-      <Text>{expanded === field ? '⌃' : '⌄'}</Text>
+      <Icon
+        as={expanded === field ? ChevronUp : ChevronDown}
+        size={20}
+        className="text-muted-foreground"
+      />
     </Button>
   );
   return (
@@ -284,12 +297,14 @@ export function ExpenseEditor({
         </View>
       }
     >
-      <Text
-        selectable
-        className="text-[15px] leading-[22px] text-muted-foreground"
-      >
-        {ledgerName} · Shared ledger
-      </Text>
+      {ledgerName ? (
+        <Text
+          selectable
+          className="text-[15px] leading-[22px] text-muted-foreground"
+        >
+          {ledgerName}
+        </Text>
+      ) : null}
       {expense ? (
         <Text selectable className="text-muted-foreground">
           Saving creates a new revision; history is kept.
@@ -297,23 +312,20 @@ export function ExpenseEditor({
       ) : null}
       {block(
         'amount',
-        <Field
+        <AmountField
           inputRef={amountInput}
-          autoFocus
-          label={`Amount (${displayCurrency})`}
-          placeholder="0.00"
-          keyboardType="decimal-pad"
+          autoFocus={!expense}
+          displayCurrency={displayCurrency}
           value={amount}
           onChangeText={updateAmount}
           editable={!saving}
-          className="text-center text-[32px]"
         />
       )}
       {block(
         'description',
         <Field
           inputRef={descriptionInput}
-          label="Description"
+          label="What was it for?"
           placeholder="e.g. Dinner at Kolachi"
           value={description}
           onChangeText={(value) => {
@@ -326,12 +338,17 @@ export function ExpenseEditor({
       {block(
         'category',
         <>
-          {expand(
-            'category',
-            'Category',
-            categories.data?.find((category) => category.code === categoryCode)
-              ?.name ?? 'Choose a category'
-          )}
+          <Text className="text-[13px] text-muted-foreground">Category</Text>
+          <CategoryPicker
+            categories={categories.data ?? []}
+            loading={categories.isLoading}
+            disabled={saving}
+            value={categoryCode}
+            onChange={(code) => {
+              setCategoryCode(code);
+              if (validation?.field === 'category') setValidation(null);
+            }}
+          />
           {categories.error ? (
             <>
               <ErrorMessage error={categories.error} />
@@ -340,23 +357,6 @@ export function ExpenseEditor({
               </Button>
             </>
           ) : null}
-          {expanded === 'category'
-            ? categories.data?.map((category) => (
-                <Row
-                  key={category.code}
-                  title={category.name}
-                  detail={
-                    category.code === categoryCode ? 'Selected' : undefined
-                  }
-                  disabled={saving}
-                  onPress={() => {
-                    setCategoryCode(category.code);
-                    if (validation?.field === 'category') setValidation(null);
-                    setExpanded(null);
-                  }}
-                />
-              ))
-            : null}
         </>
       )}
       {block(
@@ -445,47 +445,26 @@ export function ExpenseEditor({
           ) : null}
           {expanded === 'split' ? (
             <>
-              <View className="flex-row rounded-xl bg-muted p-1">
-                {(['EQUAL', 'EXACT'] as const).map((method) => (
-                  <Button
-                    key={method}
-                    variant="ghost"
-                    role="tab"
-                    className={
-                      splitMethod === method
-                        ? 'flex-1 bg-card px-2'
-                        : 'flex-1 px-2'
-                    }
-                    disabled={saving}
-                    accessibilityState={{ selected: splitMethod === method }}
-                    onPress={() => {
-                      setSplitMethod(method);
-                      if (
-                        method === 'EXACT' &&
-                        !Object.values(exactAmounts).some(Boolean)
+              <SegmentedControl
+                options={SPLIT_METHODS}
+                value={splitMethod}
+                disabled={saving}
+                onChange={(method) => {
+                  setSplitMethod(method);
+                  if (
+                    method === 'EXACT' &&
+                    !Object.values(exactAmounts).some(Boolean)
+                  )
+                    setExactAmounts(
+                      Object.fromEntries(
+                        Object.entries(equal).map(([id, minor]) => [
+                          id,
+                          minorToInput(minor)
+                        ])
                       )
-                        setExactAmounts(
-                          Object.fromEntries(
-                            Object.entries(equal).map(([id, minor]) => [
-                              id,
-                              minorToInput(minor)
-                            ])
-                          )
-                        );
-                    }}
-                  >
-                    <Text
-                      className={
-                        splitMethod === method
-                          ? 'text-primary'
-                          : 'text-muted-foreground'
-                      }
-                    >
-                      {method === 'EQUAL' ? 'Equal' : 'Exact'}
-                    </Text>
-                  </Button>
-                ))}
-              </View>
+                    );
+                }}
+              />
               <MemberAmounts
                 label="PARTICIPANTS"
                 amounts={exactAmounts}
@@ -531,13 +510,14 @@ export function ExpenseEditor({
         A network connection is required to save. Tally Stick records debts; it
         does not move money.
       </Text>
-      {onDiscard ? (
+      {/* New records close with the X; only edits need an explicit discard here. */}
+      {onDiscard && expense ? (
         <Button
           variant="destructiveOutline"
           disabled={saving}
           onPress={onDiscard}
         >
-          <Text>{expense ? 'Discard changes' : 'Discard draft'}</Text>
+          <Text>Discard changes</Text>
         </Button>
       ) : null}
     </Screen>

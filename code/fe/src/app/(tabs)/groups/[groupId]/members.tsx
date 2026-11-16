@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link, useLocalSearchParams } from 'expo-router';
 import { Stack } from 'expo-router/stack';
-import { UserPlus } from 'lucide-react-native';
+import { Flag, UserPlus } from 'lucide-react-native';
 import { useRef } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
@@ -9,9 +9,9 @@ import { queryClient } from '@/api/query-client';
 import {
   Avatar,
   ErrorMessage,
+  ListRow,
   Loading,
   Notice,
-  Row,
   SectionLabel,
   Screen
 } from '@/components/ui';
@@ -126,19 +126,19 @@ export default function GroupMembersScreen() {
       ) : null}
       <SectionLabel>
         ACTIVE ·{' '}
-        {
-          (members.data ?? []).filter((member) => member.status === 'ACTIVE')
-            .length
-        }
+        {members.data.filter((member) => member.status === 'ACTIVE').length}
       </SectionLabel>
       <View>
         {(members.data ?? [])
           .filter((member) => member.status === 'ACTIVE')
-          .map((member) => (
-            <Row
+          .map((member, index) => (
+            <ListRow
               key={member.userId}
+              divided={index > 0}
               leading={<Avatar name={member.displayName} />}
-              title={`${member.displayName}${member.userId === profile.data?.id ? ' (you)' : ''}`}
+              title={
+                member.userId === profile.data?.id ? 'You' : member.displayName
+              }
               trailing={
                 member.userId === profile.data?.id ? undefined : (
                   <ReportMemberButton
@@ -161,9 +161,10 @@ export default function GroupMembersScreen() {
       ) : null}
       <View>
         {canManage &&
-          invitations.data?.map((invitation) => (
-            <Row
+          invitations.data?.map((invitation, index) => (
+            <ListRow
               key={invitation.userId}
+              divided={index > 0}
               title={invitation.userDisplayName}
               leading={<Avatar name={invitation.userDisplayName} />}
               subtitle={`Invited by ${invitation.invitedByDisplayName}`}
@@ -217,9 +218,10 @@ export default function GroupMembersScreen() {
           <View>
             {members.data
               .filter((member) => member.status === 'INVITED')
-              .map((member) => (
-                <Row
+              .map((member, index) => (
+                <ListRow
                   key={member.userId}
+                  divided={index > 0}
                   leading={<Avatar name={member.displayName} />}
                   title={member.displayName}
                   subtitle="Invited"
@@ -248,9 +250,10 @@ export default function GroupMembersScreen() {
                 (invitation) => invitation.userId === member.userId
               )
           )
-          .map((member) => (
-            <Row
+          .map((member, index) => (
+            <ListRow
               key={member.userId}
+              divided={index > 0}
               leading={<Avatar name={member.displayName} />}
               title={member.displayName}
               subtitle={
@@ -312,12 +315,12 @@ function ReportMemberButton({
         asChild
       >
         <Button
-          size="compact"
-          variant="outline"
+          className="w-12 px-0"
+          variant="ghost"
           role="link"
           accessibilityLabel={`Report ${name}`}
         >
-          <Text>Report</Text>
+          <Icon as={Flag} size={20} className="text-muted-foreground" />
         </Button>
       </Link>
     </View>

@@ -1,9 +1,8 @@
-import { useId } from 'react';
 import { View } from 'react-native';
 
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Chip } from '@/components/ui';
 
+// Single choice from a short list, drawn with the shared Chip.
 export function ChoiceChips({
   choices,
   value,
@@ -13,27 +12,16 @@ export function ChoiceChips({
   value: string | null;
   onChange: (value: string) => void;
 }) {
-  const groupId = useId();
   return (
-    <RadioGroup
-      value={value ?? undefined}
-      onValueChange={onChange}
-      className="flex-row flex-wrap gap-3"
-    >
+    <View accessibilityRole="radiogroup" className="flex-row flex-wrap gap-2">
       {choices.map((choice) => (
-        <View
+        <Chip
           key={choice.value}
-          className="min-h-12 flex-row items-center gap-2"
-        >
-          <RadioGroupItem
-            id={`${groupId}-${choice.value}`}
-            value={choice.value}
-          />
-          <Label htmlFor={`${groupId}-${choice.value}`} className="text-[15px]">
-            {choice.label}
-          </Label>
-        </View>
+          label={choice.label}
+          selected={choice.value === value}
+          onPress={() => onChange(choice.value)}
+        />
       ))}
-    </RadioGroup>
+    </View>
   );
 }

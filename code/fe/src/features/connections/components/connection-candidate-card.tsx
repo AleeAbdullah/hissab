@@ -52,7 +52,7 @@ export function ConnectionCandidateCard({
             {isSending ? (
               <ActivityIndicator className="text-primary-foreground" />
             ) : (
-              <Text>Send connection request</Text>
+              <Text>Send friend request</Text>
             )}
           </Button>
         ) : null}
@@ -66,7 +66,7 @@ export function ConnectionCandidateCard({
           </Text>
         ) : null}
         {requestSent || candidate.state === 'PENDING_OUTGOING' ? (
-          <Link href="/groups/friends/requests" asChild>
+          <Link dismissTo href="/groups/friends/requests" asChild>
             <Button size="compact" variant="outline" role="link">
               <Text>Manage requests</Text>
             </Button>
@@ -76,10 +76,10 @@ export function ConnectionCandidateCard({
           <Text>Wants to connect with you</Text>
         ) : null}
         {candidate.state === 'CONNECTED' ? (
-          <Text>Already connected</Text>
+          <Text>Already friends</Text>
         ) : null}
         {candidate.state === 'PENDING_INCOMING' ? (
-          <Link href="/groups/friends/requests" asChild>
+          <Link dismissTo href="/groups/friends/requests" asChild>
             <Button size="compact" variant="outline" role="link">
               <Text>Review request</Text>
             </Button>
@@ -87,6 +87,7 @@ export function ConnectionCandidateCard({
         ) : null}
         {candidate.state === 'CONNECTED' ? (
           <Link
+            dismissTo
             href={{
               pathname: '/groups/friends/[friendId]',
               params: {

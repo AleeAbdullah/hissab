@@ -3,15 +3,18 @@ import { Link } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
-import { Card, ErrorMessage, Screen } from '@/components/ui';
+import { Icons } from '@/components/icons';
+import { ErrorMessage, Field, Screen } from '@/components/ui';
 import { Button } from '@/components/ui/button';
+import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { forgotPassword } from '@/features/auth/api';
-import { AuthTextField } from '@/features/auth/components/auth-field';
 import { AuthPageHeader } from '@/features/auth/components/auth-page-header';
+import { isEmail } from '@/features/auth/validation';
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState('');
+  const [emailTouched, setEmailTouched] = useState(false);
   const mutation = useMutation({ mutationFn: forgotPassword });
 
   if (mutation.isSuccess) {
@@ -19,7 +22,7 @@ export default function ForgotPasswordScreen() {
       <Screen>
         <View className="flex-1 justify-center gap-2">
           <View className="size-[72px] items-center justify-center rounded-full bg-accent">
-            <Text className="text-[28px] font-bold text-primary">✓</Text>
+            <Icon as={Icons.check} size={32} className="text-primary" />
           </View>
           <Text selectable className="text-xl font-semibold leading-[25px]">
             Check your email
@@ -45,39 +48,55 @@ export default function ForgotPasswordScreen() {
     );
   }
 
+  const emailValid = isEmail(email);
+  const submit = () => {
+    if (emailValid && !mutation.isPending) mutation.mutate(email.trim());
+  };
+
   return (
-    <Screen>
+    <Screen
+      footer={
+        <Button
+          disabled={!emailValid || mutation.isPending}
+          accessibilityState={{
+            disabled: !emailValid || mutation.isPending,
+            busy: mutation.isPending
+          }}
+          onPress={submit}
+        >
+          {mutation.isPending ? (
+            <ActivityIndicator className="text-primary-foreground" />
+          ) : (
+            <Text>Send reset link</Text>
+          )}
+        </Button>
+      }
+    >
       <AuthPageHeader
         title="Reset password"
-        description="Enter the email on your account to request a link for setting a new password."
+        description="Enter the email on your account and we'll send a link to set a new password."
       />
       {mutation.error ? <ErrorMessage error={mutation.error} /> : null}
-      <Card>
-        <AuthTextField
-          first
-          label="Email"
-          placeholder="you@example.com"
-          keyboardType="email-address"
-          autoCapitalize="none"
-          autoComplete="email"
-          value={email}
-          onChangeText={setEmail}
-        />
-      </Card>
-      <Button
-        disabled={!email.includes('@') || mutation.isPending}
-        accessibilityState={{
-          disabled: !email.includes('@') || mutation.isPending,
-          busy: mutation.isPending
-        }}
-        onPress={() => mutation.mutate(email)}
-      >
-        {mutation.isPending ? (
-          <ActivityIndicator className="text-primary-foreground" />
-        ) : (
-          <Text>Send reset instructions</Text>
-        )}
-      </Button>
+      <Field
+        label="Email"
+        placeholder="you@example.com"
+        keyboardType="email-address"
+        autoCapitalize="none"
+        autoComplete="email"
+        textContentType="emailAddress"
+        autoCorrect={false}
+        spellCheck={false}
+        returnKeyType="send"
+        onSubmitEditing={submit}
+        onBlur={() => setEmailTouched(true)}
+        error={
+          emailTouched && email.trim() && !emailValid
+            ? 'Enter a full email address, like name@example.com.'
+            : undefined
+        }
+        value={email}
+        onChangeText={setEmail}
+      />
     </Screen>
   );
 }

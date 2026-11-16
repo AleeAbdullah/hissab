@@ -1,16 +1,16 @@
 import { Link, router } from 'expo-router';
-import { ChevronRight } from 'lucide-react-native';
+import { ChevronRight, CircleCheck } from 'lucide-react-native';
 import { View } from 'react-native';
 
 import type { LedgerBalances } from '@/api/contracts';
-import { Card, ErrorMessage } from '@/components/ui';
+import { AmountText, Card, ErrorMessage } from '@/components/ui';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { BalanceReminder } from '@/features/balances/components/balance-reminder';
 import { simplifyLedgerBalances } from '@/features/balances/simplify';
 import { useLedgerDraft, type LedgerDraft } from '@/features/ledger/draft';
-import { suggestedSettlement } from '@/features/settlements/form';
+import { settleUpDraft } from '@/features/ledger/settle';
 import { formatMinorAmount } from '@/lib/money';
 
 export function LedgerBalancePanel({
@@ -57,18 +57,13 @@ export function LedgerBalancePanel({
         ? "You're owed"
         : own < 0n
           ? 'You owe'
-          : "You're settled";
+          : 'All settled';
+  const canSettle =
+    canRecord && own !== 0n && (direct || Boolean(viewerSuggestions?.length));
   const settle = () => {
-    const other = direct ? candidates[0] : undefined;
     startDraft({
       ...draft,
-      settlement: {
-        amount: other
-          ? (suggestedSettlement(own.toString(), other.netMinor) ?? '')
-          : '',
-        fromUserId: own < 0n ? draft.currentUserId : (other?.userId ?? ''),
-        toUserId: own > 0n ? draft.currentUserId : (other?.userId ?? '')
-      }
+      settlement: settleUpDraft(balances, draft, direct)
     });
     router.push('/settlement');
   };
@@ -82,59 +77,72 @@ export function LedgerBalancePanel({
   return (
     <Card>
       <View className="gap-3 p-4">
-        <Text selectable className="text-base font-semibold">
-          {direction}
-        </Text>
-        <Text
-          selectable
-          className={`text-[32px] font-semibold leading-[38px] ${own > 0n ? 'text-positive' : own < 0n ? 'text-destructive' : 'text-foreground'}`}
-        >
-          {formatMinorAmount(
-            (own < 0n ? -own : own).toString(),
-            draft.displayCurrency
-          )}
-        </Text>
+        <View className="flex-row items-center gap-2">
+          {own === 0n ? (
+            <Icon as={CircleCheck} size={20} className="text-positive" />
+          ) : null}
+          <Text selectable className="flex-1 text-base font-semibold">
+            {direction}
+          </Text>
+        </View>
+        {own !== 0n ? (
+          <AmountText
+            className={`text-[32px] font-semibold leading-[38px] ${own > 0n ? 'text-positive' : 'text-destructive'}`}
+          >
+            {formatMinorAmount(
+              (own < 0n ? -own : own).toString(),
+              draft.displayCurrency
+            )}
+          </AmountText>
+        ) : null}
+        {direct && own === 0n ? (
+          <Text
+            selectable
+            className="text-[15px] leading-[22px] text-muted-foreground"
+          >
+            Between the two of you, outside groups.
+          </Text>
+        ) : null}
         {!direct ? (
           <Text
             selectable
             className="text-[15px] leading-[22px] text-muted-foreground"
           >
-            Your net balance in this group.{' '}
             {openCount
               ? openCount === 1
                 ? '1 other member has an open balance.'
                 : `${openCount} other members have open balances.`
-              : 'Everyone is settled.'}
+              : 'Everyone in this group is settled.'}
           </Text>
         ) : null}
-        <View className="flex-row flex-wrap gap-2">
-          {canRecord &&
-          own !== 0n &&
-          (direct || Boolean(viewerSuggestions?.length)) ? (
-            <Button variant="outline" size="compact" onPress={settle}>
-              <Text>Mark settled</Text>
-            </Button>
-          ) : null}
-          {!direct ? (
-            <Link
-              href={{
-                pathname: '/groups/[groupId]/balances',
-                params: { groupId: draft.ledgerId }
-              }}
-              asChild
-            >
-              <Button
-                variant="link"
-                size="compact"
-                role="link"
-                className="justify-start px-0"
-              >
-                <Text>Balance details</Text>
-                <Icon as={ChevronRight} size={20} className="text-primary" />
+        {canSettle || !direct ? (
+          <View className="flex-row flex-wrap gap-2">
+            {canSettle ? (
+              <Button variant="outline" size="compact" onPress={settle}>
+                <Text>Settle up</Text>
               </Button>
-            </Link>
-          ) : null}
-        </View>
+            ) : null}
+            {!direct ? (
+              <Link
+                href={{
+                  pathname: '/groups/[groupId]/balances',
+                  params: { groupId: draft.ledgerId }
+                }}
+                asChild
+              >
+                <Button
+                  variant="link"
+                  size="compact"
+                  role="link"
+                  className="justify-start px-0"
+                >
+                  <Text>Balance details</Text>
+                  <Icon as={ChevronRight} size={20} className="text-primary" />
+                </Button>
+              </Link>
+            ) : null}
+          </View>
+        ) : null}
         {!direct && suggestions === null ? (
           <>
             <ErrorMessage

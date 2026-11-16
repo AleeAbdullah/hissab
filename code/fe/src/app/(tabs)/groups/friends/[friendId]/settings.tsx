@@ -1,11 +1,10 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Link, router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Stack } from 'expo-router/stack';
-import { ActivityIndicator, View } from 'react-native';
+import { View } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
-import { Avatar, Card, ErrorMessage, Notice, Screen } from '@/components/ui';
-import { Button } from '@/components/ui/button';
+import { Avatar, Card, ErrorMessage, Row, Screen } from '@/components/ui';
 import { useDialog } from '@/components/ui/dialog';
 import { Text } from '@/components/ui/text';
 import {
@@ -58,94 +57,58 @@ export default function FriendSettingsScreen() {
             selectable
             className="text-[15px] leading-[22px] text-muted-foreground"
           >
-            {friend ? 'Active connection' : 'Connection details unavailable'}
-          </Text>
-        </View>
-      </View>
-      <Card>
-        <View className="gap-1 p-4">
-          <Text
-            selectable
-            className="text-xs font-semibold leading-4 tracking-[0.4px] text-muted-foreground"
-          >
-            RELATIONSHIP
-          </Text>
-          <Text selectable className="leading-6">
             {friend
-              ? 'Direct connection is active.'
+              ? 'Active connection'
               : 'Open this page from your Friends list.'}
           </Text>
         </View>
-      </Card>
+      </View>
       {blockFriend.error || balances.error ? (
         <ErrorMessage error={blockFriend.error ?? balances.error} />
       ) : null}
-      {balances.isLoading ? (
-        <Notice title="Checking balances">
-          Blocking remains unavailable until Tally Stick confirms this direct
-          ledger is settled.
-        </Notice>
-      ) : null}
-      {balances.data && !settled ? (
-        <Notice title="Settle balances first">
-          You cannot block this person until the direct-ledger balance is
-          settled.
-        </Notice>
-      ) : null}
-      {canBlock ? (
-        <Notice title="Balances settled">
-          Blocking archives this direct ledger and removes the active
-          connection.
-        </Notice>
-      ) : null}
-      <Button
-        variant="destructiveOutline"
-        disabled={!canBlock || blockFriend.isPending}
-        accessibilityState={{
-          disabled: !canBlock || blockFriend.isPending,
-          busy: blockFriend.isPending
-        }}
-        onPress={() =>
-          dialog(
-            `Block ${friend?.displayName ?? 'person'}?`,
-            'This archives the settled direct ledger. It does not delete its audit history.',
-            [
-              { text: 'Cancel', style: 'cancel' },
-              {
-                text: 'Block person',
-                style: 'destructive',
-                onPress: () => blockFriend.mutate()
-              }
-            ]
-          )
-        }
-      >
-        {blockFriend.isPending ? (
-          <ActivityIndicator className="text-destructive" />
-        ) : (
-          <Text>Block person</Text>
-        )}
-      </Button>
-      <Link href="/account/blocked-people" asChild>
-        <Button variant="outline" role="link">
-          <Text>View blocked people</Text>
-        </Button>
-      </Link>
-      <Link
-        href={{
-          pathname: '/report',
-          params: {
-            targetType: 'USER',
-            targetId: friendId,
-            name: friend?.displayName ?? ''
+      <Card>
+        <Row
+          title="Report person"
+          href={{
+            pathname: '/report',
+            params: {
+              targetType: 'USER',
+              targetId: friendId,
+              name: friend?.displayName ?? ''
+            }
+          }}
+        />
+        <Row title="Blocked people" href="/account/blocked-people" />
+      </Card>
+      <Card>
+        <Row
+          title={`Block ${friend?.displayName ?? 'person'}`}
+          destructive
+          disabled={!canBlock || blockFriend.isPending}
+          detail={blockFriend.isPending ? 'Blocking…' : undefined}
+          subtitle={
+            balances.isLoading
+              ? 'Checking your balance…'
+              : balances.data && !settled
+                ? 'Settle your balance first.'
+                : 'Archives your shared ledger and removes the connection.'
           }
-        }}
-        asChild
-      >
-        <Button variant="outline" role="link">
-          <Text>Report person</Text>
-        </Button>
-      </Link>
+          onPress={() =>
+            dialog(
+              `Block ${friend?.displayName ?? 'person'}?`,
+              'This archives the settled direct ledger. It does not delete its audit history.',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Block person',
+                  style: 'destructive',
+                  onPress: () => blockFriend.mutate()
+                }
+              ]
+            )
+          }
+        />
+      </Card>
     </Screen>
   );
 }

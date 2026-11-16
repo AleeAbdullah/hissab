@@ -1,25 +1,31 @@
 import { useMutation } from '@tanstack/react-query';
 import { Link, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
-import { ActivityIndicator } from 'react-native';
+import { useRef, useState } from 'react';
+import { ActivityIndicator, type TextInput } from 'react-native';
 
-import { Card, ErrorMessage, Notice, Screen } from '@/components/ui';
+import { ErrorMessage, Field, Notice, Screen } from '@/components/ui';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { resetPassword } from '@/features/auth/api';
-import { AuthTextField } from '@/features/auth/components/auth-field';
 import { AuthPageHeader } from '@/features/auth/components/auth-page-header';
+import {
+  MIN_PASSWORD_LENGTH,
+  PasswordRequirement
+} from '@/features/auth/components/password-requirement';
 
 export default function ResetPasswordScreen() {
   const { token = '' } = useLocalSearchParams<{ token?: string }>();
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
+  const confirmRef = useRef<TextInput>(null);
   const mutation = useMutation({
     mutationFn: () => resetPassword(token, password)
   });
   const mismatch = confirm.length > 0 && password !== confirm;
   const valid =
-    token.length >= 32 && password.length >= 12 && password === confirm;
+    token.length >= 32 &&
+    password.length >= MIN_PASSWORD_LENGTH &&
+    password === confirm;
 
   if (mutation.isSuccess) {
     return (
@@ -37,51 +43,65 @@ export default function ResetPasswordScreen() {
     );
   }
 
+  const submit = () => {
+    if (valid && !mutation.isPending) mutation.mutate();
+  };
+
   return (
-    <Screen>
+    <Screen
+      footer={
+        <Button
+          disabled={!valid || mutation.isPending}
+          accessibilityState={{
+            disabled: !valid || mutation.isPending,
+            busy: mutation.isPending
+          }}
+          onPress={submit}
+        >
+          {mutation.isPending ? (
+            <ActivityIndicator className="text-primary-foreground" />
+          ) : (
+            <Text>Save new password</Text>
+          )}
+        </Button>
+      }
+    >
       <AuthPageHeader
         title="Set new password"
-        description="Signing in again will be required on every device."
+        description="You'll need to sign in again on every device."
       />
       {!token ? (
-        <Notice error title="Reset token missing">
-          Open this screen from the reset link, or request a new link.
+        <Notice error title="Reset link missing">
+          Open this screen from the link in your email, or request a new one.
         </Notice>
       ) : null}
       {mutation.error ? <ErrorMessage error={mutation.error} /> : null}
-      <Card>
-        <AuthTextField
-          first
-          label="New password"
-          secureTextEntry
-          autoComplete="new-password"
-          value={password}
-          onChangeText={setPassword}
-          hint="At least 12 characters."
-        />
-        <AuthTextField
-          label="Confirm new password"
-          secureTextEntry
-          autoComplete="new-password"
-          value={confirm}
-          onChangeText={setConfirm}
-          error={mismatch ? 'The two new passwords do not match.' : undefined}
-        />
-      </Card>
-      <Button
-        disabled={!valid || mutation.isPending}
-        accessibilityState={{
-          disabled: !valid || mutation.isPending,
-          busy: mutation.isPending
-        }}
-        onPress={() => mutation.mutate()}
-      >
-        {mutation.isPending ? (
-          <ActivityIndicator className="text-primary-foreground" />
-        ) : (
-          <Text>Save new password</Text>
-        )}
-      </Button>
+      <Field
+        label="New password"
+        placeholder="Create a password"
+        secureTextEntry
+        autoComplete="new-password"
+        textContentType="newPassword"
+        returnKeyType="next"
+        submitBehavior="submit"
+        onSubmitEditing={() => confirmRef.current?.focus()}
+        value={password}
+        onChangeText={setPassword}
+      />
+      <PasswordRequirement password={password} />
+      <Field
+        inputRef={confirmRef}
+        label="Confirm new password"
+        placeholder="Type it again"
+        secureTextEntry
+        autoComplete="new-password"
+        textContentType="newPassword"
+        returnKeyType="go"
+        onSubmitEditing={submit}
+        value={confirm}
+        onChangeText={setConfirm}
+        error={mismatch ? "The passwords don't match." : undefined}
+      />
       {!token ? (
         <Link href="/forgot-password" asChild>
           <Button variant="outline" role="link">

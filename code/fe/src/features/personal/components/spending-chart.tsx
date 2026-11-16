@@ -232,6 +232,8 @@ function AxisLabels({
         ? labels.map((label, index) => (
             <Text
               key={index}
+              // Same cap as the scale label: wider text would split "14 Nov" mid-word in its box.
+              maxFontSizeMultiplier={1.5}
               className={cn(
                 'text-xs text-muted-foreground',
                 index === 0

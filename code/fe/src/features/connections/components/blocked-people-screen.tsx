@@ -4,10 +4,9 @@ import { ActivityIndicator, View } from 'react-native';
 import { queryClient } from '@/api/query-client';
 import {
   Avatar,
-  Card,
   ErrorMessage,
+  ListRow,
   Loading,
-  Row,
   Screen,
   SectionLabel
 } from '@/components/ui';
@@ -47,54 +46,55 @@ export function BlockedPeopleScreen() {
         <SectionLabel>BLOCKED · {query.data.length}</SectionLabel>
       ) : null}
       {query.data?.length ? (
-        <Card>
-          {query.data.map((person) => (
-            <Row
+        <View>
+          {query.data.map((person, index) => (
+            <ListRow
               key={person.userId}
+              divided={index > 0}
               title={person.displayName}
-              subtitle="Blocked"
               leading={<Avatar name={person.displayName} />}
               trailing={
-                <View className="w-[104px]">
-                  <Button
-                    variant="outline"
-                    disabled={mutation.isPending}
-                    accessibilityState={{
-                      disabled: mutation.isPending,
-                      busy:
-                        mutation.isPending &&
-                        mutation.variables === person.userId
-                    }}
-                    onPress={() =>
-                      dialog(
-                        'Unblock this person?',
-                        'They can send a new connection request after you unblock them.',
-                        [
-                          { text: 'Cancel', style: 'cancel' },
-                          {
-                            text: 'Unblock',
-                            onPress: () => mutation.mutate(person.userId)
-                          }
-                        ]
-                      )
-                    }
-                  >
-                    {mutation.isPending &&
-                    mutation.variables === person.userId ? (
-                      <ActivityIndicator className="text-primary" />
-                    ) : (
-                      <Text>Unblock</Text>
-                    )}
-                  </Button>
-                </View>
+                <Button
+                  variant="outline"
+                  size="compact"
+                  accessibilityLabel={`Unblock ${person.displayName}`}
+                  disabled={mutation.isPending}
+                  accessibilityState={{
+                    disabled: mutation.isPending,
+                    busy:
+                      mutation.isPending && mutation.variables === person.userId
+                  }}
+                  onPress={() =>
+                    dialog(
+                      'Unblock this person?',
+                      'They can send a new connection request after you unblock them.',
+                      [
+                        { text: 'Cancel', style: 'cancel' },
+                        {
+                          text: 'Unblock',
+                          onPress: () => mutation.mutate(person.userId)
+                        }
+                      ]
+                    )
+                  }
+                >
+                  {mutation.isPending &&
+                  mutation.variables === person.userId ? (
+                    <ActivityIndicator className="text-primary" />
+                  ) : (
+                    <Text>Unblock</Text>
+                  )}
+                </Button>
               }
             />
           ))}
-        </Card>
+        </View>
       ) : null}
-      <Text selectable className="text-xs leading-4 text-muted-foreground">
-        Unblocking does not restore a connection or resend a request.
-      </Text>
+      {query.data?.length ? (
+        <Text selectable className="text-xs leading-4 text-muted-foreground">
+          Unblocking does not restore a connection or resend a request.
+        </Text>
+      ) : null}
     </Screen>
   );
 }

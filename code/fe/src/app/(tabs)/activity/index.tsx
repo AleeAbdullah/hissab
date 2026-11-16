@@ -6,12 +6,19 @@ import {
   AccessibilityInfo,
   ActivityIndicator,
   RefreshControl,
+  ScrollView,
   View,
   type GestureResponderEvent
 } from 'react-native';
 
 import type { ActivityItem } from '@/api/contracts';
-import { ErrorMessage, Loading, Screen, SectionLabel } from '@/components/ui';
+import {
+  Chip,
+  DayHeading,
+  ErrorMessage,
+  Loading,
+  Screen
+} from '@/components/ui';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
@@ -27,9 +34,13 @@ import {
   type ActivityLedgerChoice,
   type ActivityFilters
 } from '@/features/activity/components/activity-filter-sheet';
-import { activityDayLabel } from '@/features/activity/presentation';
+import {
+  activityDayLabel,
+  collapseInvitations
+} from '@/features/activity/presentation';
 import { connectionsQuery } from '@/features/connections/api';
 import { groupsQuery } from '@/features/groups/api';
+import { usePullToRefresh } from '@/lib/pull-to-refresh';
 import { THEME_VARIABLES, useThemeVariable } from '@/lib/theme';
 
 export default function ActivityScreen() {
@@ -52,24 +63,28 @@ export default function ActivityScreen() {
     ledgerId: typeof params.ledgerId === 'string' ? params.ledgerId : undefined
   };
   const activity = useInfiniteQuery(activityInfiniteQuery(filters));
+  const pull = usePullToRefresh(() => activity.refetch());
   const profile = useQuery(profileQuery);
   const items = useMemo(
     () => activity.data?.pages.flatMap((page) => page.items) ?? [],
     [activity.data]
   );
-  const sections = useMemo(() => groupByDay(items), [items]);
+  const sections = useMemo(
+    () => groupByDay(collapseInvitations(items)),
+    [items]
+  );
   const ledgers: ActivityLedgerChoice[] = [
     ...(groups.data ?? []).map((group) => ({
       id: group.id,
       name: group.name,
       type: 'GROUP' as const,
-      subtitle: group.status === 'ARCHIVED' ? 'Group · Archived' : 'Group'
+      subtitle: group.status === 'ARCHIVED' ? 'Archived' : ''
     })),
     ...(connections.data ?? []).map((connection) => ({
       id: connection.ledgerId,
       name: connection.displayName,
       type: 'DIRECT' as const,
-      subtitle: 'Direct ledger'
+      subtitle: ''
     }))
   ].sort((left, right) => left.name.localeCompare(right.name));
   if (
@@ -90,6 +105,8 @@ export default function ActivityScreen() {
     (ledger) => ledger.id === filters.ledgerId
   )?.name;
   const hasFilters = Boolean(filters.area || filters.ledgerId);
+  const setArea = (area: ActivityFilters['area']) =>
+    router.setParams({ area: area ?? undefined });
   const open = filtersOpen || params.filters === 'open';
   useEffect(() => {
     if (wasOpen.current && !open) {
@@ -131,7 +148,7 @@ export default function ActivityScreen() {
             <Button
               className="w-12 px-0"
               variant="ghost"
-              accessibilityLabel="Filter activity"
+              accessibilityLabel="Filter by group or friend"
               accessibilityState={{ expanded: open }}
               onPress={(event) => {
                 filterButton.current = event.currentTarget;
@@ -154,10 +171,7 @@ export default function ActivityScreen() {
           <Screen
             refreshControl={
               <RefreshControl
-                refreshing={
-                  activity.isRefetching && !activity.isFetchingNextPage
-                }
-                onRefresh={() => activity.refetch()}
+                {...pull}
                 tintColor={primary}
                 colors={[primary]}
               />
@@ -166,39 +180,42 @@ export default function ActivityScreen() {
             {activity.error || profile.error ? (
               <ErrorMessage error={activity.error ?? profile.error} />
             ) : null}
-            {hasFilters ? (
-              <View className="flex-row flex-wrap gap-2">
-                {filters.area ? (
-                  <Button
-                    variant="outline"
-                    accessibilityLabel={`Remove ${areaLabel(filters.area)} filter`}
-                    onPress={() => apply({ ...filters, area: undefined })}
-                  >
-                    <Text>{areaLabel(filters.area)}</Text>
-                    <Icon as={X} size={16} />
-                  </Button>
-                ) : null}
-                {filters.ledgerId ? (
-                  <Button
-                    variant="outline"
-                    accessibilityLabel={`Remove ${selectedLedgerName} filter`}
-                    onPress={() => apply({ ...filters, ledgerId: undefined })}
-                  >
-                    <Text>{selectedLedgerName}</Text>
-                    <Icon as={X} size={16} />
-                  </Button>
-                ) : null}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              className="-mx-5 grow-0"
+              contentContainerClassName="gap-2 px-5"
+            >
+              {activityAreas.map((area) => (
+                <Chip
+                  key={area.value ?? 'all'}
+                  label={area.label}
+                  selected={filters.area === area.value}
+                  onPress={() => setArea(area.value)}
+                />
+              ))}
+            </ScrollView>
+            {filters.ledgerId ? (
+              <View className="flex-row">
+                <Chip
+                  selected
+                  label={selectedLedgerName ?? 'Selected ledger'}
+                  trailingIcon={X}
+                  accessibilityLabel={`Remove ${selectedLedgerName} filter`}
+                  onPress={() => apply({ ...filters, ledgerId: undefined })}
+                />
               </View>
             ) : null}
             {items.length ? (
               sections.map((section) => (
-                <View key={section.title} className="gap-2">
-                  <SectionLabel>{section.title.toUpperCase()}</SectionLabel>
+                <View key={section.title}>
+                  <DayHeading>{section.title}</DayHeading>
                   <View>
-                    {section.items.map((item) =>
+                    {section.items.map((item, index) =>
                       profile.data ? (
                         <ActivityEventRow
                           key={item.id}
+                          divided={index > 0}
                           item={item}
                           currentUserId={profile.data.id}
                           displayCurrency={profile.data.displayCurrency}
@@ -262,8 +279,8 @@ function EmptyActivity({ filtered }: { filtered: boolean }) {
       </Text>
       <Text selectable className="text-center leading-6 text-muted-foreground">
         {filtered
-          ? 'Try changing the area or ledger filter.'
-          : 'Shared expenses, payments, groups, and connections will appear here.'}
+          ? 'Try another type, group or friend.'
+          : 'Shared expenses, payments, groups and friends will appear here.'}
       </Text>
     </View>
   );
@@ -278,12 +295,4 @@ function groupByDay(items: ActivityItem[]) {
     else sections.push({ title, items: [item] });
   }
   return sections;
-}
-
-function areaLabel(
-  area: NonNullable<ReturnType<typeof activityAreaFromParam>>
-) {
-  return (
-    activityAreas.find((item) => item.value === area)?.label ?? 'All activity'
-  );
 }

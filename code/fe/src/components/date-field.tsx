@@ -3,8 +3,7 @@ import { CalendarDays } from 'lucide-react-native';
 import { useState } from 'react';
 import { View } from 'react-native';
 
-import { Button } from '@/components/ui/button';
-import { Icon } from '@/components/ui/icon';
+import { Chip } from '@/components/ui';
 import { Text } from '@/components/ui/text';
 import {
   dateLabel,
@@ -33,60 +32,42 @@ export function DateField({
   const today = todayDate();
   const yesterday = shiftDate(today, -1);
   const label = dateLabel(value, today);
+  const custom = value !== today && value !== yesterday;
+  const chips = [
+    {
+      label: 'Today',
+      selected: value === today,
+      onPress: () => onChange(today)
+    },
+    {
+      label: 'Yesterday',
+      selected: value === yesterday,
+      onPress: () => onChange(yesterday)
+    },
+    {
+      label: custom ? dateLabel(value, today) : 'Pick date',
+      selected: custom,
+      icon: true,
+      onPress: () => setPicking(true)
+    }
+  ];
   return (
     <View className="gap-1.5">
       <Text className="text-[13px] text-muted-foreground">Date</Text>
-      <Button
-        variant="ghost"
-        className={
-          error
-            ? 'min-h-12 w-full justify-start gap-3 rounded-xl border border-destructive bg-card px-3'
-            : 'min-h-12 w-full justify-start gap-3 rounded-xl border border-input bg-card px-3'
-        }
-        accessibilityLabel={`Date, ${label}`}
-        accessibilityHint="Opens the date picker"
-        disabled={disabled}
-        accessibilityState={{ disabled }}
-        onPress={() => setPicking(true)}
-      >
-        <Icon as={CalendarDays} size={20} className="text-muted-foreground" />
-        <Text className="min-w-0 flex-1 text-[17px] font-normal text-foreground">
-          {label}
-        </Text>
-      </Button>
       <View className="flex-row flex-wrap gap-2">
-        {[
-          { label: 'Today', date: today },
-          { label: 'Yesterday', date: yesterday }
-        ].map((chip) => {
-          const selected = value === chip.date;
-          return (
-            <Button
-              key={chip.label}
-              variant="ghost"
-              size="compact"
-              disabled={disabled}
-              accessibilityLabel={chip.label}
-              accessibilityState={{ selected, disabled }}
-              className={
-                selected
-                  ? 'min-h-8 rounded-full border border-primary bg-accent px-3'
-                  : 'min-h-8 rounded-full border border-border bg-card px-3'
-              }
-              onPress={() => onChange(chip.date)}
-            >
-              <Text
-                className={
-                  selected
-                    ? 'text-[15px] font-semibold leading-5 text-primary'
-                    : 'text-[15px] font-semibold leading-5 text-foreground'
-                }
-              >
-                {chip.label}
-              </Text>
-            </Button>
-          );
-        })}
+        {chips.map((chip) => (
+          <Chip
+            key={chip.icon ? 'pick' : chip.label}
+            label={chip.label}
+            selected={chip.selected}
+            icon={chip.icon ? CalendarDays : undefined}
+            error={Boolean(error)}
+            disabled={disabled}
+            accessibilityLabel={chip.icon ? `Date, ${label}` : chip.label}
+            accessibilityHint={chip.icon ? 'Opens the date picker' : undefined}
+            onPress={chip.onPress}
+          />
+        ))}
       </View>
       {error ? (
         <Text
