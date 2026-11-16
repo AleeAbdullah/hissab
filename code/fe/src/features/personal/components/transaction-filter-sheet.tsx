@@ -1,26 +1,5 @@
 import { DateTimePicker } from '@expo/ui/community/datetime-picker';
-import {
-  BedDouble,
-  BriefcaseBusiness,
-  BusFront,
-  Check,
-  ChevronDown,
-  ChevronUp,
-  CircleDollarSign,
-  Clapperboard,
-  Gift,
-  HeartPulse,
-  PlugZap,
-  RotateCcw,
-  Shapes,
-  ShoppingBag,
-  ShoppingBasket,
-  Store,
-  UtensilsCrossed,
-  Wallet,
-  X,
-  type LucideIcon
-} from 'lucide-react-native';
+import { Check, ChevronDown, ChevronUp, Shapes, X } from 'lucide-react-native';
 import { useState } from 'react';
 import { Modal, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -35,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { AmountRangeSlider } from '@/features/personal/components/amount-range-slider';
+import { CATEGORY_ICONS } from '@/features/personal/components/category-picker';
 import {
   currentPeriodDates,
   formatDate,
@@ -54,24 +34,6 @@ export type TransactionFilters = {
 };
 
 type FilterSection = 'AMOUNT' | 'CATEGORY' | 'DATE';
-
-const CATEGORY_ICONS: Record<PersonalCategoryCode, LucideIcon> = {
-  FOOD_AND_DRINK: UtensilsCrossed,
-  GROCERIES: ShoppingBasket,
-  TRANSPORT: BusFront,
-  ACCOMMODATION: BedDouble,
-  UTILITIES: PlugZap,
-  ENTERTAINMENT: Clapperboard,
-  SHOPPING: ShoppingBag,
-  HEALTHCARE: HeartPulse,
-  OTHER: Shapes,
-  SALARY: Wallet,
-  FREELANCE: BriefcaseBusiness,
-  BUSINESS: Store,
-  GIFTS: Gift,
-  REFUNDS: RotateCcw,
-  OTHER_INCOME: CircleDollarSign
-};
 
 function dateLabel(value?: string) {
   if (!value) return 'Any date';

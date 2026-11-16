@@ -63,6 +63,8 @@ export function usePersistentDraft<T>(key: string | null) {
   );
 
   const clear = useCallback(() => save(null), [save]);
+  // Read at press time, so closing an untouched form needs no confirmation.
+  const hasContent = useCallback(() => latest.current !== null, []);
 
-  return { clear, draft, ready: loadedKey === key, save };
+  return { clear, draft, hasContent, ready: loadedKey === key, save };
 }

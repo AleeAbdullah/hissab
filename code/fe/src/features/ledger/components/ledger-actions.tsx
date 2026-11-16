@@ -1,47 +1,51 @@
 import { router } from 'expo-router';
+import { View } from 'react-native';
 
+import type { LedgerBalances } from '@/api/contracts';
 import { Button } from '@/components/ui/button';
-import { useDialog } from '@/components/ui/dialog';
 import { Text } from '@/components/ui/text';
 import type { LedgerDraft } from '@/features/ledger/draft';
 import { useLedgerDraft } from '@/features/ledger/draft';
+import { settleUpDraft } from '@/features/ledger/settle';
 
-export function LedgerActions({ draft }: { draft: LedgerDraft }) {
-  const dialog = useDialog();
+export function LedgerActions({
+  draft,
+  balances,
+  direct = false
+}: {
+  draft: LedgerDraft;
+  balances?: LedgerBalances;
+  direct?: boolean;
+}) {
   const { startDraft } = useLedgerDraft();
-  const open = (route: '/shared-expense' | '/settlement') => {
-    startDraft({ ...draft, settlement: undefined });
-    router.push(route);
-  };
+  const disabled = draft.members.length < 2;
   return (
-    <Button
-      onPress={() =>
-        dialog(
-          `Add to ${draft.ledgerName}`,
-          draft.members.length < 2
-            ? 'Shared records need at least two active members. Invited people can take part after they accept.'
-            : 'Shared expense splits a cost between members. External payment records money already paid outside Tally Stick.',
-          [
-            ...(draft.members.length >= 2
-              ? [
-                  {
-                    text: 'Shared expense',
-                    style: 'choice' as const,
-                    onPress: () => open('/shared-expense')
-                  },
-                  {
-                    text: 'External payment',
-                    style: 'choice' as const,
-                    onPress: () => open('/settlement')
-                  }
-                ]
-              : []),
-            { text: 'Cancel', style: 'cancel' }
-          ]
-        )
-      }
-    >
-      <Text>Add record</Text>
-    </Button>
+    <View className="flex-row gap-3">
+      <Button
+        className="flex-1"
+        disabled={disabled}
+        onPress={() => {
+          startDraft({ ...draft, settlement: undefined });
+          router.push('/shared-expense');
+        }}
+      >
+        <Text>Add expense</Text>
+      </Button>
+      <Button
+        variant="outline"
+        className="flex-1"
+        disabled={disabled || !balances}
+        onPress={() => {
+          if (!balances) return;
+          startDraft({
+            ...draft,
+            settlement: settleUpDraft(balances, draft, direct)
+          });
+          router.push('/settlement');
+        }}
+      >
+        <Text>Record payment</Text>
+      </Button>
+    </View>
   );
 }

@@ -1,14 +1,25 @@
-import { ChevronRight } from 'lucide-react-native';
+import {
+  ArrowLeftRight,
+  BellRing,
+  ReceiptText,
+  UsersRound,
+  type LucideIcon
+} from 'lucide-react-native';
 import { ActivityIndicator, View } from 'react-native';
 
 import type { InAppNotification } from '@/api/contracts';
-import { ErrorMessage } from '@/components/ui';
+import { ErrorMessage, IconTile, ListRow } from '@/components/ui';
 import { Button } from '@/components/ui/button';
-import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { reminderLedgerHref } from '@/features/reminders/navigation';
 import { formatDateTime } from '@/lib/dates';
-import { cn } from '@/lib/utils';
+
+const KIND_ICONS: Record<InAppNotification['kind'], LucideIcon> = {
+  EXPENSE: ReceiptText,
+  SETTLEMENT: ArrowLeftRight,
+  SOCIAL: UsersRound,
+  REMINDER: BellRing
+};
 
 export function NotificationInbox({
   error,
@@ -47,73 +58,48 @@ export function NotificationInbox({
           className="text-primary"
         />
       ) : items.length ? (
-        items.map((item) => {
+        items.map((item, index) => {
           const unread = !item.readAt;
           const linked = Boolean(
             reminderLedgerHref({ ...item.details, ...item })
           );
-          const content = (
-            <View className="w-full gap-1">
-              <View className="flex-row items-center gap-2">
-                {unread ? (
-                  <View className="size-2 rounded-full bg-primary" />
-                ) : null}
-                <Text
-                  className={cn(
-                    'flex-1 text-base leading-[22px]',
-                    unread ? 'font-semibold' : 'font-normal'
-                  )}
-                >
-                  {item.title}
-                </Text>
-                {linked ? (
-                  <Icon
-                    as={ChevronRight}
-                    size={20}
-                    className="text-muted-foreground"
-                  />
-                ) : null}
-              </View>
-              <Text
-                numberOfLines={2}
-                className="text-[15px] font-normal leading-[22px] text-muted-foreground"
-              >
-                {item.body}
-              </Text>
-              <Text className="text-[13px] font-normal leading-[18px] text-muted-foreground">
-                {formatDateTime(item.createdAt)}
-              </Text>
-            </View>
-          );
           const label = `${unread ? 'Unread. ' : ''}${item.title}. ${item.body}. ${formatDateTime(item.createdAt)}`;
-          return unread || linked ? (
-            <Button
+          return (
+            <ListRow
               key={item.id}
-              variant="ghost"
+              divided={index > 0}
               role={linked ? 'link' : 'button'}
               disabled={busy}
               accessibilityLabel={label}
-              onPress={() => onOpen(item)}
-              className="w-full rounded-none border-b border-border px-0 py-4"
+              onPress={unread || linked ? () => onOpen(item) : undefined}
+              leading={<IconTile icon={KIND_ICONS[item.kind]} />}
+              title={item.title}
+              subtitle={item.body}
+              trailing={
+                unread ? (
+                  <View className="size-2.5 rounded-full bg-primary" />
+                ) : undefined
+              }
             >
-              {content}
-            </Button>
-          ) : (
-            <View
-              key={item.id}
-              accessible
-              accessibilityLabel={label}
-              className="border-b border-border py-4"
-            >
-              {content}
-            </View>
+              <Text className="text-[13px] font-normal leading-[18px] text-muted-foreground">
+                {formatDateTime(item.createdAt)}
+              </Text>
+            </ListRow>
           );
         })
       ) : !error ? (
-        <View className="gap-2 py-8">
-          <Text className="text-lg font-semibold">No notifications yet</Text>
-          <Text className="text-[15px] leading-[22px] text-muted-foreground">
-            Shared changes, invitations, connection requests and reminders
+        <View className="items-center gap-2 py-10">
+          <Text
+            selectable
+            className="text-center text-xl font-semibold leading-[26px]"
+          >
+            No notifications yet
+          </Text>
+          <Text
+            selectable
+            className="text-center leading-6 text-muted-foreground"
+          >
+            Shared changes, invitations, friend requests and reminders will
             appear here.
           </Text>
         </View>

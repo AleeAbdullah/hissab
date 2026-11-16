@@ -205,10 +205,16 @@ export class AuthService {
           session.id,
           new Date(),
         );
-        const tokens = await this.issueSession(transaction, user, metadata, {
-          familyId: session.familyId,
-          rotatedFromSessionId: session.id,
-        });
+        // Refresh requests carry no device name; keep the one given at sign-in.
+        const tokens = await this.issueSession(
+          transaction,
+          user,
+          { ...metadata, deviceName: session.deviceName ?? undefined },
+          {
+            familyId: session.familyId,
+            rotatedFromSessionId: session.id,
+          },
+        );
         return { ok: true, value: tokens };
       },
     );

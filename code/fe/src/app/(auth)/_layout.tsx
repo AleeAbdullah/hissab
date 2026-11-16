@@ -1,35 +1,20 @@
 import { Stack } from 'expo-router/stack';
 
-import { Text } from '@/components/ui/text';
-
 export default function AuthLayout() {
   return (
     <Stack
       screenOptions={{
-        headerTitle: () => (
-          <Text
-            selectable
-            className="font-serif text-[21px] font-medium leading-6"
-          >
-            Tally Stick
-          </Text>
-        ),
-        headerTitleAlign: 'center',
+        // Each auth screen carries its own large in-body title.
+        headerTitle: '',
         headerBackButtonDisplayMode: 'minimal',
         headerShadowVisible: false
       }}
     >
       <Stack.Screen name="welcome" options={{ headerShown: false }} />
-      <Stack.Screen name="register" options={{ headerShown: false }} />
-      <Stack.Screen name="sign-in" options={{ headerShown: false }} />
-      <Stack.Screen
-        name="forgot-password"
-        options={{ title: 'Reset password' }}
-      />
-      <Stack.Screen
-        name="reset-password"
-        options={{ title: 'Set new password' }}
-      />
+      <Stack.Screen name="register" />
+      <Stack.Screen name="sign-in" />
+      <Stack.Screen name="forgot-password" />
+      <Stack.Screen name="reset-password" />
     </Stack>
   );
 }

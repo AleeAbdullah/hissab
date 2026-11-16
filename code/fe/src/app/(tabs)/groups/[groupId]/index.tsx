@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link, useLocalSearchParams } from 'expo-router';
 import { Stack } from 'expo-router/stack';
-import { Settings, UsersRound } from 'lucide-react-native';
+import { ChevronRight, Settings } from 'lucide-react-native';
 import { View, useWindowDimensions } from 'react-native';
 
 import { Avatar, ErrorMessage, Loading, Screen } from '@/components/ui';
@@ -93,7 +93,7 @@ export default function GroupDetailScreen() {
               </Button>
             </Link>
           ) : (
-            <LedgerActions draft={draft} />
+            <LedgerActions draft={draft} balances={balances.data} />
           )
         ) : undefined
       }
@@ -103,25 +103,8 @@ export default function GroupDetailScreen() {
           title: group.data.name,
           headerTitle: () => <View />,
           headerBackVisible: true,
-          headerRight: () => (
-            <View className="flex-row">
-              <Link
-                href={{
-                  pathname: '/groups/[groupId]/members',
-                  params: { groupId }
-                }}
-                asChild
-              >
-                <Button
-                  className="w-12 px-0"
-                  variant="ghost"
-                  role="link"
-                  accessibilityLabel={`Members, ${active.length} active`}
-                >
-                  <Icon as={UsersRound} size={22} className="text-primary" />
-                </Button>
-              </Link>
-              {canManage ? (
+          headerRight: canManage
+            ? () => (
                 <Link
                   href={{
                     pathname: '/groups/[groupId]/settings',
@@ -138,9 +121,8 @@ export default function GroupDetailScreen() {
                     <Icon as={Settings} size={22} className="text-primary" />
                   </Button>
                 </Link>
-              ) : null}
-            </View>
-          )
+              )
+            : undefined
         }}
       />
       <View
@@ -161,16 +143,31 @@ export default function GroupDetailScreen() {
           >
             {group.data.name}
           </Text>
-          <Text
-            selectable
-            className="text-[15px] leading-[22px] text-muted-foreground"
+          <Link
+            href={{
+              pathname: '/groups/[groupId]/members',
+              params: { groupId }
+            }}
+            asChild
           >
-            {group.data.status === 'ARCHIVED'
-              ? 'Archived · read-only'
-              : group.data.membershipStatus === 'LEFT'
-                ? 'You left this group'
-                : `${active.length} ${active.length === 1 ? 'member' : 'members'} · Active`}
-          </Text>
+            <Button
+              variant="link"
+              size="compact"
+              role="link"
+              className="justify-start self-start px-0"
+            >
+              <Text>
+                {`${active.length} ${active.length === 1 ? 'member' : 'members'}${
+                  group.data.status === 'ARCHIVED'
+                    ? ' · Archived'
+                    : group.data.membershipStatus === 'LEFT'
+                      ? ' · You left'
+                      : ''
+                }`}
+              </Text>
+              <Icon as={ChevronRight} size={18} className="text-primary" />
+            </Button>
+          </Link>
         </View>
       </View>
       <LedgerBalancePanel
@@ -191,6 +188,7 @@ export default function GroupDetailScreen() {
         ledgerId={groupId}
         ledgerName={group.data.name}
         members={members.data}
+        currentUserId={profile.data.id}
       />
     </Screen>
   );

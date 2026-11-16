@@ -40,7 +40,7 @@ export function ConnectionRequestCard({
             >
               {incoming
                 ? 'Wants to connect with you'
-                : 'Connection request sent'}
+                : 'Friend request sent'}
             </Text>
           </View>
           {incoming && (onReport || onBlock) ? (

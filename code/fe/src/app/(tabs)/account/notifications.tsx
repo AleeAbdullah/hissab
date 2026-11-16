@@ -215,7 +215,7 @@ function PreferenceRow({
     <View className="gap-2 border-b border-border p-4">
       <View className="min-h-12 flex-row items-center gap-3">
         <View className="flex-1 gap-1">
-          <Text className="text-base leading-6">{title}</Text>
+          <Text className="text-[17px] leading-[23px]">{title}</Text>
           <Text className="text-[13px] leading-[18px] text-muted-foreground">
             {description}
           </Text>

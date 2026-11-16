@@ -125,6 +125,13 @@ export class ExpenseActivityDetailsDto {
 
   @ApiProperty({ type: String, format: 'date-time' })
   occurredAt!: Date;
+
+  @ApiProperty({
+    pattern: '^-?[0-9]+$',
+    description:
+      "The viewer's paid minus owed amount in this expense revision, in minor units.",
+  })
+  viewerNetMinor!: string;
 }
 
 export class SettlementActivityDetailsDto {

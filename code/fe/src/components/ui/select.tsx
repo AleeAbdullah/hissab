@@ -7,6 +7,7 @@ import { FullWindowOverlay as RNFullWindowOverlay } from 'react-native-screens';
 import { Icons } from '@/components/icons';
 import { Icon } from '@/components/ui/icon';
 import { NativeOnlyAnimatedView } from '@/components/ui/native-only-animated-view';
+import { surfaceVariants } from '@/components/ui/surface';
 import { TextClassContext } from '@/components/ui/text';
 import { cn } from '@/lib/utils';
 
@@ -28,7 +29,7 @@ function SelectValue({
     <SelectPrimitive.Value
       ref={ref}
       className={cn(
-        'line-clamp-1 flex flex-row items-center gap-2 text-sm text-foreground',
+        'line-clamp-1 flex flex-row items-center gap-2 text-[17px] text-foreground',
         !value && 'text-muted-foreground',
         className
       )}
@@ -51,7 +52,8 @@ function SelectTrigger({
     <SelectPrimitive.Trigger
       ref={ref}
       className={cn(
-        'dark:bg-input/30 dark:active:bg-input/50 flex min-h-12 flex-row items-center justify-between gap-2 rounded-xl border border-input bg-background px-3 py-2',
+        surfaceVariants({ variant: 'control' }),
+        'flex flex-row items-center justify-between gap-2 px-3 py-2',
         Platform.select({
           web: 'focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:hover:bg-input/50 w-fit whitespace-nowrap text-sm outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] disabled:cursor-not-allowed [&_svg]:pointer-events-none [&_svg]:shrink-0'
         }),

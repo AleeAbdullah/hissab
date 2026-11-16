@@ -1,47 +1,54 @@
+import { Image } from 'expo-image';
 import { Link } from 'expo-router';
-import { View } from 'react-native';
+import { useColorScheme, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Icons } from '@/components/icons';
 import { Screen } from '@/components/ui';
 import { Button } from '@/components/ui/button';
+import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
+import { LARGE_TEXT_SCALE, useLargeText } from '@/lib/text-scale';
+
+const illustration = {
+  light: require('@/assets/images/welcome/tally-stick.png'),
+  dark: require('@/assets/images/welcome/tally-stick-dark.png')
+};
 
 const points = [
-  [
-    'Split what you actually paid',
-    'One payer or several. Equal or exact amounts, down to the cent.'
-  ],
-  [
-    'Balances stay clear',
-    'Every shared expense and payment updates one exact ledger balance.'
-  ],
-  [
-    'Record settlements made elsewhere',
-    'Cash, bank transfer, anything. Tally Stick keeps the record.'
-  ]
+  'Split equally or exactly',
+  'Every balance adds up',
+  'Record payments made anywhere'
 ];
 
 export default function WelcomeScreen() {
+  const scheme = useColorScheme();
+  const largeText = useLargeText();
   return (
     <SafeAreaView edges={['top', 'bottom']} className="flex-1 bg-background">
       <Screen>
         <View className="flex-grow justify-between gap-8">
-          <View className="flex-grow justify-center gap-7 py-8">
+          <View className="flex-grow justify-center gap-6 py-4">
+            {/* Decorative: a split tally stick, the product's namesake. Hidden at large text so the actions stay in view. */}
+            {largeText ? null : (
+              <Image
+                source={illustration[scheme === 'dark' ? 'dark' : 'light']}
+                contentFit="contain"
+                accessible={false}
+                style={{ width: '100%', height: 190 }}
+              />
+            )}
             <View className="gap-4">
+              {/* The wordmark is already display-sized; scaling it further splits the name mid-word. */}
               <Text
                 selectable
+                maxFontSizeMultiplier={LARGE_TEXT_SCALE}
                 className="font-serif text-[56px] font-medium leading-[60px]"
               >
                 Tally Stick
               </Text>
               <View className="h-px w-12 bg-primary" />
               <View className="gap-2">
-                <Text
-                  selectable
-                  className="text-[10px] font-bold leading-[14px] tracking-[1.8px] text-primary"
-                >
-                  CALM LEDGER. CLEAR RELATIONSHIPS.
-                </Text>
                 <Text
                   selectable
                   className="font-serif text-[32px] font-medium leading-[38px]"
@@ -56,26 +63,19 @@ export default function WelcomeScreen() {
                 </Text>
               </View>
             </View>
-            <View className="gap-5">
-              {points.map(([title, detail]) => (
-                <View key={title} className="flex-row items-start gap-3">
-                  <View className="size-[26px] items-center justify-center border border-border">
-                    <View className="h-0.5 w-2.5 bg-primary" />
-                  </View>
-                  <View className="flex-1 gap-0.5">
-                    <Text
-                      selectable
-                      className="text-base font-semibold leading-6"
-                    >
-                      {title}
-                    </Text>
-                    <Text
-                      selectable
-                      className="text-[15px] leading-[22px] text-muted-foreground"
-                    >
-                      {detail}
-                    </Text>
-                  </View>
+            <View className="gap-3">
+              {points.map((point) => (
+                <View key={point} className="flex-row items-center gap-3">
+                  <Icon
+                    as={Icons.check}
+                    size={20}
+                    className="text-primary"
+                    accessibilityElementsHidden
+                    importantForAccessibility="no"
+                  />
+                  <Text selectable className="flex-1 text-base leading-6">
+                    {point}
+                  </Text>
                 </View>
               ))}
             </View>
@@ -95,8 +95,7 @@ export default function WelcomeScreen() {
               selectable
               className="text-center text-xs leading-4 text-muted-foreground"
             >
-              Tally Stick records money that has already moved. It never
-              transfers funds, links a bank account, or touches a card.
+              Tally Stick keeps the record. It never moves money.
             </Text>
           </View>
         </View>

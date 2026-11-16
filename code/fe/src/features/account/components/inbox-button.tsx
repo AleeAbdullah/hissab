@@ -10,8 +10,11 @@ import { unreadCountQuery } from '@/features/account/api';
 
 export function InboxButton() {
   const count = useQuery(unreadCountQuery);
+  // The count is persisted; show it only once this mount has fetched it, and keep it through refetches.
   const unread =
-    count.isFetching || count.error ? 0 : (count.data?.unreadCount ?? 0);
+    count.isFetchedAfterMount && !count.error
+      ? (count.data?.unreadCount ?? 0)
+      : 0;
   return (
     <Link href="/home/inbox" asChild>
       <Button

@@ -5,7 +5,8 @@ import { View } from 'react-native';
 
 import { Icons } from '@/components/icons';
 import {
-  Card,
+  AmountText,
+  DayHeading,
   ErrorMessage,
   Loading,
   Screen,
@@ -13,18 +14,19 @@ import {
 } from '@/components/ui';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
+import { surfaceVariants } from '@/components/ui/surface';
 import { Text } from '@/components/ui/text';
 import { profileQuery } from '@/features/account/api';
+import { groupByDay } from '@/features/activity/presentation';
 import {
   personalHistoryInfiniteQuery,
   personalReportQuery
 } from '@/features/personal/api';
 import { PersonalHistoryRow } from '@/features/personal/components/personal-history-row';
-import { PersonalSummary } from '@/features/personal/components/personal-summary';
 import { SpendingChart } from '@/features/personal/components/spending-chart';
-import { periodLabel } from '@/features/personal/form';
 import { spendingRange } from '@/features/personal/spending';
-import { formatMinorAmount } from '@/lib/money';
+import { absMinor, formatMinorAmount } from '@/lib/money';
+import { cn } from '@/lib/utils';
 
 export default function PersonalScreen() {
   const profile = useQuery(profileQuery);
@@ -56,6 +58,7 @@ export default function PersonalScreen() {
         />
       </Screen>
     );
+  const net = BigInt(report.data.netMinor);
   return (
     <>
       <Stack.Screen options={{ headerRight: () => <AddTransactionButton /> }} />
@@ -64,19 +67,25 @@ export default function PersonalScreen() {
           <Button
             variant="ghost"
             role="link"
-            className="flex-col items-stretch gap-4 rounded-2xl border border-border bg-card p-4"
-            accessibilityLabel={`Spent this month, ${formatMinorAmount(report.data.expenseMinor, profile.data.displayCurrency)}. View spending report.`}
+            className={cn(
+              surfaceVariants(),
+              'flex-col items-stretch gap-4 p-4'
+            )}
+            accessibilityLabel={`Spent this month, ${formatMinorAmount(report.data.expenseMinor, profile.data.displayCurrency)}. Income ${formatMinorAmount(report.data.incomeMinor, profile.data.displayCurrency)}. ${net < 0n ? 'Overspent' : 'Left over'} ${formatMinorAmount(absMinor(net), profile.data.displayCurrency)}. View spending report.`}
           >
             <View className="flex-row items-start justify-between gap-3">
               <View className="min-w-0 flex-1 gap-1">
                 <Text className="text-base font-normal text-muted-foreground">
                   Spent this month
                 </Text>
-                <Text className="text-[32px] font-semibold leading-[38px]">
+                <AmountText className="text-[32px] font-semibold leading-[38px]">
                   {formatMinorAmount(
                     report.data.expenseMinor,
                     profile.data.displayCurrency
                   )}
+                </AmountText>
+                <Text className="text-[13px] font-normal leading-[18px] text-muted-foreground">
+                  Includes your share of shared expenses
                 </Text>
               </View>
               <Icon
@@ -94,35 +103,76 @@ export default function PersonalScreen() {
               displayCurrency={profile.data.displayCurrency}
               emptyLabel="No spending yet this month"
             />
+            <View className="flex-row gap-4 border-t border-border pt-3">
+              {[
+                {
+                  label: 'Income',
+                  value: report.data.incomeMinor,
+                  tone: BigInt(report.data.incomeMinor) > 0n
+                },
+                {
+                  label: net < 0n ? 'Overspent' : 'Left over',
+                  value: absMinor(net),
+                  tone: net !== 0n
+                }
+              ].map((figure) => (
+                <View key={figure.label} className="flex-1 gap-0.5">
+                  <Text className="text-[13px] font-normal leading-[18px] text-muted-foreground">
+                    {figure.label}
+                  </Text>
+                  <AmountText
+                    className={cn(
+                      'text-base font-semibold tabular-nums leading-[22px]',
+                      figure.tone &&
+                        (figure.label === 'Overspent'
+                          ? 'text-destructive'
+                          : 'text-positive')
+                    )}
+                  >
+                    {formatMinorAmount(
+                      figure.value,
+                      profile.data.displayCurrency
+                    )}
+                  </AmountText>
+                </View>
+              ))}
+            </View>
           </Button>
         </Link>
-        <PersonalSummary
-          displayCurrency={profile.data.displayCurrency}
-          report={report.data}
-          title={periodLabel(range.from.slice(0, 7), 'MONTH')}
-        />
         <View className="gap-2">
-          <View className="flex-row items-center justify-between gap-4">
-            <SectionLabel>HISTORY</SectionLabel>
-            <Link href="/personal/transactions" asChild>
-              <Button variant="link" role="link" className="px-0">
-                <Text>View all</Text>
-              </Button>
-            </Link>
-          </View>
+          <SectionLabel>HISTORY</SectionLabel>
           {recent.length ? (
-            <Card>
-              {recent.map((item) => (
-                <PersonalHistoryRow
-                  key={`${item.kind}-${item.id}`}
-                  displayCurrency={profile.data.displayCurrency}
-                  item={item}
-                />
-              ))}
-            </Card>
+            groupByDay(recent).map((day) => (
+              <View key={day.title}>
+                <DayHeading>{day.title}</DayHeading>
+                {day.items.map((item, index) => (
+                  <PersonalHistoryRow
+                    key={`${item.kind}-${item.id}`}
+                    divided={index > 0}
+                    displayCurrency={profile.data.displayCurrency}
+                    item={item}
+                  />
+                ))}
+              </View>
+            ))
           ) : (
             <Text selectable>No history yet.</Text>
           )}
+          <Link href="/personal/transactions" asChild>
+            <Button
+              variant="link"
+              size="compact"
+              role="link"
+              className="justify-start px-0"
+            >
+              <Text>See all history</Text>
+              <Icon
+                as={Icons.chevronRight}
+                size={20}
+                className="text-primary"
+              />
+            </Button>
+          </Link>
         </View>
       </Screen>
     </>
@@ -138,7 +188,7 @@ function AddTransactionButton() {
         role="link"
         accessibilityLabel="Add personal transaction"
       >
-        <Text className="text-[30px] font-light text-primary">＋</Text>
+        <Icon as={Icons.add} size={24} className="text-primary" />
       </Button>
     </Link>
   );

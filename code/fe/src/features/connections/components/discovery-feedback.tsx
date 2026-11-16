@@ -29,7 +29,7 @@ export function DiscoveryFeedback({
         </Text>
         {group && !error ? (
           <Text className="text-[15px] leading-[22px] text-muted-foreground">
-            You can also invite someone from your connections below.
+            You can also invite someone from your friends below.
           </Text>
         ) : null}
         {error && onRetry ? (

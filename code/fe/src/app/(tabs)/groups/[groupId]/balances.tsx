@@ -1,8 +1,16 @@
 import { useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
 import { Stack } from 'expo-router/stack';
+import { ArrowLeftRight } from 'lucide-react-native';
 
-import { Card, ErrorMessage, Loading, Row, Screen } from '@/components/ui';
+import {
+  ErrorMessage,
+  IconTile,
+  ListRow,
+  Loading,
+  Screen,
+  SectionLabel
+} from '@/components/ui';
 import { profileQuery } from '@/features/account/api';
 import { ledgerBalancesQuery } from '@/features/balances/api';
 import { LedgerBalanceCards } from '@/features/balances/components/ledger-balance-cards';
@@ -40,8 +48,19 @@ export default function GroupBalancesScreen() {
   return (
     <Screen>
       <Stack.Screen
-        options={{ title: 'Group balances', headerTitleAlign: 'center' }}
+        options={{ title: 'Balances', headerTitleAlign: 'center' }}
       />
+      <ListRow
+        href={{
+          pathname: '/groups/[groupId]/simplified-debts',
+          params: { groupId }
+        }}
+        accessibilityLabel="Simplify debts. See the fewest payments to settle up."
+        title="Simplify debts"
+        subtitle="See the fewest payments to settle up"
+        leading={<IconTile icon={ArrowLeftRight} />}
+      />
+      <SectionLabel>MEMBERS</SectionLabel>
       <LedgerBalanceCards
         balances={balances.data}
         canRemind={
@@ -52,16 +71,6 @@ export default function GroupBalancesScreen() {
         displayCurrency={profile.data.displayCurrency}
         ledgerName={group.data.name}
       />
-      <Card>
-        <Row
-          title="Simplify debts"
-          subtitle="View read-only suggested payments"
-          href={{
-            pathname: '/groups/[groupId]/simplified-debts',
-            params: { groupId }
-          }}
-        />
-      </Card>
     </Screen>
   );
 }

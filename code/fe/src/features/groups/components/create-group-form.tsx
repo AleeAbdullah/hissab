@@ -1,19 +1,12 @@
 import { useMutation } from '@tanstack/react-query';
 import { useNavigation, usePreventRemove } from 'expo-router/react-navigation';
 import { Stack } from 'expo-router/stack';
-import { useEffect, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Keyboard,
-  ScrollView,
-  View,
-  useWindowDimensions
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRef, useState } from 'react';
+import { ActivityIndicator } from 'react-native';
 
 import type { Group } from '@/api/contracts';
 import { queryClient } from '@/api/query-client';
-import { ErrorMessage, Field } from '@/components/ui';
+import { ErrorMessage, Field, FormSheet, Screen } from '@/components/ui';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { createGroup, groupsQuery } from '@/features/groups/api';
@@ -30,22 +23,6 @@ export function CreateGroupForm({
   const submitting = useRef(false);
   const created = useRef(false);
   const navigation = useNavigation();
-  const { height } = useWindowDimensions();
-  const [keyboardHeight, setKeyboardHeight] = useState(
-    () => Keyboard.metrics()?.height ?? 0
-  );
-  useEffect(() => {
-    const show = Keyboard.addListener('keyboardDidShow', (event) =>
-      setKeyboardHeight(event.endCoordinates.height)
-    );
-    const hide = Keyboard.addListener('keyboardDidHide', () =>
-      setKeyboardHeight(0)
-    );
-    return () => {
-      show.remove();
-      hide.remove();
-    };
-  }, []);
   const create = useMutation({
     mutationFn: createGroup,
     onSuccess: async (group) => {
@@ -84,60 +61,13 @@ export function CreateGroupForm({
   };
 
   return (
-    <>
-      <Stack.Screen
-        options={{
-          gestureEnabled: !busy,
-          headerShown: false,
-          sheetAllowedDetents: 'fitToContents'
-        }}
-      />
-      <SafeAreaView
-        edges={['bottom']}
-        className="bg-background"
-        style={{ maxHeight: Math.max(200, height - keyboardHeight - 48) }}
-      >
-        <View className="flex-row items-center justify-between gap-3 px-5 pt-4">
-          <Text
-            accessibilityRole="header"
-            className="flex-1 text-xl font-semibold"
-          >
-            New group
-          </Text>
-          <Button variant="ghost" disabled={busy} onPress={cancel}>
-            <Text>Cancel</Text>
-          </Button>
-        </View>
-        <ScrollView
-          keyboardShouldPersistTaps="handled"
-          automaticallyAdjustKeyboardInsets
-          contentInsetAdjustmentBehavior="automatic"
-          style={{ flexGrow: 0, flexShrink: 1 }}
-          contentContainerClassName="gap-4 p-5"
-        >
-          {create.error ? <ErrorMessage error={create.error} /> : null}
-          <Field
-            label="Group name"
-            placeholder="e.g. Weekend trip"
-            value={name}
-            editable={!busy}
-            onChangeText={(value) => {
-              if (submitting.current) return;
-              setName(value);
-              create.reset();
-            }}
-            onSubmitEditing={submit}
-            returnKeyType="done"
-            maxLength={100}
-            autoFocus
-            hint={
-              trimmedName
-                ? 'Up to 100 characters'
-                : 'Enter a group name to continue. Up to 100 characters.'
-            }
-          />
-        </ScrollView>
-        <View className="px-5 pb-5">
+    <FormSheet
+      title="New group"
+      action={{ label: 'Cancel', onPress: cancel, disabled: busy }}
+    >
+      <Stack.Screen options={{ gestureEnabled: !busy }} />
+      <Screen
+        footer={
           <Button
             disabled={!trimmedName || busy}
             accessibilityState={{
@@ -151,8 +81,30 @@ export function CreateGroupForm({
             ) : null}
             <Text>{busy ? 'Creating…' : 'Create group'}</Text>
           </Button>
-        </View>
-      </SafeAreaView>
-    </>
+        }
+      >
+        {create.error ? <ErrorMessage error={create.error} /> : null}
+        <Field
+          label="Group name"
+          placeholder="e.g. Weekend trip"
+          value={name}
+          editable={!busy}
+          onChangeText={(value) => {
+            if (submitting.current) return;
+            setName(value);
+            create.reset();
+          }}
+          onSubmitEditing={submit}
+          returnKeyType="done"
+          maxLength={100}
+          autoFocus
+          hint={
+            trimmedName
+              ? 'Up to 100 characters'
+              : 'Enter a group name to continue. Up to 100 characters.'
+          }
+        />
+      </Screen>
+    </FormSheet>
   );
 }

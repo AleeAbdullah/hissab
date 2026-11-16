@@ -79,7 +79,7 @@ export default function RequestsScreen() {
           selectable
           className="py-8 text-center text-[17px] text-muted-foreground"
         >
-          No pending connection requests.
+          No pending friend requests.
         </Text>
       ) : null}
       {incoming.length ? (

@@ -33,6 +33,8 @@ export interface ActivityRow {
   expenseCategoryCode: string | null;
   expenseCategoryName: string | null;
   expenseOccurredAt: Date | null;
+  expenseViewerPaidMinor: string | null;
+  expenseViewerOwedMinor: string | null;
   settlementVersion: number | null;
   settlementAmountMinor: string | null;
   settlementFromUserId: string | null;
@@ -95,6 +97,18 @@ export class ActivityRepository {
                expense_category.code AS "expenseCategoryCode",
                expense_category.name AS "expenseCategoryName",
                expense.occurred_at AS "expenseOccurredAt",
+               (
+                 SELECT coalesce(sum(payer.amount_minor), 0)::text
+                 FROM expense_payers payer
+                 WHERE payer.expense_id = expense.id
+                   AND payer.user_id = $1::uuid
+               ) AS "expenseViewerPaidMinor",
+               (
+                 SELECT coalesce(sum(split.owed_minor), 0)::text
+                 FROM expense_splits split
+                 WHERE split.expense_id = expense.id
+                   AND split.user_id = $1::uuid
+               ) AS "expenseViewerOwedMinor",
                settlement.version AS "settlementVersion",
                settlement.amount_minor::text AS "settlementAmountMinor",
                settlement.from_user_id AS "settlementFromUserId",

@@ -7,15 +7,10 @@ import type {
   Settlement
 } from '@/api/contracts';
 import type { CreateSettlementDto } from '@/api/generated/types.gen';
+import { AmountField } from '@/components/amount-field';
 import { ChoiceChips } from '@/components/choice-chips';
 import { DateField } from '@/components/date-field';
-import {
-  ErrorMessage,
-  Field,
-  Row,
-  Screen,
-  SectionLabel
-} from '@/components/ui';
+import { ErrorMessage, Row, Screen, SectionLabel } from '@/components/ui';
 import { Button } from '@/components/ui/button';
 import { useDialog } from '@/components/ui/dialog';
 import { Text } from '@/components/ui/text';
@@ -275,7 +270,7 @@ export function SettlementEditor({
       }
     >
       <Text selectable className="text-[15px] text-muted-foreground">
-        External payment · {ledgerName}
+        {ledgerName}
       </Text>
       {savedDraft && !initialPayment && !settlement ? (
         <Text selectable className="text-muted-foreground">
@@ -292,16 +287,13 @@ export function SettlementEditor({
           {validation}
         </Text>
       ) : null}
-      <Field
+      <AmountField
         inputRef={amountInput}
         autoFocus
-        label={`Amount (${displayCurrency})`}
-        placeholder="0.00"
-        keyboardType="decimal-pad"
+        displayCurrency={displayCurrency}
         value={amount}
         onChangeText={setAmount}
         editable={!saving}
-        className="text-center text-[32px]"
       />
       <DateField
         allowFuture
@@ -320,15 +312,20 @@ export function SettlementEditor({
           }))}
           value={fromUserId}
           onChange={(value) => {
-            if (!saving) setFromUserId(value);
+            if (saving) return;
+            setFromUserId(value);
+            if (value === toUserId) setToUserId('');
           }}
         />
         <SectionLabel>RECEIVED BY</SectionLabel>
         <ChoiceChips
-          choices={members.map((member) => ({
-            label: member.displayName,
-            value: member.userId
-          }))}
+          // The payer can't also receive, so they're left out of this row.
+          choices={members
+            .filter((member) => member.userId !== fromUserId)
+            .map((member) => ({
+              label: member.displayName,
+              value: member.userId
+            }))}
           value={toUserId}
           onChange={(value) => {
             if (!saving) setToUserId(value);
@@ -367,13 +364,14 @@ export function SettlementEditor({
         Record money already paid or received elsewhere. Tally Stick does not
         move money.
       </Text>
-      {onDiscard ? (
+      {/* New records close with the X; only edits need an explicit discard here. */}
+      {onDiscard && settlement ? (
         <Button
           variant="destructiveOutline"
           disabled={saving}
           onPress={onDiscard}
         >
-          <Text>{settlement ? 'Discard changes' : 'Discard draft'}</Text>
+          <Text>Discard changes</Text>
         </Button>
       ) : null}
     </Screen>

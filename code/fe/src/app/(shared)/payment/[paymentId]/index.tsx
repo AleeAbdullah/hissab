@@ -1,16 +1,15 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link, router, useLocalSearchParams } from 'expo-router';
+import { ArrowLeftRight } from 'lucide-react-native';
 import { ActivityIndicator } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
 import {
-  Card,
+  DetailHero,
   ErrorMessage,
   Loading,
   Notice,
-  Row,
-  Screen,
-  SectionLabel
+  Screen
 } from '@/components/ui';
 import { Button } from '@/components/ui/button';
 import { useDialog } from '@/components/ui/dialog';
@@ -21,6 +20,7 @@ import {
   userBalancesQuery
 } from '@/features/balances/api';
 import { homeQuery } from '@/features/home/api';
+import { useLedgerName } from '@/features/ledger/use-ledger-name';
 import { deleteSettlement, settlementQuery } from '@/features/settlements/api';
 import { formatDate } from '@/lib/dates';
 import { formatMinorAmount } from '@/lib/money';
@@ -30,6 +30,7 @@ export default function PaymentDetailScreen() {
   const { paymentId } = useLocalSearchParams<{ paymentId: string }>();
   const settlement = useQuery(settlementQuery(paymentId));
   const profile = useQuery(profileQuery);
+  const ledgerName = useLedgerName(settlement.data?.ledgerId);
   const balances = useQuery({
     ...ledgerBalancesQuery(settlement.data?.ledgerId ?? ''),
     enabled: Boolean(settlement.data)
@@ -42,6 +43,7 @@ export default function PaymentDetailScreen() {
           queryKey: ['ledgers', settlement.data!.ledgerId]
         }),
         queryClient.invalidateQueries({ queryKey: userBalancesQuery.queryKey }),
+        queryClient.invalidateQueries({ queryKey: ['activity'] }),
         queryClient.invalidateQueries({ queryKey: homeQuery.queryKey })
       ]);
       router.back();
@@ -61,6 +63,8 @@ export default function PaymentDetailScreen() {
   const names = new Map(
     balances.data?.members.map((member) => [member.userId, member.displayName])
   );
+  const person = (userId: string, you: string) =>
+    userId === profile.data.id ? you : (names.get(userId) ?? 'Member');
   const editable =
     settlement.data.status === 'ACTIVE' &&
     settlement.data.createdByUserId === profile.data.id;
@@ -69,20 +73,24 @@ export default function PaymentDetailScreen() {
       {remove.error || balances.error ? (
         <ErrorMessage error={remove.error ?? balances.error} />
       ) : null}
-      <SectionLabel>EXTERNAL PAYMENT</SectionLabel>
-      <Card>
-        <Row
-          title={`${names.get(settlement.data.fromUserId) ?? 'Member'} paid ${names.get(settlement.data.toUserId) ?? 'member'}`}
-          subtitle={formatDate(settlement.data.occurredAt)}
-          detail={formatMinorAmount(
-            settlement.data.amountMinor,
-            profile.data.displayCurrency
-          )}
-        />
-      </Card>
-      <Notice title="Recorded only">
-        This documents money paid elsewhere. Tally Stick did not move money.
-      </Notice>
+      <DetailHero
+        icon={ArrowLeftRight}
+        title={`${person(settlement.data.fromUserId, 'You')} paid ${person(settlement.data.toUserId, 'you')}`}
+        amount={formatMinorAmount(
+          settlement.data.amountMinor,
+          profile.data.displayCurrency
+        )}
+        meta={[ledgerName, formatDate(settlement.data.occurredAt)]
+          .filter(Boolean)
+          .join(' · ')}
+        deleted={settlement.data.status === 'DELETED'}
+      />
+      <Text
+        selectable
+        className="text-center text-[13px] leading-[18px] text-muted-foreground"
+      >
+        Recorded only. This payment happened outside Tally Stick.
+      </Text>
       {settlement.data.status === 'DELETED' ? (
         <Notice title="Deleted payment">
           This record remains in Tally Stick’s audit history and no longer
@@ -112,7 +120,7 @@ export default function PaymentDetailScreen() {
             onPress={() =>
               dialog(
                 'Delete payment?',
-                'This reverses its balance effect. It does not reverse any money paid outside Tally Stick.',
+                `Delete the payment from ${names.get(settlement.data.fromUserId) ?? 'Member'} to ${names.get(settlement.data.toUserId) ?? 'member'} (${formatMinorAmount(settlement.data.amountMinor, profile.data.displayCurrency)})${ledgerName ? ` in ${ledgerName}` : ''}? This reverses its balance effect. It does not reverse any money paid outside Tally Stick.`,
                 [
                   { text: 'Keep payment', style: 'cancel' },
                   {

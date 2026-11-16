@@ -1,13 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
 import { Stack } from 'expo-router/stack';
+import { View } from 'react-native';
 
 import {
-  Card,
+  Avatar,
   ErrorMessage,
+  ListRow,
   Loading,
   Notice,
-  Row,
   Screen,
   SectionLabel
 } from '@/components/ui';
@@ -49,14 +50,10 @@ export default function SimplifiedDebtsScreen() {
   return (
     <Screen>
       <Stack.Screen options={{ title: 'Simplified debts' }} />
-      <Notice title="Suggestions only">
-        Nothing here has been applied. Your expenses, history, and balances are
-        unchanged.
-      </Notice>
       <SectionLabel>SUGGESTED PAYMENTS</SectionLabel>
       {payments.length ? (
-        <Card>
-          {payments.map((payment) => {
+        <View>
+          {payments.map((payment, index) => {
             const payer =
               payment.fromUserId === profile.data.id
                 ? 'You'
@@ -66,17 +63,26 @@ export default function SimplifiedDebtsScreen() {
                 ? 'you'
                 : payment.toDisplayName;
             return (
-              <Row
+              <ListRow
                 key={`${payment.fromUserId}:${payment.toUserId}`}
+                divided={index > 0}
+                leading={<Avatar name={payment.fromDisplayName} />}
                 title={`${payer} ${payer === 'You' ? 'pay' : 'pays'} ${recipient}`}
-                detail={formatMinorAmount(
-                  payment.amountMinor,
-                  profile.data.displayCurrency
-                )}
+                trailing={
+                  <Text
+                    selectable
+                    className="text-base font-semibold tabular-nums leading-[22px]"
+                  >
+                    {formatMinorAmount(
+                      payment.amountMinor,
+                      profile.data.displayCurrency
+                    )}
+                  </Text>
+                }
               />
             );
           })}
-        </Card>
+        </View>
       ) : (
         <Notice title="Everyone is settled">
           No suggested payments are needed for this group.
@@ -86,8 +92,8 @@ export default function SimplifiedDebtsScreen() {
         selectable
         className="text-[13px] leading-[18px] text-muted-foreground"
       >
-        Read-only. To act on a suggestion, record a settlement for it. Tally
-        Stick does not create payments.
+        Suggestions only. Nothing changes until someone records one of these
+        payments.
       </Text>
     </Screen>
   );

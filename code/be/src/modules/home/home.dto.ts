@@ -49,6 +49,21 @@ export class HomeRecentItemDto {
   @ApiProperty({ pattern: '^[1-9][0-9]*$' })
   amountMinor!: string;
 
+  @ApiProperty({
+    nullable: true,
+    description:
+      "Shared expenses: the viewer's owed share at this revision, 0 when they are not in the split.",
+    pattern: '^[0-9]+$',
+  })
+  shareMinor!: string | null;
+
+  @ApiProperty({
+    nullable: true,
+    description:
+      'Shared items: the activity event type, such as EXPENSE_DELETED.',
+  })
+  eventType!: string | null;
+
   @ApiProperty({ type: HomeLedgerDto, nullable: true })
   ledger!: HomeLedgerDto | null;
 

@@ -1,10 +1,10 @@
 import { View } from 'react-native';
 
 import type { DisplayCurrency, LedgerBalances } from '@/api/contracts';
-import { Card, Row } from '@/components/ui';
+import { Avatar, ListRow } from '@/components/ui';
 import { Text } from '@/components/ui/text';
 import { BalanceReminder } from '@/features/balances/components/balance-reminder';
-import { memberBalanceDescription } from '@/features/balances/format';
+import { NetBalance } from '@/features/balances/components/net-balance';
 
 export function LedgerBalanceCards({
   balances,
@@ -23,29 +23,42 @@ export function LedgerBalanceCards({
     balances.members.find((member) => member.userId === currentUserId)
       ?.netMinor ?? '0'
   );
-  return balances.members.length ? (
-    <Card>
-      {balances.members.map((member) => (
-        <View key={member.userId}>
-          <Row
-            title={member.displayName}
-            detail={memberBalanceDescription(member.netMinor, displayCurrency)}
-          />
-          {canRemind &&
-          own > 0n &&
-          member.userId !== currentUserId &&
-          BigInt(member.netMinor) < 0n ? (
-            <View className="px-3 pb-3">
-              <BalanceReminder
-                ledgerId={balances.ledgerId}
-                ledgerName={ledgerName}
-                member={member}
+  // The viewer first, then everyone else in server order.
+  const members = [
+    ...balances.members.filter((member) => member.userId === currentUserId),
+    ...balances.members.filter((member) => member.userId !== currentUserId)
+  ];
+  return members.length ? (
+    <View>
+      {members.map((member, index) => {
+        const you = member.userId === currentUserId;
+        return (
+          <ListRow
+            key={member.userId}
+            divided={index > 0}
+            leading={<Avatar name={member.displayName} />}
+            title={you ? 'You' : member.displayName}
+            trailing={
+              <NetBalance
+                netMinor={member.netMinor}
+                currency={displayCurrency}
+                member={!you}
               />
-            </View>
-          ) : null}
-        </View>
-      ))}
-    </Card>
+            }
+          >
+            {canRemind && own > 0n && !you && BigInt(member.netMinor) < 0n ? (
+              <View className="items-start pt-1">
+                <BalanceReminder
+                  ledgerId={balances.ledgerId}
+                  ledgerName={ledgerName}
+                  member={member}
+                />
+              </View>
+            ) : null}
+          </ListRow>
+        );
+      })}
+    </View>
   ) : (
     <Text selectable>No recorded balance.</Text>
   );

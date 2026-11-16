@@ -13,6 +13,9 @@ import { UsersService } from '../users/users.service';
 import type { HomeDto, HomeRecentItemDto } from './home.dto';
 import { HomeRepository } from './home.repository';
 
+// The revision version is only used to look up the viewer's expense share.
+type RecentDraft = Omit<HomeRecentItemDto, 'shareMinor'> & { version: number };
+
 @Injectable()
 export class HomeService {
   constructor(
@@ -56,6 +59,12 @@ export class HomeService {
         (left, right) => right.createdAt.getTime() - left.createdAt.getTime(),
       )
       .slice(0, 5);
+    const shares = await this.repository.listOwnShares(
+      userId,
+      recent
+        .filter((item) => item.kind === 'SHARED_EXPENSE')
+        .map((item) => ({ rootExpenseId: item.id, version: item.version })),
+    );
 
     return {
       currency: profile.displayCurrency,
@@ -67,12 +76,20 @@ export class HomeService {
         ).length,
         peopleCount,
       },
-      recent,
+      recent: recent.map(({ version, ...item }) => ({
+        ...item,
+        shareMinor:
+          item.kind === 'SHARED_EXPENSE'
+            ? (shares.get(`${item.id}:${version}`) ?? '0')
+            : null,
+      })),
     };
   }
 
-  private personalItem(item: PersonalTransactionView): HomeRecentItemDto {
+  private personalItem(item: PersonalTransactionView): RecentDraft {
     return {
+      version: 0,
+      eventType: null,
       kind: item.type === 'INCOME' ? 'PERSONAL_INCOME' : 'PERSONAL_EXPENSE',
       id: item.id,
       amountMinor: item.amountMinor,
@@ -89,9 +106,10 @@ export class HomeService {
 
   // Home only lists expense and settlement activity, whose details are
   // financial snapshots; the activity service guarantees their shape.
-  private sharedItem(item: ActivityItemDto): HomeRecentItemDto {
+  private sharedItem(item: ActivityItemDto): RecentDraft {
     const base = {
       id: item.aggregateId,
+      eventType: item.eventType,
       ledger: item.ledger
         ? { id: item.ledger.id, type: item.ledger.type, name: item.ledger.name }
         : null,
@@ -103,6 +121,7 @@ export class HomeService {
       return {
         ...base,
         kind: 'SHARED_EXPENSE',
+        version: details.version,
         amountMinor: details.totalMinor,
         category: details.category,
         description: details.description,
@@ -115,6 +134,7 @@ export class HomeService {
     return {
       ...base,
       kind: 'SHARED_SETTLEMENT',
+      version: details.version,
       amountMinor: details.amountMinor,
       category: null,
       description: null,

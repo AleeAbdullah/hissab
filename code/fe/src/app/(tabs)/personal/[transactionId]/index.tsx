@@ -5,6 +5,7 @@ import { ActivityIndicator, View } from 'react-native';
 import { queryClient } from '@/api/query-client';
 import {
   Card,
+  DetailHero,
   ErrorMessage,
   Loading,
   Notice,
@@ -21,6 +22,7 @@ import {
   deletePersonalTransaction,
   personalTransactionQuery
 } from '@/features/personal/api';
+import { CATEGORY_ICONS } from '@/features/personal/components/category-picker';
 import { formatDate } from '@/lib/dates';
 import { formatMinorAmount } from '@/lib/money';
 
@@ -57,19 +59,17 @@ export default function TransactionDetailScreen() {
   return (
     <Screen>
       {remove.error ? <ErrorMessage error={remove.error} /> : null}
-      <SectionLabel>
-        PERSONAL {item.type === 'INCOME' ? 'INCOME' : 'EXPENSE'}
-      </SectionLabel>
-      <Card>
-        <Row
-          title={item.description}
-          subtitle={`${item.category.name} · ${formatDate(item.occurredAt)}`}
-          detail={formatMinorAmount(
-            item.amountMinor,
-            profile.data.displayCurrency
-          )}
-        />
-      </Card>
+      <DetailHero
+        icon={CATEGORY_ICONS[item.category.code]}
+        title={item.description}
+        amount={`${item.type === 'INCOME' ? '+' : ''}${formatMinorAmount(
+          item.amountMinor,
+          profile.data.displayCurrency
+        )}`}
+        meta={`${item.type === 'INCOME' ? 'Income' : 'Expense'} · ${formatDate(item.occurredAt)}`}
+        deleted={item.status === 'DELETED'}
+        positive={item.type === 'INCOME'}
+      />
       {item.status === 'DELETED' ? (
         <Notice title="Deleted transaction">
           This revision remains in your private audit history and no longer
@@ -80,11 +80,12 @@ export default function TransactionDetailScreen() {
         <SectionLabel>DETAILS</SectionLabel>
         <Card>
           <Row title="Category" detail={item.category.name} />
-          <Row
-            title={item.type === 'INCOME' ? 'Source' : 'Merchant'}
-            detail={item.merchantOrSource ?? 'Not recorded'}
-          />
-          <Row title="Date" detail={formatDate(item.occurredAt)} />
+          {item.merchantOrSource ? (
+            <Row
+              title={item.type === 'INCOME' ? 'Source' : 'Merchant'}
+              detail={item.merchantOrSource}
+            />
+          ) : null}
           {item.notes ? <Row title="Notes" subtitle={item.notes} /> : null}
         </Card>
       </View>

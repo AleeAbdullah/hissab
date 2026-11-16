@@ -1,43 +1,39 @@
-import { Link, type Href } from 'expo-router';
+import type { Href } from 'expo-router';
 import {
-  FileText,
-  Trash2,
   ArrowLeftRight,
+  UserRound,
   UsersRound,
-  UserRound
+  type LucideIcon
 } from 'lucide-react-native';
-import { View, useWindowDimensions } from 'react-native';
+import { View } from 'react-native';
 
 import type { ActivityItem, DisplayCurrency } from '@/api/contracts';
-import { Button } from '@/components/ui/button';
-import { Icon } from '@/components/ui/icon';
+import { IconTile, ListRow } from '@/components/ui';
 import { Text } from '@/components/ui/text';
-import {
-  activityTimeLabel,
-  activityOccurrenceLabel,
-  describeActivity
-} from '@/features/activity/presentation';
+import { activityRow } from '@/features/activity/presentation';
+import { CATEGORY_ICONS } from '@/features/personal/components/category-picker';
+import { cn } from '@/lib/utils';
 
 export function ActivityEventRow({
   displayCurrency,
   currentUserId,
-  item
+  item,
+  divided
 }: {
   displayCurrency: DisplayCurrency;
   currentUserId: string;
   item: ActivityItem;
+  divided?: boolean;
 }) {
-  const event = describeActivity(item, displayCurrency, currentUserId);
-  const { fontScale } = useWindowDimensions();
-  const deleted = item.eventType.endsWith('_DELETED');
-  const edited = item.eventType.endsWith('_REPLACED');
-  const revision =
-    edited && event.version ? ` · revision ${event.version}` : '';
-  const occurrence = activityOccurrenceLabel(event.occurredAt, item.createdAt);
-  const subject = `“${event.amount ? event.subject : event.context}”`;
-  const amountLabel = event.amount
-    ? `${event.amount} ${item.area === 'EXPENSE' ? 'total' : 'payment'}`
-    : undefined;
+  const row = activityRow(item, displayCurrency, currentUserId);
+  const icon: LucideIcon =
+    'categoryCode' in row && row.categoryCode
+      ? CATEGORY_ICONS[row.categoryCode]
+      : item.area === 'SETTLEMENT'
+        ? ArrowLeftRight
+        : item.area === 'GROUP'
+          ? UsersRound
+          : UserRound;
   const href: Href | undefined =
     item.area === 'EXPENSE'
       ? {
@@ -50,76 +46,52 @@ export function ActivityEventRow({
             params: { paymentId: item.aggregateId }
           }
         : undefined;
-  const icon = deleted
-    ? Trash2
-    : item.area === 'EXPENSE'
-      ? FileText
-      : item.area === 'SETTLEMENT'
-        ? ArrowLeftRight
-        : item.area === 'GROUP'
-          ? UsersRound
-          : UserRound;
-  const amount = event.amount ? (
-    <Text
-      selectable
-      className={`text-[15px] font-normal leading-[20px] ${deleted ? 'text-muted-foreground line-through' : 'text-foreground'}`}
-    >
-      {amountLabel}
-    </Text>
-  ) : null;
-  const content = (
-    <View
-      className={
-        fontScale >= 1.3
-          ? 'w-full items-start gap-2'
-          : 'w-full flex-row items-start gap-3'
+  const subtitle = 'subtitle' in row ? row.subtitle : undefined;
+  const amount = 'amount' in row ? row.amount : undefined;
+  const deleted = 'deleted' in row && row.deleted;
+  const effect = 'effect' in row ? row.effect : undefined;
+  const lent = 'lent' in row && row.lent;
+  return (
+    <ListRow
+      href={href}
+      divided={divided}
+      accessibilityLabel={[
+        row.title,
+        subtitle,
+        amount && (deleted ? `${amount}, deleted` : amount),
+        effect
+      ]
+        .filter(Boolean)
+        .join('. ')}
+      leading={<IconTile icon={icon} />}
+      title={row.title}
+      subtitle={subtitle}
+      trailing={
+        amount ? (
+          <View className="items-end">
+            <Text
+              selectable
+              className={cn(
+                'text-base font-semibold tabular-nums leading-[22px]',
+                deleted && 'text-muted-foreground line-through'
+              )}
+            >
+              {amount}
+            </Text>
+            {effect ? (
+              <Text
+                selectable
+                className={cn(
+                  'text-[13px] leading-[18px]',
+                  lent ? 'text-positive' : 'text-destructive'
+                )}
+              >
+                {effect}
+              </Text>
+            ) : null}
+          </View>
+        ) : undefined
       }
-    >
-      <Icon
-        as={icon}
-        size={22}
-        accessible={false}
-        className="mt-1 text-muted-foreground"
-      />
-      <View
-        className={fontScale >= 1.3 ? 'w-full gap-1' : 'min-w-0 flex-1 gap-1'}
-      >
-        <Text selectable className="text-[16px] font-normal leading-[22px]">
-          <Text className="font-semibold">{event.actor}</Text> {event.action}{' '}
-          <Text className="font-semibold">{subject}</Text>
-          {event.amount ? ` in ${event.context}` : ''}
-          {revision}
-        </Text>
-        {amount}
-        <Text
-          selectable
-          className="text-[13px] font-normal leading-[18px] text-muted-foreground"
-        >
-          {activityTimeLabel(item.createdAt)}
-          {occurrence}
-        </Text>
-      </View>
-    </View>
-  );
-  const label = `${event.actor} ${event.action} ${subject}${event.amount ? ` in ${event.context}` : ''}${revision}. ${amountLabel ? `${amountLabel}. ` : ''}${activityTimeLabel(item.createdAt)}${occurrence}`;
-  return href ? (
-    <Link href={href} asChild>
-      <Button
-        variant="ghost"
-        role="link"
-        accessibilityLabel={label}
-        className="w-full items-stretch justify-start rounded-none border-b border-border px-0 py-4"
-      >
-        {content}
-      </Button>
-    </Link>
-  ) : (
-    <View
-      accessible
-      accessibilityLabel={label}
-      className="border-b border-border py-4"
-    >
-      {content}
-    </View>
+    />
   );
 }

@@ -1,8 +1,9 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { useLocalSearchParams } from 'expo-router';
 import { Stack } from 'expo-router/stack';
-import { ListFilter, Search, X } from 'lucide-react-native';
+import { ListFilter, X } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Keyboard, TextInput, View } from 'react-native';
+import { ActivityIndicator, Keyboard, View } from 'react-native';
 
 import type {
   PersonalCategoryCode,
@@ -10,7 +11,8 @@ import type {
   PersonalTransactionType
 } from '@/api/contracts';
 import {
-  Card,
+  Chip,
+  DayHeading,
   ErrorMessage,
   Loading,
   Screen,
@@ -20,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { profileQuery } from '@/features/account/api';
+import { groupByDay } from '@/features/activity/presentation';
 import {
   personalCategoriesQuery,
   personalHistoryInfiniteQuery
@@ -36,16 +39,30 @@ import { dateToIso, dateToExclusiveIso, formatPeriod } from '@/lib/dates';
 import { formatMinorAmount } from '@/lib/money';
 
 export default function TransactionsScreen() {
-  const [includeShared, setIncludeShared] = useState(true);
-  const [type, setType] = useState<PersonalTransactionType | undefined>();
+  // Spending's category rows open this list already filtered.
+  const params = useLocalSearchParams<{
+    categoryCode?: PersonalCategoryCode;
+    from?: string;
+    to?: string;
+    includeShared?: 'true' | 'false';
+  }>();
+  const [includeShared, setIncludeShared] = useState(
+    params.includeShared !== 'false'
+  );
+  const [type, setType] = useState<PersonalTransactionType | undefined>(
+    params.categoryCode ? 'EXPENSE' : undefined
+  );
   const [categoryCode, setCategoryCode] = useState<
     PersonalCategoryCode | undefined
-  >();
-  const [fromDate, setFromDate] = useState<string | undefined>();
-  const [toDate, setToDate] = useState<string | undefined>();
+  >(params.categoryCode);
+  const [fromDate, setFromDate] = useState<string | undefined>(
+    params.from && dateToIso(params.from) ? params.from : undefined
+  );
+  const [toDate, setToDate] = useState<string | undefined>(
+    params.to && dateToIso(params.to) ? params.to : undefined
+  );
   const [minAmountMinor, setMinAmountMinor] = useState<string | undefined>();
   const [maxAmountMinor, setMaxAmountMinor] = useState<string | undefined>();
-  const [searchOpen, setSearchOpen] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [search, setSearch] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -100,12 +117,6 @@ export default function TransactionsScreen() {
     )
       setCategoryCode(undefined);
   };
-  const closeSearch = () => {
-    setSearchOpen(false);
-    setSearchText('');
-    setSearch('');
-    Keyboard.dismiss();
-  };
   if (profile.isLoading) return <Loading />;
   if (profile.error || !profile.data)
     return (
@@ -120,56 +131,32 @@ export default function TransactionsScreen() {
     <>
       <Stack.Screen
         options={{
-          headerTitle: searchOpen
-            ? () => (
-                <TextInput
-                  autoFocus
-                  accessibilityLabel="Search personal history"
-                  placeholder="Search history"
-                  returnKeyType="search"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  maxLength={100}
-                  value={searchText}
-                  onChangeText={setSearchText}
-                  className="h-10 w-[190px] rounded-xl bg-muted px-3 text-base text-foreground placeholder:text-muted-foreground"
-                />
-              )
-            : 'History',
+          headerSearchBarOptions: {
+            placeholder: 'Search history',
+            placement: 'stacked',
+            hideWhenScrolling: false,
+            autoCapitalize: 'none',
+            onChangeText: (event) =>
+              setSearchText(event.nativeEvent.text.slice(0, 100))
+          },
           headerRight: () => (
-            <View className="flex-row">
-              <Button
-                className="w-12 px-0"
-                variant="ghost"
-                accessibilityLabel={
-                  searchOpen ? 'Close search' : 'Search history'
-                }
-                onPress={searchOpen ? closeSearch : () => setSearchOpen(true)}
-              >
-                <Icon
-                  as={searchOpen ? X : Search}
-                  size={22}
-                  className="text-primary"
-                />
-              </Button>
-              <Button
-                className="w-12 px-0"
-                variant="ghost"
-                accessibilityLabel={
-                  sheetFilterCount
-                    ? `Filter history, ${sheetFilterCount} selected`
-                    : 'Filter history'
-                }
-                disabled={categories.isLoading || Boolean(categories.error)}
-                onPress={() => {
-                  Keyboard.dismiss();
-                  setFilterSheetVersion((version) => version + 1);
-                  setFiltersOpen(true);
-                }}
-              >
-                <Icon as={ListFilter} size={22} className="text-primary" />
-              </Button>
-            </View>
+            <Button
+              className="w-12 px-0"
+              variant="ghost"
+              accessibilityLabel={
+                sheetFilterCount
+                  ? `Filter history, ${sheetFilterCount} selected`
+                  : 'Filter history'
+              }
+              disabled={categories.isLoading || Boolean(categories.error)}
+              onPress={() => {
+                Keyboard.dismiss();
+                setFilterSheetVersion((version) => version + 1);
+                setFiltersOpen(true);
+              }}
+            >
+              <Icon as={ListFilter} size={22} className="text-primary" />
+            </Button>
           )
         }}
       />
@@ -186,97 +173,46 @@ export default function TransactionsScreen() {
           ].map((choice) => {
             const selected = (type ?? 'ALL') === choice.value;
             return (
-              <Button
+              <Chip
                 key={choice.value}
-                variant="ghost"
-                size="compact"
-                className="px-0 py-0"
-                accessibilityState={{ selected }}
+                label={choice.label}
+                selected={selected}
                 onPress={() => changeType(choice.value)}
-              >
-                <View
-                  className={
-                    selected
-                      ? 'min-h-8 justify-center rounded-full bg-primary px-3 py-1'
-                      : 'min-h-8 justify-center rounded-full bg-secondary px-3 py-1'
-                  }
-                >
-                  <Text
-                    className={
-                      selected
-                        ? 'text-[15px] font-medium text-primary-foreground'
-                        : 'text-[15px] font-medium text-secondary-foreground'
-                    }
-                  >
-                    {choice.label}
-                  </Text>
-                </View>
-              </Button>
+              />
             );
           })}
           {categoryCode ? (
-            <Button
-              variant="ghost"
-              size="compact"
-              className="px-0 py-0"
+            <Chip
+              selected
+              label={selectedCategory?.name ?? 'Category'}
+              trailingIcon={X}
               accessibilityLabel={`Remove ${selectedCategory?.name ?? 'category'} filter`}
               onPress={() => setCategoryCode(undefined)}
-            >
-              <View className="min-h-8 flex-row items-center gap-1 rounded-full border border-primary px-3 py-1">
-                <Text className="text-[15px] font-medium text-primary">
-                  {selectedCategory?.name ?? 'Category'}
-                </Text>
-                <Icon as={X} size={14} className="text-primary" />
-              </View>
-            </Button>
+            />
           ) : null}
           {fromDate || toDate ? (
-            <Button
-              variant="ghost"
-              size="compact"
-              className="px-0 py-0"
+            <Chip
+              selected
+              label={formatPeriod(fromDate, toDate)}
+              trailingIcon={X}
               accessibilityLabel="Remove date filter"
               onPress={() => {
                 setFromDate(undefined);
                 setToDate(undefined);
               }}
-            >
-              <View className="min-h-8 flex-row items-center gap-1 rounded-full border border-primary px-3 py-1">
-                <Text className="text-[15px] font-medium text-primary">
-                  {formatPeriod(fromDate, toDate)}
-                </Text>
-                <Icon as={X} size={14} className="text-primary" />
-              </View>
-            </Button>
+            />
           ) : null}
           {minAmountMinor || maxAmountMinor ? (
-            <Button
-              variant="ghost"
-              size="compact"
-              className="px-0 py-0"
+            <Chip
+              selected
+              label={`${formatMinorAmount(minAmountMinor ?? '0', profile.data.displayCurrency)} – ${maxAmountMinor ? formatMinorAmount(maxAmountMinor, profile.data.displayCurrency) : 'Any'}`}
+              trailingIcon={X}
               accessibilityLabel="Remove amount filter"
               onPress={() => {
                 setMinAmountMinor(undefined);
                 setMaxAmountMinor(undefined);
               }}
-            >
-              <View className="min-h-8 flex-row items-center gap-1 rounded-full border border-primary px-3 py-1">
-                <Text className="text-[15px] font-medium text-primary">
-                  {formatMinorAmount(
-                    minAmountMinor ?? '0',
-                    profile.data.displayCurrency
-                  )}{' '}
-                  –{' '}
-                  {maxAmountMinor
-                    ? formatMinorAmount(
-                        maxAmountMinor,
-                        profile.data.displayCurrency
-                      )
-                    : 'Any'}
-                </Text>
-                <Icon as={X} size={14} className="text-primary" />
-              </View>
-            </Button>
+            />
           ) : null}
         </View>
         <PersonalHistorySummary
@@ -320,15 +256,19 @@ export default function TransactionsScreen() {
               <SectionLabel>
                 {periodLabel(group.period, 'MONTH').toUpperCase()}
               </SectionLabel>
-              <Card>
-                {group.items.map((item) => (
-                  <PersonalHistoryRow
-                    key={`${item.kind}-${item.id}`}
-                    displayCurrency={profile.data.displayCurrency}
-                    item={item}
-                  />
-                ))}
-              </Card>
+              {groupByDay(group.items).map((day) => (
+                <View key={day.title}>
+                  <DayHeading>{day.title}</DayHeading>
+                  {day.items.map((item, index) => (
+                    <PersonalHistoryRow
+                      key={`${item.kind}-${item.id}`}
+                      divided={index > 0}
+                      displayCurrency={profile.data.displayCurrency}
+                      item={item}
+                    />
+                  ))}
+                </View>
+              ))}
             </View>
           ))
         ) : (
