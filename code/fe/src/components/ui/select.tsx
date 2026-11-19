@@ -1,7 +1,14 @@
 import * as SelectPrimitive from '@rn-primitives/select';
 import * as React from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
+import {
+  Platform,
+  ScrollView,
+  StyleSheet,
+  useWindowDimensions,
+  View
+} from 'react-native';
 import { FadeIn, FadeOut, ReduceMotion } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FullWindowOverlay as RNFullWindowOverlay } from 'react-native-screens';
 
 import { Icons } from '@/components/icons';
@@ -86,6 +93,16 @@ function SelectContent({
   className?: string;
   portalHost?: string;
 }) {
+  const safeArea = useSafeAreaInsets();
+  const { height } = useWindowDimensions();
+  const insets = {
+    top: safeArea.top + 20,
+    bottom: safeArea.bottom + 20,
+    left: safeArea.left + 20,
+    right: safeArea.right + 20,
+    ...props.insets
+  };
+  const maxHeight = Math.max(48, height - insets.top - insets.bottom - 16);
   return (
     <SelectPrimitive.Portal hostName={portalHost}>
       <FullWindowOverlay>
@@ -122,6 +139,7 @@ function SelectContent({
                 )}
                 position={position}
                 {...props}
+                insets={insets}
               >
                 <SelectPrimitive.Viewport
                   className={cn(
@@ -135,7 +153,18 @@ function SelectContent({
                       )
                   )}
                 >
-                  {children}
+                  {Platform.OS === 'web' ? (
+                    children
+                  ) : (
+                    <ScrollView
+                      style={{ maxHeight }}
+                      bounces={false}
+                      nestedScrollEnabled
+                      keyboardShouldPersistTaps="handled"
+                    >
+                      {children}
+                    </ScrollView>
+                  )}
                 </SelectPrimitive.Viewport>
               </SelectPrimitive.Content>
             </TextClassContext.Provider>
@@ -154,7 +183,7 @@ function SelectItem({
   return (
     <SelectPrimitive.Item
       className={cn(
-        'group relative flex min-h-12 w-full flex-row items-center gap-2 rounded-xl py-2 pl-3 pr-10 active:bg-accent',
+        'group relative flex min-h-12 w-full flex-row items-center gap-2 rounded-xl py-2 pe-10 ps-3 active:bg-accent',
         Platform.select({
           web: '*:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 cursor-default outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none [&_svg]:pointer-events-none'
         }),
@@ -163,7 +192,7 @@ function SelectItem({
       )}
       {...props}
     >
-      <View className="absolute right-2 flex size-3.5 items-center justify-center">
+      <View className="absolute end-2 flex size-3.5 items-center justify-center">
         <SelectPrimitive.ItemIndicator>
           <Icon
             as={Icons.check}

@@ -1,10 +1,13 @@
 import type { Href } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
 import type { DisplayCurrency, PersonalHistoryItem } from '@/api/contracts';
 import { IconTile, ListRow } from '@/components/ui';
 import { Text } from '@/components/ui/text';
 import { CATEGORY_ICONS } from '@/features/personal/components/category-picker';
+import { isolate } from '@/i18n';
+import { categoryName } from '@/i18n/categories';
 import { formatMinorAmount } from '@/lib/money';
 import { cn } from '@/lib/utils';
 
@@ -17,15 +20,26 @@ export function PersonalHistoryRow({
   item: PersonalHistoryItem;
   divided?: boolean;
 }) {
+  const { t } = useTranslation(['personal', 'common']);
   const shared = item.kind === 'SHARED';
   const income = item.type === 'INCOME';
-  const amount = `${income ? '+' : ''}${formatMinorAmount(item.amountMinor, displayCurrency)}`;
+  const amount = income
+    ? t('signedIncome', {
+        amount: isolate(formatMinorAmount(item.amountMinor, displayCurrency))
+      })
+    : formatMinorAmount(item.amountMinor, displayCurrency);
   const total = shared
-    ? `of ${formatMinorAmount(item.totalMinor ?? '0', displayCurrency)}`
+    ? t('ofTotal', {
+        amount: isolate(
+          formatMinorAmount(item.totalMinor ?? '0', displayCurrency)
+        )
+      })
     : undefined;
   const subtitle = shared
-    ? `Shared · ${item.ledgerName ?? 'Shared ledger'}`
-    : item.category.name;
+    ? t('sharedLedgerLabel', {
+        ledger: isolate(item.ledgerName ?? t('sharedLedger'))
+      })
+    : categoryName(item.category.code);
   const href: Href = shared
     ? { pathname: '/expense/[expenseId]', params: { expenseId: item.id } }
     : {
@@ -36,11 +50,22 @@ export function PersonalHistoryRow({
     <ListRow
       href={href}
       divided={divided}
-      accessibilityLabel={[
-        item.description,
-        subtitle,
-        shared ? `Your share ${amount} ${total}` : amount
-      ].join('. ')}
+      accessibilityLabel={
+        shared
+          ? t('sharedHistoryLabel', {
+              description: isolate(item.description),
+              category: subtitle,
+              amount: isolate(amount),
+              total: isolate(
+                formatMinorAmount(item.totalMinor ?? '0', displayCurrency)
+              )
+            })
+          : t('historyLabel', {
+              description: isolate(item.description),
+              category: subtitle,
+              amount: isolate(amount)
+            })
+      }
       leading={<IconTile icon={CATEGORY_ICONS[item.category.code]} />}
       title={item.description}
       subtitle={subtitle}

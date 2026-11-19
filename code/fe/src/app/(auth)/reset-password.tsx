@@ -1,6 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { Link, useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, type TextInput } from 'react-native';
 
 import { ErrorMessage, Field, Notice, Screen } from '@/components/ui';
@@ -14,6 +15,7 @@ import {
 } from '@/features/auth/components/password-requirement';
 
 export default function ResetPasswordScreen() {
+  const { t } = useTranslation(['auth', 'common']);
   const { token = '' } = useLocalSearchParams<{ token?: string }>();
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -30,13 +32,13 @@ export default function ResetPasswordScreen() {
   if (mutation.isSuccess) {
     return (
       <Screen>
-        <AuthPageHeader title="Password changed" />
-        <Notice title="Sign in again">
-          Every session has ended. Sign in again with your new password.
+        <AuthPageHeader title={t('passwordChanged')} />
+        <Notice title={t('signInAgain')}>
+          {t('everySessionHasEndedSignInAgainWithYour')}
         </Notice>
         <Link href="/sign-in" asChild>
           <Button variant="outline" role="link">
-            <Text>Back to sign in</Text>
+            <Text>{t('backToSignIn')}</Text>
           </Button>
         </Link>
       </Screen>
@@ -61,24 +63,24 @@ export default function ResetPasswordScreen() {
           {mutation.isPending ? (
             <ActivityIndicator className="text-primary-foreground" />
           ) : (
-            <Text>Save new password</Text>
+            <Text>{t('saveNewPassword')}</Text>
           )}
         </Button>
       }
     >
       <AuthPageHeader
-        title="Set new password"
-        description="You'll need to sign in again on every device."
+        title={t('setNewPassword')}
+        description={t('youllNeedToSignInAgainOnEveryDevice')}
       />
       {!token ? (
-        <Notice error title="Reset link missing">
-          Open this screen from the link in your email, or request a new one.
+        <Notice error title={t('resetLinkMissing')}>
+          {t('openThisScreenFromTheLinkInYourEmail')}
         </Notice>
       ) : null}
       {mutation.error ? <ErrorMessage error={mutation.error} /> : null}
       <Field
-        label="New password"
-        placeholder="Create a password"
+        label={t('newPassword')}
+        placeholder={t('createAPassword')}
         secureTextEntry
         autoComplete="new-password"
         textContentType="newPassword"
@@ -91,8 +93,8 @@ export default function ResetPasswordScreen() {
       <PasswordRequirement password={password} />
       <Field
         inputRef={confirmRef}
-        label="Confirm new password"
-        placeholder="Type it again"
+        label={t('confirmNewPassword')}
+        placeholder={t('typeItAgain')}
         secureTextEntry
         autoComplete="new-password"
         textContentType="newPassword"
@@ -100,12 +102,12 @@ export default function ResetPasswordScreen() {
         onSubmitEditing={submit}
         value={confirm}
         onChangeText={setConfirm}
-        error={mismatch ? "The passwords don't match." : undefined}
+        error={mismatch ? t('thePasswordsDontMatch') : undefined}
       />
       {!token ? (
         <Link href="/forgot-password" asChild>
           <Button variant="outline" role="link">
-            <Text>Request a new link</Text>
+            <Text>{t('requestANewLink')}</Text>
           </Button>
         </Link>
       ) : null}

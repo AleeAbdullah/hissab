@@ -46,6 +46,7 @@ export class UsersService {
         await this.repository.updateProfile(transaction, userId, {
           displayName: dto.displayName,
           displayCurrency: dto.displayCurrency,
+          locale: dto.locale,
         });
         await transaction.insert(activityEvents).values({
           actorUserId: userId,

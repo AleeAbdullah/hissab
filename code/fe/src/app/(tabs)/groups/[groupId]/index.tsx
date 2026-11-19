@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link, useLocalSearchParams } from 'expo-router';
 import { Stack } from 'expo-router/stack';
 import { ChevronRight, Settings } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import { View, useWindowDimensions } from 'react-native';
 
 import { Avatar, ErrorMessage, Loading, Screen } from '@/components/ui';
@@ -16,6 +17,7 @@ import { LedgerActivity } from '@/features/ledger/components/ledger-activity';
 import { LedgerBalancePanel } from '@/features/ledger/components/ledger-balance-panel';
 
 export default function GroupDetailScreen() {
+  const { t } = useTranslation(['groups', 'common']);
   const { groupId } = useLocalSearchParams<{ groupId: string }>();
   const { fontScale } = useWindowDimensions();
   const group = useQuery(groupQuery(groupId));
@@ -47,7 +49,7 @@ export default function GroupDetailScreen() {
             profile.error ??
             members.error ??
             balances.error ??
-            new Error('Group unavailable.')
+            new Error(t('groupUnavailable'))
           }
         />
         <Button
@@ -59,7 +61,7 @@ export default function GroupDetailScreen() {
             void balances.refetch();
           }}
         >
-          <Text>Retry</Text>
+          <Text>{t('retry')}</Text>
         </Button>
       </Screen>
     );
@@ -89,7 +91,7 @@ export default function GroupDetailScreen() {
               asChild
             >
               <Button role="link">
-                <Text>Invite members</Text>
+                <Text>{t('inviteMembers')}</Text>
               </Button>
             </Link>
           ) : (
@@ -116,7 +118,7 @@ export default function GroupDetailScreen() {
                     className="w-12 px-0"
                     variant="ghost"
                     role="link"
-                    accessibilityLabel="Group settings"
+                    accessibilityLabel={t('groupSettings')}
                   >
                     <Icon as={Settings} size={22} className="text-primary" />
                   </Button>
@@ -157,13 +159,14 @@ export default function GroupDetailScreen() {
               className="justify-start self-start px-0"
             >
               <Text>
-                {`${active.length} ${active.length === 1 ? 'member' : 'members'}${
+                {t(
                   group.data.status === 'ARCHIVED'
-                    ? ' · Archived'
+                    ? 'archivedMembers'
                     : group.data.membershipStatus === 'LEFT'
-                      ? ' · You left'
-                      : ''
-                }`}
+                      ? 'leftMembers'
+                      : 'memberCount',
+                  { count: active.length }
+                )}
               </Text>
               <Icon as={ChevronRight} size={18} className="text-primary" />
             </Button>
@@ -178,8 +181,7 @@ export default function GroupDetailScreen() {
       {canManage && active.length === 1 ? (
         <View className="gap-2">
           <Text selectable className="text-muted-foreground">
-            Shared records need at least two active members. Invited people can
-            take part after they accept.
+            {t('sharedRecordsNeedAtLeastTwoActiveMembersInvitedPeople')}
           </Text>
         </View>
       ) : null}

@@ -2,6 +2,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useNavigation, usePreventRemove } from 'expo-router/react-navigation';
 import { Stack } from 'expo-router/stack';
 import { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator } from 'react-native';
 
 import type { Group } from '@/api/contracts';
@@ -19,6 +20,7 @@ export function CreateGroupForm({
   onCancel: () => void;
   onCreated: (group: Group) => void;
 }) {
+  const { t } = useTranslation(['groups', 'common']);
   const [name, setName] = useState('');
   const submitting = useRef(false);
   const created = useRef(false);
@@ -62,8 +64,8 @@ export function CreateGroupForm({
 
   return (
     <FormSheet
-      title="New group"
-      action={{ label: 'Cancel', onPress: cancel, disabled: busy }}
+      title={t('newGroup')}
+      action={{ label: t('common:cancel'), onPress: cancel, disabled: busy }}
     >
       <Stack.Screen options={{ gestureEnabled: !busy }} />
       <Screen
@@ -79,14 +81,14 @@ export function CreateGroupForm({
             {busy ? (
               <ActivityIndicator className="text-primary-foreground" />
             ) : null}
-            <Text>{busy ? 'Creating…' : 'Create group'}</Text>
+            <Text>{busy ? t('creating') : t('createGroup')}</Text>
           </Button>
         }
       >
         {create.error ? <ErrorMessage error={create.error} /> : null}
         <Field
-          label="Group name"
-          placeholder="e.g. Weekend trip"
+          label={t('groupName')}
+          placeholder={t('eGWeekendTrip')}
           value={name}
           editable={!busy}
           onChangeText={(value) => {
@@ -100,8 +102,8 @@ export function CreateGroupForm({
           autoFocus
           hint={
             trimmedName
-              ? 'Up to 100 characters'
-              : 'Enter a group name to continue. Up to 100 characters.'
+              ? t('upTo100Characters')
+              : t('enterAGroupNameToContinueUpTo100Characters')
           }
         />
       </Screen>

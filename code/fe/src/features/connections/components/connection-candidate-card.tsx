@@ -1,4 +1,5 @@
 import { Link } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, View, useWindowDimensions } from 'react-native';
 
 import type { ConnectionCandidate } from '@/api/contracts';
@@ -17,6 +18,7 @@ export function ConnectionCandidateCard({
   requestSent: boolean;
   onSend: () => void;
 }) {
+  const { t } = useTranslation(['connections', 'common']);
   const { fontScale } = useWindowDimensions();
   return (
     <Card>
@@ -52,7 +54,7 @@ export function ConnectionCandidateCard({
             {isSending ? (
               <ActivityIndicator className="text-primary-foreground" />
             ) : (
-              <Text>Send friend request</Text>
+              <Text>{t('sendFriendRequest')}</Text>
             )}
           </Button>
         ) : null}
@@ -62,26 +64,26 @@ export function ConnectionCandidateCard({
             accessibilityLiveRegion="polite"
             className="text-[15px] leading-[22px] text-positive"
           >
-            Request sent · waiting for them
+            {t('requestSentWaitingForThem')}
           </Text>
         ) : null}
         {requestSent || candidate.state === 'PENDING_OUTGOING' ? (
           <Link dismissTo href="/groups/friends/requests" asChild>
             <Button size="compact" variant="outline" role="link">
-              <Text>Manage requests</Text>
+              <Text>{t('manageRequests')}</Text>
             </Button>
           </Link>
         ) : null}
         {candidate.state === 'PENDING_INCOMING' ? (
-          <Text>Wants to connect with you</Text>
+          <Text>{t('wantsToConnectWithYou')}</Text>
         ) : null}
         {candidate.state === 'CONNECTED' ? (
-          <Text>Already friends</Text>
+          <Text>{t('alreadyFriends')}</Text>
         ) : null}
         {candidate.state === 'PENDING_INCOMING' ? (
           <Link dismissTo href="/groups/friends/requests" asChild>
             <Button size="compact" variant="outline" role="link">
-              <Text>Review request</Text>
+              <Text>{t('reviewRequest')}</Text>
             </Button>
           </Link>
         ) : null}
@@ -98,7 +100,7 @@ export function ConnectionCandidateCard({
             asChild
           >
             <Button size="compact" variant="outline" role="link">
-              <Text>View friend</Text>
+              <Text>{t('viewFriend')}</Text>
             </Button>
           </Link>
         ) : null}

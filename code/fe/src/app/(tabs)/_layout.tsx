@@ -1,6 +1,7 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Redirect, useSegments } from 'expo-router';
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
+import { useTranslation } from 'react-i18next';
 import { Platform, useWindowDimensions } from 'react-native';
 
 import { Loading } from '@/components/ui';
@@ -8,6 +9,7 @@ import { useSession } from '@/features/auth/session';
 import { THEME_VARIABLES, useThemeVariable } from '@/lib/theme';
 
 export default function TabLayout() {
+  const { t } = useTranslation('common');
   const session = useSession();
   const segments = useSegments();
   const { fontScale } = useWindowDimensions();
@@ -79,7 +81,7 @@ export default function TabLayout() {
             )
           }}
         />
-        <NativeTabs.Trigger.Label>Groups</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>{t('tabs.groups')}</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger
         name="activity"
@@ -102,7 +104,7 @@ export default function TabLayout() {
             )
           }}
         />
-        <NativeTabs.Trigger.Label>Activity</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>{t('tabs.activity')}</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger
         name="home"
@@ -125,7 +127,7 @@ export default function TabLayout() {
             )
           }}
         />
-        <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>{t('tabs.home')}</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger
         name="personal"
@@ -148,7 +150,7 @@ export default function TabLayout() {
             )
           }}
         />
-        <NativeTabs.Trigger.Label>Personal</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>{t('tabs.personal')}</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger
         name="account"
@@ -174,7 +176,7 @@ export default function TabLayout() {
             )
           }}
         />
-        <NativeTabs.Trigger.Label>Account</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>{t('tabs.account')}</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
     </NativeTabs>
   );

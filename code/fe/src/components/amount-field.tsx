@@ -1,4 +1,5 @@
 import type { RefObject } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   InputAccessoryView,
   Keyboard,
@@ -10,25 +11,22 @@ import {
 import type { DisplayCurrency } from '@/api/contracts';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
-import { formatMinorAmount } from '@/lib/money';
+import { isolate } from '@/i18n';
+import { currencySymbol } from '@/lib/money';
 import { cn } from '@/lib/utils';
-
-export function currencySymbol(displayCurrency: DisplayCurrency) {
-  return formatMinorAmount('0', displayCurrency)
-    .replace(/0\.00$/, '')
-    .trim();
-}
+export { currencySymbol } from '@/lib/money';
 
 // iOS number pads have no return key; inputs opt into this "Done" bar by its ID.
 export const DONE_BAR_ID = 'decimal-done';
 
 function DoneBar() {
+  const { t } = useTranslation('common');
   if (Platform.OS !== 'ios') return null;
   return (
     <InputAccessoryView nativeID={DONE_BAR_ID}>
       <View className="flex-row justify-end border-t border-border bg-muted px-2">
         <Button variant="link" size="compact" onPress={Keyboard.dismiss}>
-          <Text>Done</Text>
+          <Text>{t('done')}</Text>
         </Button>
       </View>
     </InputAccessoryView>
@@ -53,12 +51,13 @@ export function AmountField({
   error?: string;
   inputRef?: RefObject<TextInput | null>;
 }) {
+  const { t } = useTranslation('common');
   const textClass = 'text-[40px] font-semibold leading-[48px]';
   return (
     <View className="items-center gap-1.5">
       {/* Mounted before the input so an auto-focused field finds its bar. */}
       <DoneBar />
-      <Text className="text-[13px] text-muted-foreground">Amount</Text>
+      <Text className="text-[13px] text-muted-foreground">{t('amount')}</Text>
       <View className="min-h-14 flex-row items-center justify-center gap-2 self-stretch">
         <Text
           className={cn(
@@ -71,11 +70,11 @@ export function AmountField({
         <TextInput
           ref={inputRef}
           inputAccessoryViewID={DONE_BAR_ID}
-          accessibilityLabel={`Amount in ${displayCurrency}`}
+          accessibilityLabel={t('amountLabel', { currency: isolate(displayCurrency) })}
           autoFocus={autoFocus}
           editable={editable}
           keyboardType="decimal-pad"
-          placeholder="0"
+          placeholder={t('zero')}
           value={value}
           onChangeText={onChangeText}
           className={cn(

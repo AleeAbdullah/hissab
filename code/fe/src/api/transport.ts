@@ -5,7 +5,13 @@ import { errorMessage } from './error-message';
 import { client } from './generated/client.gen';
 import { authRefresh } from './generated/sdk.gen';
 import { runSingleRefresh } from './refresh-lock';
-import { clearTokens, getTokens, setTokens } from './session-store';
+import {
+  clearTokens,
+  getLoginVersion,
+  getTokens,
+  setTokens
+} from './session-store';
+import { i18n } from '@/i18n';
 
 type Result = {
   data?: unknown;
@@ -54,24 +60,35 @@ export async function publicRequest<T>(
 }
 
 export async function request<T>(call: () => Promise<Result>): Promise<T> {
+  const loginVersion = getLoginVersion();
+  const userId = getTokens()?.user.id;
+  const assertLogin = () => {
+    if (getLoginVersion() !== loginVersion || getTokens()?.user.id !== userId)
+      throw new ApiError(i18n.t('common:apiErrors.sessionChanged'));
+  };
   const sentWith = getTokens()?.accessToken;
   let result = await call();
+  assertLogin();
   if (result.response?.status === 401) {
     // A concurrent request may have rotated the session already; reuse its tokens
     // rather than refreshing again, which would invalidate them.
     const refresh =
-      getTokens()?.accessToken !== sentWith ? 'ok' : await refreshSession();
+      getTokens()?.accessToken !== sentWith
+        ? 'ok'
+        : await refreshSession(loginVersion);
+    assertLogin();
+    if (refresh === 'cancelled')
+      throw new ApiError(i18n.t('common:apiErrors.sessionChanged'));
     // An outage is not a rejected session: keep credentials and drafts.
     if (refresh === 'unavailable')
-      throw new ApiError(
-        'Tally Stick is unreachable right now. Check your connection and try again.'
-      );
+      throw new ApiError(i18n.t('common:unreachable'));
     if (refresh === 'rejected') {
       await clearTokens();
       return unwrap<T>(result);
     }
     const retriedWith = getTokens()?.accessToken;
     result = await call();
+    assertLogin();
     // Sign out only if the tokens we just retried with are themselves rejected.
     if (
       result.response?.status === 401 &&
@@ -82,15 +99,17 @@ export async function request<T>(call: () => Promise<Result>): Promise<T> {
   return unwrap<T>(result);
 }
 
-function refreshSession() {
-  return runSingleRefresh(doRefresh);
+function refreshSession(loginVersion: number) {
+  return runSingleRefresh(() => doRefresh(loginVersion), loginVersion);
 }
 
 // One key per refresh token: a retry after a lost response replays the same
 // rotation instead of tripping the server's token-reuse revocation.
 let refreshAttempt: { token: string; key: string } | undefined;
 
-async function doRefresh(): Promise<'ok' | 'rejected' | 'unavailable'> {
+async function doRefresh(
+  loginVersion: number
+): Promise<'ok' | 'rejected' | 'unavailable' | 'cancelled'> {
   const tokens = getTokens();
   if (!tokens) return 'rejected';
 
@@ -109,8 +128,9 @@ async function doRefresh(): Promise<'ok' | 'rejected' | 'unavailable'> {
     const status = result.response?.status;
     return status === 400 || status === 401 ? 'rejected' : 'unavailable';
   }
-  await setTokens(result.data as AuthTokens);
-  return 'ok';
+  return (await setTokens(result.data as AuthTokens, loginVersion))
+    ? 'ok'
+    : 'cancelled';
 }
 
 function unwrap<T>(result: Result): T {

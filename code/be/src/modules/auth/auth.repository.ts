@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import { and, desc, eq, isNull, ne, sql } from 'drizzle-orm';
 
+import { resolveLocale, type Locale } from '../../common/locale';
 import {
   type AppDatabase,
   DatabaseService,
@@ -53,6 +54,7 @@ export class AuthRepository {
         email: users.email,
         displayName: users.displayName,
         displayCurrency: users.displayCurrency,
+        locale: users.locale,
         status: users.status,
         passwordHash: userIdentities.passwordHash,
       })
@@ -76,6 +78,7 @@ export class AuthRepository {
       email: account.email,
       displayName: account.displayName,
       displayCurrency: account.displayCurrency,
+      locale: resolveLocale(account.locale),
       passwordHash: account.passwordHash,
       status: account.status,
     };
@@ -87,6 +90,7 @@ export class AuthRepository {
       email: string;
       passwordHash: string;
       displayName: string;
+      locale?: Locale;
     },
   ): Promise<AuthUser> {
     const userId = randomUUID();
@@ -97,6 +101,7 @@ export class AuthRepository {
         id: userId,
         email: input.email,
         displayName: input.displayName,
+        locale: input.locale ?? 'en',
         status: 'ACTIVE',
         createdAt: now,
         updatedAt: now,
@@ -106,6 +111,7 @@ export class AuthRepository {
         email: users.email,
         displayName: users.displayName,
         displayCurrency: users.displayCurrency,
+        locale: users.locale,
       });
 
     if (!user?.email) {
@@ -125,7 +131,7 @@ export class AuthRepository {
     await transaction.insert(notificationPreferences).values({ userId });
     await transaction.insert(personalLedgers).values({ userId });
 
-    return { ...user, email: user.email };
+    return { ...user, email: user.email, locale: resolveLocale(user.locale) };
   }
 
   async findActiveAuthUserById(
@@ -138,12 +144,15 @@ export class AuthRepository {
         email: users.email,
         displayName: users.displayName,
         displayCurrency: users.displayCurrency,
+        locale: users.locale,
       })
       .from(users)
       .where(and(eq(users.id, userId), eq(users.status, 'ACTIVE')))
       .limit(1);
 
-    return user?.email ? { ...user, email: user.email } : undefined;
+    return user?.email
+      ? { ...user, email: user.email, locale: resolveLocale(user.locale) }
+      : undefined;
   }
 
   async insertRefreshSession(

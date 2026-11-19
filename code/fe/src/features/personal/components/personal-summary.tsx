@@ -1,8 +1,10 @@
+import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
 import type { DisplayCurrency, PersonalReportBucket } from '@/api/contracts';
 import { AmountText, Card } from '@/components/ui';
 import { Text } from '@/components/ui/text';
+import { isolate } from '@/i18n';
 import { formatMinorAmount } from '@/lib/money';
 import { cn } from '@/lib/utils';
 
@@ -24,6 +26,7 @@ export function PersonalHistorySummary({
   type?: 'INCOME' | 'EXPENSE';
   loading: boolean;
 }) {
+  const { t } = useTranslation(['personal', 'common']);
   const income = BigInt(report?.incomeMinor ?? '0');
   const spending = BigInt(report?.expenseMinor ?? '0');
   const net = income - spending;
@@ -36,19 +39,19 @@ export function PersonalHistorySummary({
     ...(type !== 'EXPENSE'
       ? [
           {
-            label: 'Income',
+            label: t('income'),
             value: income,
             tone: income > 0n ? 'text-positive' : undefined
           }
         ]
       : []),
     ...(type !== 'INCOME'
-      ? [{ label: 'Spending', value: spending, tone: undefined }]
+      ? [{ label: t('spending'), value: spending, tone: undefined }]
       : []),
     ...(!type
       ? [
           {
-            label: net < 0n ? 'Overspent' : 'Left over',
+            label: net < 0n ? t('overspent') : t('leftOver'),
             value: net,
             tone:
               net < 0n
@@ -65,7 +68,20 @@ export function PersonalHistorySummary({
     <Card className="gap-3 p-4">
       <View
         accessible
-        accessibilityLabel={`${title}. ${caption ? caption + '. ' : ''}${pending ? 'Loading totals.' : figures.map((figure) => `${figure.label} ${money(figure.value)}.`).join(' ')}`}
+        accessibilityLabel={t('summaryLabel', {
+          title,
+          caption: caption ?? '',
+          figures: pending
+            ? t('loadingTotals')
+            : figures
+                .map((figure) =>
+                  t('itemValue', {
+                    label: figure.label,
+                    value: isolate(money(figure.value))
+                  })
+                )
+                .join(t('listSeparator'))
+        })}
         className="gap-3"
       >
         <View className="gap-0.5">

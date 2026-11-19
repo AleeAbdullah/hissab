@@ -5,6 +5,7 @@ import {
   UsersRound,
   type LucideIcon
 } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, View } from 'react-native';
 
 import type { InAppNotification } from '@/api/contracts';
@@ -12,6 +13,7 @@ import { ErrorMessage, IconTile, ListRow } from '@/components/ui';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { reminderLedgerHref } from '@/features/reminders/navigation';
+import { isolate } from '@/i18n';
 import { formatDateTime } from '@/lib/dates';
 
 const KIND_ICONS: Record<InAppNotification['kind'], LucideIcon> = {
@@ -42,19 +44,20 @@ export function NotificationInbox({
   onOpen: (notification: InAppNotification) => void;
   onRetry: () => void;
 }) {
+  const { t } = useTranslation(['account', 'common']);
   return (
     <View>
       {error ? (
         <View className="gap-3 pb-4">
           <ErrorMessage error={error} />
           <Button variant="outline" onPress={onRetry}>
-            <Text>Try again</Text>
+            <Text>{t('common:tryAgain')}</Text>
           </Button>
         </View>
       ) : null}
       {isLoading ? (
         <ActivityIndicator
-          accessibilityLabel="Loading notifications"
+          accessibilityLabel={t('loadingNotifications')}
           className="text-primary"
         />
       ) : items.length ? (
@@ -63,7 +66,11 @@ export function NotificationInbox({
           const linked = Boolean(
             reminderLedgerHref({ ...item.details, ...item })
           );
-          const label = `${unread ? 'Unread. ' : ''}${item.title}. ${item.body}. ${formatDateTime(item.createdAt)}`;
+          const label = t(unread ? 'unreadNotification' : 'readNotification', {
+            title: isolate(item.title),
+            body: isolate(item.body),
+            date: isolate(formatDateTime(item.createdAt))
+          });
           return (
             <ListRow
               key={item.id}
@@ -93,14 +100,13 @@ export function NotificationInbox({
             selectable
             className="text-center text-xl font-semibold leading-[26px]"
           >
-            No notifications yet
+            {t('noNotificationsYet')}
           </Text>
           <Text
             selectable
             className="text-center leading-6 text-muted-foreground"
           >
-            Shared changes, invitations, friend requests and reminders will
-            appear here.
+            {t('sharedChangesInvitationsFriendRequestsAndRemindersWillAppear')}
           </Text>
         </View>
       ) : null}
@@ -114,7 +120,7 @@ export function NotificationInbox({
           {isLoadingMore ? (
             <ActivityIndicator className="text-primary" />
           ) : (
-            <Text>Load more</Text>
+            <Text>{t('loadMore')}</Text>
           )}
         </Button>
       ) : null}

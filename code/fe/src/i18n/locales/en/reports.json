@@ -1,0 +1,18 @@
+{
+  "harassmentOrAbuse": "Harassment or abuse",
+  "spamOrScam": "Spam or scam",
+  "inappropriateNameOrContent": "Inappropriate name or content",
+  "impersonation": "Impersonation",
+  "somethingElse": "Something else",
+  "reportSent": "Report sent",
+  "thanksForTellingUsTheTallyStickTeamWillReview": "Thanks for telling us. The Tally Stick team will review it. {{name}} won't be notified.",
+  "tellTheTallyStickTeamAboutAProblemWithReports": "Tell the Tally Stick team about a problem with {{name}}. Reports are private. Nobody in the group or ledger is notified.",
+  "tellTheTallyStickTeamAboutAProblemWithThe": "Tell the Tally Stick team about a problem with the group {{name}}. Reports are private. Nobody in the group or ledger is notified.",
+  "reason": "REASON",
+  "detailsOptional": "Details (optional)",
+  "whatHappenedUpTo1000Characters": "What happened? Up to 1,000 characters.",
+  "sendReport": "Send report",
+  "thisPerson": "this person",
+  "thisGroup": "this group",
+  "openReportFromAPersonOrGroup": "Open Report from a person or group."
+}

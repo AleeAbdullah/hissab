@@ -3,6 +3,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { Stack } from 'expo-router/stack';
 import { ListFilter, X } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Keyboard, View } from 'react-native';
 
 import type {
@@ -34,11 +35,14 @@ import {
   TransactionFilterSheet,
   type TransactionFilters
 } from '@/features/personal/components/transaction-filter-sheet';
-import { periodLabel } from '@/features/personal/form';
-import { dateToIso, dateToExclusiveIso, formatPeriod } from '@/lib/dates';
+import { historyPeriodLabel, periodLabel } from '@/features/personal/form';
+import { isolate } from '@/i18n';
+import { categoryName } from '@/i18n/categories';
+import { dateToIso, dateToExclusiveIso } from '@/lib/dates';
 import { formatMinorAmount } from '@/lib/money';
 
 export default function TransactionsScreen() {
+  const { t } = useTranslation(['personal', 'common']);
   // Spending's category rows open this list already filtered.
   const params = useLocalSearchParams<{
     categoryCode?: PersonalCategoryCode;
@@ -122,7 +126,7 @@ export default function TransactionsScreen() {
     return (
       <Screen>
         <ErrorMessage
-          error={profile.error ?? new Error('Profile is unavailable.')}
+          error={profile.error ?? new Error(t('profileIsUnavailable'))}
         />
       </Screen>
     );
@@ -132,7 +136,7 @@ export default function TransactionsScreen() {
       <Stack.Screen
         options={{
           headerSearchBarOptions: {
-            placeholder: 'Search history',
+            placeholder: t('searchHistory'),
             placement: 'stacked',
             hideWhenScrolling: false,
             autoCapitalize: 'none',
@@ -145,8 +149,8 @@ export default function TransactionsScreen() {
               variant="ghost"
               accessibilityLabel={
                 sheetFilterCount
-                  ? `Filter history, ${sheetFilterCount} selected`
-                  : 'Filter history'
+                  ? t('filterCount', { count: sheetFilterCount })
+                  : t('filterHistory')
               }
               disabled={categories.isLoading || Boolean(categories.error)}
               onPress={() => {
@@ -167,9 +171,9 @@ export default function TransactionsScreen() {
         />
         <View className="flex-row flex-wrap items-center gap-2">
           {[
-            { label: 'All', value: 'ALL' },
-            { label: 'Expenses', value: 'EXPENSE' },
-            { label: 'Income', value: 'INCOME' }
+            { label: t('all'), value: 'ALL' },
+            { label: t('expenses'), value: 'EXPENSE' },
+            { label: t('income'), value: 'INCOME' }
           ].map((choice) => {
             const selected = (type ?? 'ALL') === choice.value;
             return (
@@ -184,18 +188,26 @@ export default function TransactionsScreen() {
           {categoryCode ? (
             <Chip
               selected
-              label={selectedCategory?.name ?? 'Category'}
+              label={
+                (selectedCategory
+                  ? categoryName(selectedCategory.code)
+                  : undefined) ?? t('category')
+              }
               trailingIcon={X}
-              accessibilityLabel={`Remove ${selectedCategory?.name ?? 'category'} filter`}
+              accessibilityLabel={t('removeCategory', {
+                category: selectedCategory
+                  ? categoryName(selectedCategory.code)
+                  : t('category')
+              })}
               onPress={() => setCategoryCode(undefined)}
             />
           ) : null}
           {fromDate || toDate ? (
             <Chip
               selected
-              label={formatPeriod(fromDate, toDate)}
+              label={historyPeriodLabel(fromDate, toDate)}
               trailingIcon={X}
-              accessibilityLabel="Remove date filter"
+              accessibilityLabel={t('removeDateFilter')}
               onPress={() => {
                 setFromDate(undefined);
                 setToDate(undefined);
@@ -205,9 +217,24 @@ export default function TransactionsScreen() {
           {minAmountMinor || maxAmountMinor ? (
             <Chip
               selected
-              label={`${formatMinorAmount(minAmountMinor ?? '0', profile.data.displayCurrency)} – ${maxAmountMinor ? formatMinorAmount(maxAmountMinor, profile.data.displayCurrency) : 'Any'}`}
+              label={t('range', {
+                from: isolate(
+                  formatMinorAmount(
+                    minAmountMinor ?? '0',
+                    profile.data.displayCurrency
+                  )
+                ),
+                to: maxAmountMinor
+                  ? isolate(
+                      formatMinorAmount(
+                        maxAmountMinor,
+                        profile.data.displayCurrency
+                      )
+                    )
+                  : t('any')
+              })}
               trailingIcon={X}
-              accessibilityLabel="Remove amount filter"
+              accessibilityLabel={t('removeAmountFilter')}
               onPress={() => {
                 setMinAmountMinor(undefined);
                 setMaxAmountMinor(undefined);
@@ -218,7 +245,7 @@ export default function TransactionsScreen() {
         <PersonalHistorySummary
           displayCurrency={profile.data.displayCurrency}
           report={report}
-          title={formatPeriod(fromDate, toDate)}
+          title={historyPeriodLabel(fromDate, toDate)}
           type={type}
           loading={
             history.isPending ||
@@ -227,25 +254,42 @@ export default function TransactionsScreen() {
           }
           caption={[
             type === 'EXPENSE'
-              ? 'Expenses'
+              ? t('expenses')
               : type === 'INCOME'
-                ? 'Income'
+                ? t('income')
                 : undefined,
-            selectedCategory?.name,
-            searchText.trim() ? `“${searchText.trim()}”` : undefined,
-            minAmountMinor || maxAmountMinor
-              ? `${formatMinorAmount(minAmountMinor ?? '0', profile.data.displayCurrency)}–${maxAmountMinor ? formatMinorAmount(maxAmountMinor, profile.data.displayCurrency) : 'Any'}`
+            selectedCategory ? categoryName(selectedCategory.code) : undefined,
+            searchText.trim()
+              ? t('quote', { text: isolate(searchText.trim()) })
               : undefined,
-            !includeShared ? 'Shared excluded' : undefined
+            minAmountMinor || maxAmountMinor
+              ? t('range', {
+                  from: isolate(
+                    formatMinorAmount(
+                      minAmountMinor ?? '0',
+                      profile.data.displayCurrency
+                    )
+                  ),
+                  to: maxAmountMinor
+                    ? isolate(
+                        formatMinorAmount(
+                          maxAmountMinor,
+                          profile.data.displayCurrency
+                        )
+                      )
+                    : t('any')
+                })
+              : undefined,
+            !includeShared ? t('sharedExcluded') : undefined
           ]
             .filter(Boolean)
-            .join(' · ')}
+            .join(t('captionSeparator'))}
         />
         {history.error ? (
           <View className="gap-2">
             <ErrorMessage error={history.error} />
             <Button variant="outline" onPress={() => history.refetch()}>
-              <Text>Try again</Text>
+              <Text>{t('tryAgain')}</Text>
             </Button>
           </View>
         ) : null}
@@ -274,8 +318,8 @@ export default function TransactionsScreen() {
         ) : (
           <Text selectable>
             {search || activeFilterCount
-              ? 'No history matches your search or filters.'
-              : 'No history yet.'}
+              ? t('noHistoryMatchesYourSearchOrFilters')
+              : t('noHistoryYet')}
           </Text>
         )}
         {history.hasNextPage ? (
@@ -291,7 +335,7 @@ export default function TransactionsScreen() {
             {history.isFetchingNextPage ? (
               <ActivityIndicator className="text-primary" />
             ) : (
-              <Text>Load more history</Text>
+              <Text>{t('loadMoreHistory')}</Text>
             )}
           </Button>
         ) : null}

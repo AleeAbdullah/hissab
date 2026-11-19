@@ -1,0 +1,18 @@
+{
+  "harassmentOrAbuse": "ہراسانی یا بدسلوکی",
+  "spamOrScam": "اسپیم یا دھوکا",
+  "inappropriateNameOrContent": "نامناسب نام یا مواد",
+  "impersonation": "کسی اور کی شناخت اختیار کرنا",
+  "somethingElse": "کچھ اور",
+  "reportSent": "رپورٹ بھیج دی",
+  "thanksForTellingUsTheTallyStickTeamWillReview": "بتانے کا شکریہ۔ Tally Stick کی ٹیم اس کا جائزہ لے گی۔ {{name}} کو اطلاع نہیں دی جائے گی۔",
+  "tellTheTallyStickTeamAboutAProblemWithReports": "Tally Stick کی ٹیم کو {{name}} کے ساتھ مسئلہ بتائیں۔ رپورٹس نجی ہیں۔ گروپ یا کھاتے میں کسی کو اطلاع نہیں دی جاتی۔",
+  "tellTheTallyStickTeamAboutAProblemWithThe": "Tally Stick کی ٹیم کو گروپ {{name}} کا مسئلہ بتائیں۔ رپورٹس نجی ہیں۔ گروپ یا کھاتے میں کسی کو اطلاع نہیں دی جاتی۔",
+  "reason": "وجہ",
+  "detailsOptional": "تفصیل (اختیاری)",
+  "whatHappenedUpTo1000Characters": "کیا ہوا؟ زیادہ سے زیادہ 1,000 حروف۔",
+  "sendReport": "رپورٹ بھیجیں",
+  "thisPerson": "یہ شخص",
+  "thisGroup": "یہ گروپ",
+  "openReportFromAPersonOrGroup": "کسی شخص یا گروپ سے رپورٹ کھولیں۔"
+}

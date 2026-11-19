@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { and, eq, or } from 'drizzle-orm';
 
+import { resolveLocale, type Locale } from '../../common/locale';
 import type { DisplayCurrency } from '../../common/display-currency';
 import {
   type AppDatabase,
@@ -14,6 +15,7 @@ export interface UserProfile {
   email: string;
   displayName: string;
   displayCurrency: DisplayCurrency;
+  locale: Locale;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -21,6 +23,7 @@ export interface UserProfile {
 export interface ProfileChanges {
   displayName?: string;
   displayCurrency?: DisplayCurrency;
+  locale?: Locale;
 }
 
 @Injectable()
@@ -37,6 +40,7 @@ export class UsersRepository {
         email: users.email,
         displayName: users.displayName,
         displayCurrency: users.displayCurrency,
+        locale: users.locale,
         createdAt: users.createdAt,
         updatedAt: users.updatedAt,
       })
@@ -48,6 +52,7 @@ export class UsersRepository {
       ? {
           ...profile,
           email: profile.email,
+          locale: resolveLocale(profile.locale),
           displayCurrency: profile.displayCurrency as DisplayCurrency,
         }
       : undefined;

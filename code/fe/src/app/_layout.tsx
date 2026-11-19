@@ -1,18 +1,22 @@
+import '@/i18n';
 import { PortalHost } from '@rn-primitives/portal';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from 'expo-router/react-navigation';
 import { Stack } from 'expo-router/stack';
 import { StatusBar } from 'expo-status-bar';
 import { lazy, Suspense } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Platform, useColorScheme, View } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
 import { DialogProvider } from '@/components/ui/dialog';
+import { ProfileLocaleSync } from '@/features/account/components/profile-locale-sync';
 import { canRegisterPushNotifications } from '@/features/account/push';
 import { SessionProvider } from '@/features/auth/session';
 import { LedgerDraftProvider } from '@/features/ledger/draft';
 import { PersistedQueryProvider } from '@/features/local-data/query-cache';
 import { RealtimeProvider } from '@/features/realtime/provider';
+import { isRTL } from '@/i18n/locale';
 import { useLargeText } from '@/lib/text-scale';
 import { useNavigationTheme } from '@/lib/theme';
 
@@ -25,6 +29,7 @@ const NotificationResponseHandler = lazy(
 );
 
 function Navigation() {
+  const { t, i18n } = useTranslation('common');
   const colorScheme = useColorScheme();
   const navigationTheme = useNavigationTheme();
   const largeText = useLargeText();
@@ -37,7 +42,10 @@ function Navigation() {
       ) : null}
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
       <DialogProvider>
-        <View className="flex-1 bg-background">
+        <View
+          className="flex-1 bg-background"
+          style={{ direction: isRTL(i18n.language) ? 'rtl' : 'ltr' }}
+        >
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="index" />
             <Stack.Screen name="(auth)" />
@@ -47,7 +55,7 @@ function Navigation() {
             <Stack.Screen
               name="group-new"
               options={{
-                title: 'New group',
+                title: t('newGroup'),
                 // Sheet header visibility is fixed when the sheet is presented, so it is set here.
                 // react-native-screens attaches a native toolbar to iOS form sheets only.
                 headerShown: Platform.OS === 'ios',
@@ -69,7 +77,7 @@ function Navigation() {
               options={{
                 // Fixed at presentation; iOS form sheets alone get a native toolbar.
                 headerShown: Platform.OS === 'ios',
-                title: 'Add expense',
+                title: t('addExpense'),
                 presentation: 'formSheet',
                 sheetAllowedDetents: [0.85, 1],
                 sheetGrabberVisible: true,
@@ -89,6 +97,7 @@ export default function RootLayout() {
     <QueryClientProvider client={queryClient}>
       <SessionProvider>
         <PersistedQueryProvider>
+          <ProfileLocaleSync />
           <RealtimeProvider>
             <LedgerDraftProvider>
               <Navigation />

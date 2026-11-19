@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
 import type { LedgerBalances } from '@/api/contracts';
@@ -17,6 +18,7 @@ export function LedgerActions({
   balances?: LedgerBalances;
   direct?: boolean;
 }) {
+  const { t } = useTranslation(['ledger', 'common']);
   const { startDraft } = useLedgerDraft();
   const disabled = draft.members.length < 2;
   return (
@@ -29,7 +31,7 @@ export function LedgerActions({
           router.push('/shared-expense');
         }}
       >
-        <Text>Add expense</Text>
+        <Text>{t('addExpense')}</Text>
       </Button>
       <Button
         variant="outline"
@@ -44,7 +46,7 @@ export function LedgerActions({
           router.push('/settlement');
         }}
       >
-        <Text>Record payment</Text>
+        <Text>{t('recordPayment')}</Text>
       </Button>
     </View>
   );

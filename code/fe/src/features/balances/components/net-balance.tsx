@@ -1,7 +1,9 @@
+import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
 import type { DisplayCurrency } from '@/api/contracts';
 import { Text } from '@/components/ui/text';
+import { i18n, isolate } from '@/i18n';
 import { absMinor, formatMinorAmount } from '@/lib/money';
 import { useLargeText } from '@/lib/text-scale';
 import { cn } from '@/lib/utils';
@@ -16,6 +18,7 @@ export function NetBalance({
   currency?: DisplayCurrency;
   member?: boolean;
 }) {
+  const { t } = useTranslation(['balances', 'common']);
   const largeText = useLargeText();
   if (netMinor === undefined || !currency) return null;
   const net = BigInt(netMinor);
@@ -38,13 +41,13 @@ export function NetBalance({
       >
         {net > 0n
           ? member
-            ? 'gets back'
-            : 'you’re owed'
+            ? t('getsBack')
+            : t('youReOwed')
           : net < 0n
             ? member
-              ? 'owes the group'
-              : 'you owe'
-            : 'Settled'}
+              ? t('owesTheGroup')
+              : t('youOwe')
+            : t('settled')}
       </Text>
     </View>
   );
@@ -53,7 +56,9 @@ export function NetBalance({
 export function netBalanceLabel(netMinor?: string, currency?: DisplayCurrency) {
   if (netMinor === undefined || !currency) return undefined;
   const net = BigInt(netMinor);
-  if (!net) return 'Settled';
+  if (!net) return i18n.t('balances:settled');
   const amount = formatMinorAmount(absMinor(net), currency);
-  return net > 0n ? `you’re owed ${amount}` : `you owe ${amount}`;
+  return net > 0n
+    ? i18n.t('balances:youReOwed2', { amount: isolate(amount) })
+    : i18n.t('balances:youOwe2', { amount: isolate(amount) });
 }

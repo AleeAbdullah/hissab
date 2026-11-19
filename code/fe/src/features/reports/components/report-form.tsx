@@ -1,6 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, View } from 'react-native';
 
 import { ChoiceChips } from '@/components/choice-chips';
@@ -14,6 +15,7 @@ import {
   type ReportReason,
   type ReportTargetType
 } from '@/features/reports/api';
+import { isolate } from '@/i18n';
 
 export function ReportForm({
   targetType,
@@ -24,6 +26,7 @@ export function ReportForm({
   targetId: string;
   name: string;
 }) {
+  const { t } = useTranslation(['reports', 'common']);
   const dialog = useDialog();
   const [reason, setReason] = useState<ReportReason | null>(null);
   const [details, setDetails] = useState('');
@@ -38,9 +41,11 @@ export function ReportForm({
       }),
     onSuccess: () =>
       dialog(
-        'Report sent',
-        `Thanks for telling us. The Tally Stick team will review it. ${name} won't be notified.`,
-        [{ text: 'Done', onPress: () => router.back() }],
+        t('reportSent'),
+        t('thanksForTellingUsTheTallyStickTeamWillReview', {
+          name: isolate(name)
+        }),
+        [{ text: t('common:done'), onPress: () => router.back() }],
         { tone: 'success' }
       ),
     onSettled: () => {
@@ -60,25 +65,31 @@ export function ReportForm({
         className="text-[15px] leading-[22px] text-muted-foreground"
       >
         {targetType === 'USER'
-          ? `Tell the Tally Stick team about a problem with ${name}.`
-          : `Tell the Tally Stick team about a problem with the group ${name}.`}{' '}
-        Reports are private. Nobody in the group or ledger is notified.
+          ? t('tellTheTallyStickTeamAboutAProblemWithReports', {
+              name: isolate(name)
+            })
+          : t('tellTheTallyStickTeamAboutAProblemWithThe', {
+              name: isolate(name)
+            })}
       </Text>
-      <SectionLabel>REASON</SectionLabel>
+      <SectionLabel>{t('reason')}</SectionLabel>
       <ChoiceChips
-        choices={REPORT_REASONS}
+        choices={REPORT_REASONS.map((item) => ({
+          ...item,
+          label: t(item.label)
+        }))}
         value={reason}
         onChange={(value) => setReason(value as ReportReason)}
       />
       <Field
-        label="Details (optional)"
+        label={t('detailsOptional')}
         multiline
         value={details}
         onChangeText={setDetails}
         maxLength={1000}
         textAlignVertical="top"
         className="min-h-24"
-        hint="What happened? Up to 1,000 characters."
+        hint={t('whatHappenedUpTo1000Characters')}
       />
       {send.error ? <ErrorMessage error={send.error} /> : null}
       <Button
@@ -92,7 +103,7 @@ export function ReportForm({
         {send.isPending ? (
           <ActivityIndicator className="text-primary-foreground" />
         ) : (
-          <Text>{send.isSuccess ? 'Report sent' : 'Send report'}</Text>
+          <Text>{send.isSuccess ? t('reportSent') : t('sendReport')}</Text>
         )}
       </Button>
     </View>

@@ -24,6 +24,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:check": "drizzle-kit check",
     "check:utc-calendar": "node scripts/check-utc-calendar.mjs",
+    "check:auth-response": "node scripts/check-auth-response.mjs",
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {

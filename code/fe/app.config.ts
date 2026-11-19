@@ -22,15 +22,16 @@ const config: ExpoConfig = {
     },
     icon: {
       light: './assets/images/icons/app-icon-light.png',
-      dark: './assets/images/icons/app-icon-dark.png'
+      dark: './assets/images/icons/app-icon-dark.png',
+      tinted: './assets/images/icons/app-icon-tinted.png'
     }
   },
   android: {
     package: 'com.alee.hissab',
     adaptiveIcon: {
-      backgroundColor: '#FDFDFD',
+      backgroundColor: '#A83A1B',
       foregroundImage: './assets/images/icons/app-icon-foreground.png',
-      monochromeImage: './assets/images/icons/app-icon-foreground.png'
+      monochromeImage: './assets/images/icons/app-icon-monochrome.png'
     },
     predictiveBackGestureEnabled: true
   },
@@ -40,6 +41,8 @@ const config: ExpoConfig = {
   },
   plugins: [
     'expo-router',
+    'expo-localization',
+    './plugins/with-rtl-preferences.cjs',
     ['expo-secure-store', { faceIDPermission: false }],
     'expo-notifications',
     'expo-font',
@@ -49,11 +52,11 @@ const config: ExpoConfig = {
     [
       'expo-splash-screen',
       {
-        backgroundColor: '#FDFDFD',
+        backgroundColor: '#F7F3EC',
         image: './assets/images/icons/icon-dark.png',
         imageWidth: 160,
         dark: {
-          backgroundColor: '#091E2F',
+          backgroundColor: '#1D1D1B',
           image: './assets/images/icons/icon-light.png'
         }
       }

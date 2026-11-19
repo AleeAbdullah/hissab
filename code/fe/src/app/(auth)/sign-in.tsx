@@ -1,6 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { Link, useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, type TextInput, View } from 'react-native';
 
 import { ErrorMessage, Field, Screen } from '@/components/ui';
@@ -11,6 +12,7 @@ import { AuthLegalLinks } from '@/features/auth/components/auth-legal-links';
 import { isEmail } from '@/features/auth/validation';
 
 export default function SignInScreen() {
+  const { t } = useTranslation(['auth', 'common']);
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [emailTouched, setEmailTouched] = useState(false);
@@ -42,12 +44,12 @@ export default function SignInScreen() {
             {mutation.isPending ? (
               <ActivityIndicator className="text-primary-foreground" />
             ) : (
-              <Text>Sign in</Text>
+              <Text>{t('signIn')}</Text>
             )}
           </Button>
           <View className="flex-row flex-wrap items-center justify-center">
             <Text className="text-[15px] leading-[22px] text-muted-foreground">
-              New to Tally Stick?
+              {t('newToTallyStick')}
             </Text>
             <Link href="/register" replace asChild>
               <Button
@@ -56,7 +58,7 @@ export default function SignInScreen() {
                 role="link"
                 className="px-1.5"
               >
-                <Text>Create account</Text>
+                <Text>{t('createAccount')}</Text>
               </Button>
             </Link>
           </View>
@@ -69,20 +71,20 @@ export default function SignInScreen() {
           accessibilityRole="header"
           className="font-serif text-[48px] font-medium leading-[52px]"
         >
-          Tally Stick
+          {t('tallyStick')}
         </Text>
         <View className="h-px w-12 bg-primary" />
         <Text
           selectable
           className="text-[17px] leading-[24px] text-muted-foreground"
         >
-          Welcome back.
+          {t('welcomeBack')}
         </Text>
       </View>
       {mutation.error ? <ErrorMessage error={mutation.error} /> : null}
       <Field
-        label="Email"
-        placeholder="you@example.com"
+        label={t('email')}
+        placeholder={t('youexamplecom')}
         keyboardType="email-address"
         autoCapitalize="none"
         autoComplete="email"
@@ -95,7 +97,7 @@ export default function SignInScreen() {
         onBlur={() => setEmailTouched(true)}
         error={
           emailTouched && email.trim() && !emailValid
-            ? 'Enter a full email address, like name@example.com.'
+            ? t('enterAFullEmailAddressLikeNameexamplecom')
             : undefined
         }
         value={email}
@@ -104,8 +106,8 @@ export default function SignInScreen() {
       <View className="gap-1">
         <Field
           inputRef={passwordRef}
-          label="Password"
-          placeholder="Your password"
+          label={t('password')}
+          placeholder={t('yourPassword')}
           secureTextEntry
           autoComplete="current-password"
           textContentType="password"
@@ -117,7 +119,7 @@ export default function SignInScreen() {
         <View className="items-start">
           <Link href="/forgot-password" asChild>
             <Button variant="link" size="compact" role="link" className="px-0">
-              <Text>Forgot password?</Text>
+              <Text>{t('forgotPassword')}</Text>
             </Button>
           </Link>
         </View>

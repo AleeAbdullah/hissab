@@ -1,6 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
@@ -12,6 +13,7 @@ import { Text } from '@/components/ui/text';
 import { deleteAccount } from '@/features/account/api';
 
 export default function DeleteAccountScreen() {
+  const { t } = useTranslation(['account', 'common']);
   const dialog = useDialog();
   const router = useRouter();
   const [password, setPassword] = useState('');
@@ -28,12 +30,12 @@ export default function DeleteAccountScreen() {
   const valid = password.length > 0 && confirmation === 'DELETE';
   const confirmDeletion = () => {
     dialog(
-      'Delete Tally Stick account?',
-      'This is permanent. Your profile is anonymized and every device is signed out. Financial history remains for audit.',
+      t('deleteTallyStickAccount'),
+      t('thisIsPermanentYourProfileIsAnonymizedAndEvery'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common:cancel'), style: 'cancel' },
         {
-          text: 'Delete account',
+          text: t('deleteAccount'),
           style: 'destructive',
           onPress: () => mutation.mutate()
         }
@@ -43,26 +45,25 @@ export default function DeleteAccountScreen() {
 
   return (
     <Screen>
-      <Notice title="Before you can delete" error>
-        Settle every ledger balance and leave every active group. This action
-        cannot be undone.
+      <Notice title={t('beforeYouCanDelete')} error>
+        {t('settleEveryLedgerBalanceAndLeaveEveryActiveGroup')}
       </Notice>
       {mutation.error ? <ErrorMessage error={mutation.error} /> : null}
       <Field
-        label="Current password"
+        label={t('currentPassword')}
         secureTextEntry
         autoComplete="current-password"
         value={password}
         onChangeText={setPassword}
       />
       <Field
-        label="Type DELETE to confirm"
+        label={t('typeDeleteToConfirm')}
         autoCapitalize="characters"
         value={confirmation}
         onChangeText={setConfirmation}
         error={
           confirmation.length > 0 && confirmation !== 'DELETE'
-            ? 'Type DELETE exactly.'
+            ? t('typeDeleteExactly')
             : undefined
         }
       />
@@ -78,7 +79,7 @@ export default function DeleteAccountScreen() {
         {mutation.isPending ? (
           <ActivityIndicator className="text-destructive-foreground" />
         ) : (
-          <Text>Permanently delete account</Text>
+          <Text>{t('permanentlyDeleteAccount')}</Text>
         )}
       </Button>
     </Screen>

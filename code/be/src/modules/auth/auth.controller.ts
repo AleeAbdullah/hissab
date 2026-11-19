@@ -11,7 +11,12 @@ import {
   Post,
   Req,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiTags,
+  ApiCreatedResponse,
+  ApiOkResponse,
+} from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { Request } from 'express';
 
@@ -19,6 +24,7 @@ import type { AuthPrincipal } from '../../common/auth/auth-principal';
 import { CurrentUser } from '../../common/auth/current-user.decorator';
 import { Public } from '../../common/auth/public.decorator';
 import { IdempotencyKey } from '../idempotency';
+import { AuthTokensDto } from './dto/auth-response.dto';
 import { AuthService } from './auth.service';
 import type { AuthRequestMetadata } from './auth.types';
 import {
@@ -40,6 +46,7 @@ export class AuthController {
 
   @Throttle(credentialThrottle)
   @Public()
+  @ApiCreatedResponse({ type: AuthTokensDto })
   @Post('register')
   register(
     @IdempotencyKey() idempotencyKey: string,
@@ -55,6 +62,7 @@ export class AuthController {
 
   @Throttle(credentialThrottle)
   @Public()
+  @ApiOkResponse({ type: AuthTokensDto })
   @Post('sign-in')
   @HttpCode(HttpStatus.OK)
   signIn(
@@ -70,6 +78,7 @@ export class AuthController {
   }
 
   @Public()
+  @ApiOkResponse({ type: AuthTokensDto })
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   refresh(

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
 import type { DisplayCurrency, LedgerBalances } from '@/api/contracts';
@@ -19,6 +20,7 @@ export function LedgerBalanceCards({
   displayCurrency: DisplayCurrency;
   ledgerName: string;
 }) {
+  const { t } = useTranslation(['balances', 'common']);
   const own = BigInt(
     balances.members.find((member) => member.userId === currentUserId)
       ?.netMinor ?? '0'
@@ -37,7 +39,7 @@ export function LedgerBalanceCards({
             key={member.userId}
             divided={index > 0}
             leading={<Avatar name={member.displayName} />}
-            title={you ? 'You' : member.displayName}
+            title={you ? t('you') : member.displayName}
             trailing={
               <NetBalance
                 netMinor={member.netMinor}
@@ -60,6 +62,6 @@ export function LedgerBalanceCards({
       })}
     </View>
   ) : (
-    <Text selectable>No recorded balance.</Text>
+    <Text selectable>{t('noRecordedBalance')}</Text>
   );
 }

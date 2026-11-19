@@ -9,6 +9,7 @@ import {
   type PropsWithChildren,
   type RefObject
 } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   AccessibilityInfo,
   Keyboard,
@@ -26,6 +27,7 @@ import { Button } from '@/components/ui/button';
 import { DialogTriggerContext } from '@/components/ui/dialog-trigger';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
+import { i18n, isolate } from '@/i18n';
 import { cn } from '@/lib/utils';
 
 type DialogAction = {
@@ -80,7 +82,7 @@ export function DialogProvider({ children }: PropsWithChildren) {
     const next: DialogState = {
       title,
       body,
-      actions: actions?.length ? actions : [{ text: 'Done' }],
+      actions: actions?.length ? actions : [{ text: i18n.t('common:done') }],
       tone: options?.tone,
       trigger: trigger.current
     };
@@ -215,6 +217,7 @@ function HissabDialog({
   onClose: (action?: DialogAction) => void;
   onReady?: () => void;
 }) {
+  const { t, i18n } = useTranslation('common');
   const { fontScale, height } = useWindowDimensions();
   // Unlike a native Modal, the window overlay keeps an already-open keyboard.
   const [keyboardTop, setKeyboardTop] = useState(
@@ -269,7 +272,7 @@ function HissabDialog({
             onAccessibilityEscape={() => onClose()}
             onLayout={onReady}
             className="w-full max-w-[400px] shrink rounded-[20px] border-hairline border-border bg-popover p-6"
-            style={{ maxHeight: '100%' }}
+            style={{ maxHeight: '100%', direction: i18n.dir() }}
           >
             {tone ? (
               <Icon
@@ -296,7 +299,10 @@ function HissabDialog({
               ref={heading}
               accessible
               accessibilityRole="header"
-              accessibilityLabel={`${dialog.title}. ${dialog.body}`}
+              accessibilityLabel={t('dialogAnnouncement', {
+                title: isolate(dialog.title),
+                body: isolate(dialog.body)
+              })}
             >
               <Text className="text-xl font-semibold leading-7 text-popover-foreground">
                 {dialog.title}

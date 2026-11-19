@@ -1,8 +1,13 @@
-let refreshing: Promise<unknown> | undefined;
+const refreshing = new Map<number, Promise<unknown>>();
 
-export function runSingleRefresh<T>(refresh: () => Promise<T>): Promise<T> {
-  refreshing ??= refresh().finally(() => {
-    refreshing = undefined;
-  });
-  return refreshing as Promise<T>;
+export function runSingleRefresh<T>(
+  refresh: () => Promise<T>,
+  loginVersion = 0
+): Promise<T> {
+  let pending = refreshing.get(loginVersion);
+  if (!pending) {
+    pending = refresh().finally(() => refreshing.delete(loginVersion));
+    refreshing.set(loginVersion, pending);
+  }
+  return pending as Promise<T>;
 }

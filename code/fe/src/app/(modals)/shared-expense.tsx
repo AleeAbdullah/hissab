@@ -3,6 +3,7 @@ import { router, Stack } from 'expo-router';
 import { useNavigation, usePreventRemove } from 'expo-router/react-navigation';
 import { X } from 'lucide-react-native';
 import { useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { queryClient } from '@/api/query-client';
 import { Loading, Notice, Screen } from '@/components/ui';
@@ -20,6 +21,7 @@ import { useLedgerDraft } from '@/features/ledger/draft';
 import { usePersistentDraft } from '@/features/local-data/draft';
 
 export default function SharedExpenseScreen() {
+  const { t } = useTranslation(['expenses', 'common']);
   const dialog = useDialog();
   const navigation = useNavigation();
   const allowExit = useRef(false);
@@ -58,17 +60,16 @@ export default function SharedExpenseScreen() {
   if (!draft)
     return (
       <Screen>
-        <Notice title="Choose a ledger">
-          Open Add expense from an active group or friend ledger.
+        <Notice title={t('chooseALedger')}>
+          {t('openAddExpenseFromAnActiveGroup')}
         </Notice>
       </Screen>
     );
   if (draft.members.length < 2)
     return (
       <Screen>
-        <Notice title="Invite members first">
-          Shared records need at least two active members. Invited people can
-          take part after they accept.
+        <Notice title={t('inviteMembersFirst')}>
+          {t('sharedRecordsNeedAtLeastTwoActive')}
         </Notice>
       </Screen>
     );
@@ -81,12 +82,12 @@ export default function SharedExpenseScreen() {
       return;
     }
     dialog(
-      'Discard draft?',
-      'This removes the saved expense details from this device.',
+      t('confirmDiscardDraft'),
+      t('thisRemovesTheSavedExpenseDetailsFrom'),
       [
-        { text: 'Keep editing', style: 'cancel' },
+        { text: t('keepEditing'), style: 'cancel' },
         {
-          text: 'Discard draft',
+          text: t('discardDraft'),
           style: 'destructive',
           onPress: () => {
             allowExit.current = true;
@@ -102,14 +103,14 @@ export default function SharedExpenseScreen() {
     <>
       <Stack.Screen
         options={{
-          title: 'Shared expense',
+          title: t('sharedExpense'),
           gestureEnabled: !busy,
           headerRight: () => (
             <Button
               className="w-12 px-0"
               variant="ghost"
               disabled={busy}
-              accessibilityLabel="Close editor"
+              accessibilityLabel={t('closeEditor')}
               onPress={discard}
             >
               <Icon as={X} size={22} />

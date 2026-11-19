@@ -4,6 +4,7 @@ import type { Href } from 'expo-router';
 import { ArrowLeftRight, ChevronRight } from 'lucide-react-native';
 import type { LucideIcon } from 'lucide-react-native';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, View } from 'react-native';
 
 import type { DisplayCurrency } from '@/api/contracts';
@@ -23,6 +24,8 @@ import { listExpenses } from '@/features/expenses/api';
 import type { LedgerDraftMember } from '@/features/ledger/draft';
 import { CATEGORY_ICONS } from '@/features/personal/components/category-picker';
 import { listSettlements } from '@/features/settlements/api';
+import { isolate } from '@/i18n';
+import { categoryName } from '@/i18n/categories';
 import { formatMinorAmount } from '@/lib/money';
 
 type RecordItem = {
@@ -34,11 +37,6 @@ type RecordItem = {
   icon: LucideIcon;
   href: Href;
 };
-
-const RECORD_TABS = [
-  { value: 'expenses', label: 'Expenses' },
-  { value: 'payments', label: 'Payments' }
-] as const;
 
 export function LedgerActivity({
   displayCurrency,
@@ -53,6 +51,11 @@ export function LedgerActivity({
   members: LedgerDraftMember[];
   currentUserId: string;
 }) {
+  const { t } = useTranslation(['ledger', 'common']);
+  const recordTabs = [
+    { value: 'expenses', label: t('expenses') },
+    { value: 'payments', label: t('payments') }
+  ] as const;
   const [tab, setTab] = useState<'expenses' | 'payments'>('expenses');
   const expenses = useInfiniteQuery({
     queryKey: ['ledgers', ledgerId, 'expenses'],
@@ -70,7 +73,7 @@ export function LedgerActivity({
     members.map((member) => [member.userId, member.displayName])
   );
   const name = (userId: string, fallback: string) =>
-    userId === currentUserId ? 'You' : (names.get(userId) ?? fallback);
+    userId === currentUserId ? t('you') : (names.get(userId) ?? fallback);
   const expenseItems = expenses.data?.pages.flatMap((page) => page.items) ?? [];
   const settlementItems =
     settlements.data?.pages.flatMap((page) => page.items) ?? [];
@@ -79,14 +82,29 @@ export function LedgerActivity({
     tab === 'expenses'
       ? expenseItems.map((expense) => {
           const payer =
-            expense.payers.length === 1 && expense.payers[0]
-              ? name(expense.payers[0].userId, 'A member')
-              : `${expense.payers.length} people`;
+            expense.payers.length === 1 ? expense.payers[0] : undefined;
           return {
             id: expense.id,
             occurredAt: expense.occurredAt,
             title: expense.description,
-            subtitle: `${expense.status === 'DELETED' ? 'Deleted' : `${payer} paid`} · ${expense.category.name}`,
+            subtitle:
+              expense.status === 'DELETED'
+                ? t('deletedCategory', {
+                    category: categoryName(expense.category.code)
+                  })
+                : payer?.userId === currentUserId
+                  ? t('youPaidCategory', {
+                      category: categoryName(expense.category.code)
+                    })
+                  : !payer
+                    ? t('payersCategory', {
+                        count: expense.payers.length,
+                        category: categoryName(expense.category.code)
+                      })
+                    : t('paidCategory', {
+                        name: isolate(names.get(payer.userId) ?? t('aMember')),
+                        category: categoryName(expense.category.code)
+                      }),
             amount: formatMinorAmount(expense.totalMinor, displayCurrency),
             icon: CATEGORY_ICONS[expense.category.code],
             href: {
@@ -96,13 +114,25 @@ export function LedgerActivity({
           };
         })
       : settlementItems.map((settlement) => {
-          const to = name(settlement.toUserId, 'member');
+          const to = name(settlement.toUserId, t('member'));
           return {
             id: settlement.id,
             occurredAt: settlement.occurredAt,
-            title: `${name(settlement.fromUserId, 'Member')} paid ${to === 'You' ? 'you' : to}`,
+            title: t(
+              settlement.fromUserId === currentUserId
+                ? 'youPaidPerson'
+                : settlement.toUserId === currentUserId
+                  ? 'paidYou'
+                  : 'paidPerson',
+              {
+                name: isolate(name(settlement.fromUserId, t('member2'))),
+                recipient: isolate(to)
+              }
+            ),
             subtitle:
-              settlement.status === 'DELETED' ? 'Payment deleted' : 'Payment',
+              settlement.status === 'DELETED'
+                ? t('paymentDeleted')
+                : t('payment'),
             amount: formatMinorAmount(settlement.amountMinor, displayCurrency),
             icon: ArrowLeftRight,
             href: {
@@ -114,13 +144,13 @@ export function LedgerActivity({
   const empty = !records.length;
   return (
     <View className="gap-3">
-      <SectionLabel>RECORDS</SectionLabel>
-      <SegmentedControl options={RECORD_TABS} value={tab} onChange={setTab} />
+      <SectionLabel>{t('records')}</SectionLabel>
+      <SegmentedControl options={recordTabs} value={tab} onChange={setTab} />
       {selected.error ? (
         <>
           <ErrorMessage error={selected.error} />
           <Button variant="outline" onPress={() => selected.refetch()}>
-            <Text>Retry</Text>
+            <Text>{t('retry')}</Text>
           </Button>
         </>
       ) : null}
@@ -128,7 +158,7 @@ export function LedgerActivity({
         <ActivityIndicator className="text-primary" />
       ) : empty && selected.isSuccess ? (
         <Text selectable className="py-6 text-center text-muted-foreground">
-          No {tab} yet.
+          {t(tab === 'expenses' ? 'noExpenses' : 'noPayments')}
         </Text>
       ) : empty ? null : (
         groupByDay(records).map((day) => (
@@ -141,7 +171,11 @@ export function LedgerActivity({
                 title={record.title}
                 subtitle={record.subtitle}
                 divided={index > 0}
-                accessibilityLabel={`${record.title}. ${record.subtitle}. ${record.amount}`}
+                accessibilityLabel={t('label', {
+                  title: isolate(record.title),
+                  summary: isolate(record.subtitle),
+                  amount: isolate(record.amount)
+                })}
                 leading={<IconTile icon={record.icon} />}
                 trailing={
                   <Text
@@ -167,7 +201,9 @@ export function LedgerActivity({
           onPress={() => selected.fetchNextPage()}
         >
           <Text>
-            {selected.isFetchingNextPage ? 'Loading…' : `Load more ${tab}`}
+            {selected.isFetchingNextPage
+              ? t('loading')
+              : t(tab === 'expenses' ? 'moreExpenses' : 'morePayments')}
           </Text>
         </Button>
       ) : null}
@@ -181,7 +217,7 @@ export function LedgerActivity({
           role="link"
           className="justify-start px-0"
         >
-          <Text>See all in Activity</Text>
+          <Text>{t('seeAllInActivity')}</Text>
           <Icon as={ChevronRight} size={20} className="text-primary" />
         </Button>
       </Link>

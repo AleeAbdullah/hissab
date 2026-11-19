@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
 import { Stack } from 'expo-router/stack';
 import { ArrowLeftRight } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 
 import {
   ErrorMessage,
@@ -17,6 +18,7 @@ import { LedgerBalanceCards } from '@/features/balances/components/ledger-balanc
 import { groupQuery } from '@/features/groups/api';
 
 export default function GroupBalancesScreen() {
+  const { t } = useTranslation(['groups', 'common']);
   const { groupId } = useLocalSearchParams<{ groupId: string }>();
   const balances = useQuery(ledgerBalancesQuery(groupId));
   const group = useQuery(groupQuery(groupId));
@@ -39,7 +41,7 @@ export default function GroupBalancesScreen() {
             balances.error ??
             group.error ??
             profile.error ??
-            new Error('Group balances are unavailable.')
+            new Error(t('groupBalancesAreUnavailable'))
           }
         />
       </Screen>
@@ -48,19 +50,19 @@ export default function GroupBalancesScreen() {
   return (
     <Screen>
       <Stack.Screen
-        options={{ title: 'Balances', headerTitleAlign: 'center' }}
+        options={{ title: t('balances'), headerTitleAlign: 'center' }}
       />
       <ListRow
         href={{
           pathname: '/groups/[groupId]/simplified-debts',
           params: { groupId }
         }}
-        accessibilityLabel="Simplify debts. See the fewest payments to settle up."
-        title="Simplify debts"
-        subtitle="See the fewest payments to settle up"
+        accessibilityLabel={t('simplifyDebtsSeeTheFewestPaymentsToSettleUp')}
+        title={t('simplifyDebts')}
+        subtitle={t('seeTheFewestPaymentsToSettleUp')}
         leading={<IconTile icon={ArrowLeftRight} />}
       />
-      <SectionLabel>MEMBERS</SectionLabel>
+      <SectionLabel>{t('members2')}</SectionLabel>
       <LedgerBalanceCards
         balances={balances.data}
         canRemind={

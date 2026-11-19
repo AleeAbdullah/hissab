@@ -1,3 +1,5 @@
+import type { Locale } from '@/i18n/locale';
+
 export type DisplayCurrency = 'PKR' | 'USD' | 'GBP' | 'EUR' | 'AED' | 'SAR';
 
 export type AuthUser = {
@@ -5,6 +7,7 @@ export type AuthUser = {
   email: string;
   displayName: string;
   displayCurrency: DisplayCurrency;
+  locale: Locale;
 };
 
 export type AuthTokens = {
@@ -356,6 +359,7 @@ export type HomeRecentItem = {
 
 export type Home = {
   currency: DisplayCurrency;
+  locale: Locale;
   personal: { monthNetMinor: string };
   shared: {
     totalNetMinor: string;

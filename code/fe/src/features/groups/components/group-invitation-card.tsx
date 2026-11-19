@@ -1,9 +1,11 @@
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, View } from 'react-native';
 
 import type { GroupInvitation } from '@/api/contracts';
 import { Avatar, Card } from '@/components/ui';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
+import { isolate } from '@/i18n';
 
 export function GroupInvitationCard({
   invitation,
@@ -18,6 +20,7 @@ export function GroupInvitationCard({
   onAccept: () => void;
   onDecline: () => void;
 }) {
+  const { t } = useTranslation(['groups', 'common']);
   return (
     <Card>
       <View className="gap-3 p-4">
@@ -31,7 +34,9 @@ export function GroupInvitationCard({
               selectable
               className="text-[13px] leading-[18px] text-muted-foreground"
             >
-              Invited by {invitation.invitedByDisplayName}
+              {t('invitedBy', {
+                name: isolate(invitation.invitedByDisplayName)
+              })}
             </Text>
           </View>
         </View>
@@ -45,7 +50,7 @@ export function GroupInvitationCard({
               {loading ? (
                 <ActivityIndicator className="text-primary-foreground" />
               ) : (
-                <Text>Accept</Text>
+                <Text>{t('accept')}</Text>
               )}
             </Button>
           </View>
@@ -56,7 +61,7 @@ export function GroupInvitationCard({
               accessibilityState={{ disabled }}
               onPress={onDecline}
             >
-              <Text>Decline</Text>
+              <Text>{t('decline')}</Text>
             </Button>
           </View>
         </View>

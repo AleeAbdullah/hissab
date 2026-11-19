@@ -4,6 +4,7 @@ import { useNavigation, usePreventRemove } from 'expo-router/react-navigation';
 import { Stack } from 'expo-router/stack';
 import { X } from 'lucide-react-native';
 import { useCallback, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Platform, View } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
@@ -23,6 +24,7 @@ import {
 import { LARGE_TEXT_SCALE } from '@/lib/text-scale';
 
 export default function PersonalTransactionScreen() {
+  const { t } = useTranslation(['personal', 'common']);
   const dialog = useDialog();
   const profile = useQuery(profileQuery);
   const persistedDraft = usePersistentDraft<PersonalTransactionFormDraft>(
@@ -58,12 +60,12 @@ export default function PersonalTransactionScreen() {
   });
   const discard = () =>
     dialog(
-      'Discard draft?',
-      'This removes the saved personal transaction details from this device.',
+      t('discardDraftTitle'),
+      t('thisRemovesTheSavedPersonalTransactionDetailsFromThisDevice'),
       [
-        { text: 'Keep editing', style: 'cancel' },
+        { text: t('keepEditing'), style: 'cancel' },
         {
-          text: 'Discard draft',
+          text: t('discardDraft'),
           style: 'destructive',
           onPress: () => {
             persistedDraft.clear();
@@ -76,7 +78,8 @@ export default function PersonalTransactionScreen() {
     <View className="flex-1 bg-background">
       <Stack.Screen
         options={{
-          title: liveDraft?.type === 'INCOME' ? 'Add income' : 'Add expense',
+          title:
+            liveDraft?.type === 'INCOME' ? t('addIncome') : t('addExpense'),
           headerTitleAlign: 'center',
           headerShadowVisible: false,
           gestureEnabled: !create.isPending,
@@ -86,7 +89,7 @@ export default function PersonalTransactionScreen() {
                 variant="ghost"
                 size="compact"
                 disabled={create.isPending}
-                accessibilityLabel="Discard draft"
+                accessibilityLabel={t('discardDraft')}
                 onPress={discard}
               >
                 {/* The native toolbar has a fixed height, so its label stops growing at large text. */}
@@ -94,7 +97,7 @@ export default function PersonalTransactionScreen() {
                   maxFontSizeMultiplier={LARGE_TEXT_SCALE}
                   className="text-destructive"
                 >
-                  Discard draft
+                  {t('discardDraft')}
                 </Text>
               </Button>
             ) : null,
@@ -103,7 +106,7 @@ export default function PersonalTransactionScreen() {
               variant="ghost"
               className="w-12 px-0"
               disabled={create.isPending}
-              accessibilityLabel="Close add transaction"
+              accessibilityLabel={t('closeAddTransaction')}
               onPress={() => router.back()}
             >
               <Icon as={X} size={24} />
@@ -118,13 +121,13 @@ export default function PersonalTransactionScreen() {
               accessibilityRole="header"
               className="px-14 text-center text-xl font-semibold"
             >
-              {liveDraft?.type === 'INCOME' ? 'Add income' : 'Add expense'}
+              {liveDraft?.type === 'INCOME' ? t('addIncome') : t('addExpense')}
             </Text>
             <Button
               variant="ghost"
-              className="absolute right-0 w-12 px-0"
+              className="absolute end-0 w-12 px-0"
               disabled={create.isPending}
-              accessibilityLabel="Close add transaction"
+              accessibilityLabel={t('closeAddTransaction')}
               onPress={() => router.back()}
             >
               <Icon as={X} size={24} />
@@ -137,10 +140,10 @@ export default function PersonalTransactionScreen() {
                 size="compact"
                 className="px-0"
                 disabled={create.isPending}
-                accessibilityLabel="Discard draft"
+                accessibilityLabel={t('discardDraft')}
                 onPress={discard}
               >
-                <Text className="text-destructive">Discard draft</Text>
+                <Text className="text-destructive">{t('discardDraft')}</Text>
               </Button>
             </View>
           ) : null}
@@ -151,7 +154,7 @@ export default function PersonalTransactionScreen() {
       ) : profile.error || !profile.data ? (
         <View className="px-5">
           <ErrorMessage
-            error={profile.error ?? new Error('Profile is unavailable.')}
+            error={profile.error ?? new Error(t('profileIsUnavailable'))}
           />
         </View>
       ) : (

@@ -1,6 +1,7 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { Link, Stack } from 'expo-router';
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
 import { Icons } from '@/components/icons';
@@ -25,10 +26,12 @@ import {
 import { PersonalHistoryRow } from '@/features/personal/components/personal-history-row';
 import { SpendingChart } from '@/features/personal/components/spending-chart';
 import { spendingRange } from '@/features/personal/spending';
+import { isolate } from '@/i18n';
 import { absMinor, formatMinorAmount } from '@/lib/money';
 import { cn } from '@/lib/utils';
 
 export default function PersonalScreen() {
+  const { t } = useTranslation(['personal', 'common']);
   const profile = useQuery(profileQuery);
   const range = spendingRange('1M');
   const report = useQuery(personalReportQuery({ ...range, bucket: 'DAY' }));
@@ -53,7 +56,7 @@ export default function PersonalScreen() {
             profile.error ??
             report.error ??
             history.error ??
-            new Error('Personal data is unavailable.')
+            new Error(t('personalDataIsUnavailable'))
           }
         />
       </Screen>
@@ -71,12 +74,29 @@ export default function PersonalScreen() {
               surfaceVariants(),
               'flex-col items-stretch gap-4 p-4'
             )}
-            accessibilityLabel={`Spent this month, ${formatMinorAmount(report.data.expenseMinor, profile.data.displayCurrency)}. Income ${formatMinorAmount(report.data.incomeMinor, profile.data.displayCurrency)}. ${net < 0n ? 'Overspent' : 'Left over'} ${formatMinorAmount(absMinor(net), profile.data.displayCurrency)}. View spending report.`}
+            accessibilityLabel={t('homeSummary', {
+              spent: isolate(
+                formatMinorAmount(
+                  report.data.expenseMinor,
+                  profile.data.displayCurrency
+                )
+              ),
+              income: isolate(
+                formatMinorAmount(
+                  report.data.incomeMinor,
+                  profile.data.displayCurrency
+                )
+              ),
+              balanceLabel: net < 0n ? t('overspent') : t('leftOver'),
+              balance: isolate(
+                formatMinorAmount(absMinor(net), profile.data.displayCurrency)
+              )
+            })}
           >
             <View className="flex-row items-start justify-between gap-3">
               <View className="min-w-0 flex-1 gap-1">
                 <Text className="text-base font-normal text-muted-foreground">
-                  Spent this month
+                  {t('spentThisMonth')}
                 </Text>
                 <AmountText className="text-[32px] font-semibold leading-[38px]">
                   {formatMinorAmount(
@@ -85,7 +105,7 @@ export default function PersonalScreen() {
                   )}
                 </AmountText>
                 <Text className="text-[13px] font-normal leading-[18px] text-muted-foreground">
-                  Includes your share of shared expenses
+                  {t('includesYourShareOfSharedExpenses')}
                 </Text>
               </View>
               <Icon
@@ -101,17 +121,17 @@ export default function PersonalScreen() {
               buckets={report.data.buckets}
               range={range}
               displayCurrency={profile.data.displayCurrency}
-              emptyLabel="No spending yet this month"
+              emptyLabel={t('noSpendingYetThisMonth')}
             />
             <View className="flex-row gap-4 border-t border-border pt-3">
               {[
                 {
-                  label: 'Income',
+                  label: t('income'),
                   value: report.data.incomeMinor,
                   tone: BigInt(report.data.incomeMinor) > 0n
                 },
                 {
-                  label: net < 0n ? 'Overspent' : 'Left over',
+                  label: net < 0n ? t('overspent') : t('leftOver'),
                   value: absMinor(net),
                   tone: net !== 0n
                 }
@@ -124,7 +144,7 @@ export default function PersonalScreen() {
                     className={cn(
                       'text-base font-semibold tabular-nums leading-[22px]',
                       figure.tone &&
-                        (figure.label === 'Overspent'
+                        (figure.label === t('overspent')
                           ? 'text-destructive'
                           : 'text-positive')
                     )}
@@ -140,7 +160,7 @@ export default function PersonalScreen() {
           </Button>
         </Link>
         <View className="gap-2">
-          <SectionLabel>HISTORY</SectionLabel>
+          <SectionLabel>{t('historyHeading')}</SectionLabel>
           {recent.length ? (
             groupByDay(recent).map((day) => (
               <View key={day.title}>
@@ -156,7 +176,7 @@ export default function PersonalScreen() {
               </View>
             ))
           ) : (
-            <Text selectable>No history yet.</Text>
+            <Text selectable>{t('noHistoryYet')}</Text>
           )}
           <Link href="/personal/transactions" asChild>
             <Button
@@ -165,7 +185,7 @@ export default function PersonalScreen() {
               role="link"
               className="justify-start px-0"
             >
-              <Text>See all history</Text>
+              <Text>{t('seeAllHistory')}</Text>
               <Icon
                 as={Icons.chevronRight}
                 size={20}
@@ -180,13 +200,14 @@ export default function PersonalScreen() {
 }
 
 function AddTransactionButton() {
+  const { t } = useTranslation(['personal', 'common']);
   return (
     <Link href="/personal-transaction" asChild>
       <Button
         className="w-12 px-0"
         variant="ghost"
         role="link"
-        accessibilityLabel="Add personal transaction"
+        accessibilityLabel={t('addPersonalTransaction')}
       >
         <Icon as={Icons.add} size={24} className="text-primary" />
       </Button>

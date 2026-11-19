@@ -6,14 +6,9 @@ import type {
   ActivityUser,
   DisplayCurrency
 } from '@/api/contracts';
+import { i18n, isolate } from '@/i18n';
 import { formatDate } from '@/lib/dates';
 import { absMinor, formatMinorAmount } from '@/lib/money';
-
-const recordVerbs: Record<string, string> = {
-  CREATED: 'added',
-  REPLACED: 'edited',
-  DELETED: 'deleted'
-};
 
 // One Activity row: a short title, one detail line and an optional amount.
 export function activityRow(
@@ -22,18 +17,21 @@ export function activityRow(
   currentUserId: string
 ) {
   const name = (user?: ActivityUser | null) =>
-    !user
-      ? 'Someone'
-      : user.userId === currentUserId
-        ? 'You'
-        : user.displayName;
+    isolate(
+      !user
+        ? i18n.t('activity:someone')
+        : user.userId === currentUserId
+          ? i18n.t('activity:you')
+          : user.displayName
+    );
   const object = (user?: ActivityUser | null) =>
-    user?.userId === currentUserId ? 'you' : name(user);
+    user?.userId === currentUserId
+      ? isolate(i18n.t('activity:youObject'))
+      : name(user);
+  const own = item.actor?.userId === currentUserId;
   const actor = name(item.actor);
   const deleted = item.eventType.endsWith('_DELETED');
-  const verb = recordVerbs[item.eventType.split('_').at(-1) ?? ''] ?? 'updated';
   const ledger = item.ledger?.name;
-
   if (item.area === 'EXPENSE' || item.area === 'SETTLEMENT') {
     const expense =
       item.area === 'EXPENSE' ? (item.details as ActivityExpenseDetails) : null;
@@ -42,26 +40,57 @@ export function activityRow(
         ? (item.details as ActivitySettlementDetails)
         : null;
     const occurredAt = (expense ?? payment)?.occurredAt;
-    // Compare against the same day label the list heading uses, so "dated" only shows when it differs.
     const dated =
       occurredAt &&
       activityDayLabel(occurredAt) !== activityDayLabel(item.createdAt)
-        ? `dated ${formatDate(occurredAt, occurredAt.slice(0, 4) !== item.createdAt.slice(0, 4))}`
+        ? i18n.t('activity:dated', {
+            date: isolate(
+              formatDate(
+                occurredAt,
+                occurredAt.slice(0, 4) !== item.createdAt.slice(0, 4)
+              )
+            )
+          })
         : undefined;
     const net = expense ? BigInt(expense.viewerNetMinor) : 0n;
     const effect =
-      !expense || deleted
+      !expense || deleted || net === 0n
         ? undefined
-        : net > 0n
-          ? `you lent ${formatMinorAmount(absMinor(net), displayCurrency)}`
-          : net < 0n
-            ? `you borrowed ${formatMinorAmount(absMinor(net), displayCurrency)}`
-            : undefined;
+        : i18n.t(net > 0n ? 'activity:lent' : 'activity:borrowed', {
+            amount: isolate(formatMinorAmount(absMinor(net), displayCurrency))
+          });
+    const action = item.eventType.endsWith('_CREATED')
+      ? own
+        ? 'activity:recordAddedSelf'
+        : 'activity:recordAdded'
+      : item.eventType.endsWith('_REPLACED')
+        ? own
+          ? 'activity:recordEditedSelf'
+          : 'activity:recordEdited'
+        : deleted
+          ? own
+            ? 'activity:recordDeletedSelf'
+            : 'activity:recordDeleted'
+          : own
+            ? 'activity:recordUpdatedSelf'
+            : 'activity:recordUpdated';
     return {
       title: expense
         ? expense.description
-        : `${name(payment?.from)} paid ${object(payment?.to)}`,
-      subtitle: [`${actor} ${verb}`, ledger, dated].filter(Boolean).join(' · '),
+        : i18n.t(
+            payment?.from?.userId === currentUserId
+              ? 'activity:paidByYou'
+              : payment?.to?.userId === currentUserId
+                ? 'activity:paidToYou'
+                : 'activity:paidPerson',
+            {
+              from: name(payment?.from),
+              to: name(payment?.to)
+            }
+          ),
+      subtitle: [i18n.t(action, { actor }), ledger && isolate(ledger), dated]
+        .filter(Boolean)
+        .join(' · '),
       amount: formatMinorAmount(
         expense ? expense.totalMinor : (payment?.amountMinor ?? '0'),
         displayCurrency
@@ -72,41 +101,73 @@ export function activityRow(
       deleted
     };
   }
-
   if (item.area === 'GROUP') {
     const details = item.details as ActivityGroupDetails;
-    const group = details.name ?? ledger ?? 'a group';
+    const group = isolate(details.name ?? ledger ?? i18n.t('activity:aGroup'));
     const subject = object(details.subjectUser);
-    const titles: Record<string, string> = {
-      GROUP_CREATED: `${actor} created ${group}`,
-      GROUP_UPDATED: `${actor} renamed the group to ${group}`,
-      GROUP_INVITATION_SENT: `${actor} invited ${subject} to ${group}`,
-      GROUP_INVITATION_CANCELLED: `${actor} cancelled ${subject === 'you' ? 'your' : `${subject}’s`} invitation to ${group}`,
-      GROUP_INVITATION_ACCEPTED: `${actor} joined ${group}`,
-      GROUP_INVITATION_DECLINED: `${actor} declined the invitation to ${group}`,
-      GROUP_MEMBER_LEFT: `${actor} left ${group}`,
+    const keys = {
+      GROUP_CREATED: own
+        ? 'activity:groupCreatedSelf'
+        : 'activity:groupCreated',
+      GROUP_UPDATED: own
+        ? 'activity:groupUpdatedSelf'
+        : 'activity:groupUpdated',
+      GROUP_INVITATION_SENT: own
+        ? 'activity:groupInvitedSelf'
+        : 'activity:groupInvited',
+      GROUP_INVITATION_CANCELLED:
+        details.subjectUser?.userId === currentUserId
+          ? own
+            ? 'activity:groupCancelledYoursSelf'
+            : 'activity:groupCancelledYours'
+          : own
+            ? 'activity:groupCancelledSelf'
+            : 'activity:groupCancelled',
+      GROUP_INVITATION_ACCEPTED: own
+        ? 'activity:groupJoinedSelf'
+        : 'activity:groupJoined',
+      GROUP_INVITATION_DECLINED: own
+        ? 'activity:groupDeclinedSelf'
+        : 'activity:groupDeclined',
+      GROUP_MEMBER_LEFT: own ? 'activity:groupLeftSelf' : 'activity:groupLeft',
       GROUP_ARCHIVED:
         details.reason === 'LAST_MEMBER_LEFT' || !item.actor
-          ? `${group} was archived`
-          : `${actor} archived ${group}`
-    };
-    return { title: titles[item.eventType] ?? `${actor} updated ${group}` };
+          ? 'activity:groupArchivedAuto'
+          : own
+            ? 'activity:groupArchivedSelf'
+            : 'activity:groupArchived'
+    } as const;
+    const key =
+      keys[item.eventType as keyof typeof keys] ??
+      (own ? 'activity:groupChangedSelf' : 'activity:groupChanged');
+    return { title: i18n.t(key, { actor, group, subject }) };
   }
-
   const other = object(item.counterparty);
-  const own = item.actor?.userId === currentUserId;
-  const theirs = own ? `${other}’s` : 'your';
-  const titles: Record<string, string> = {
-    CONNECTION_CREATED: `${actor} sent ${other} a friend request`,
-    CONNECTION_ACCEPTED: `${actor} accepted ${theirs} friend request`,
-    CONNECTION_DECLINED: `${actor} declined ${theirs} friend request`,
+  const keys = {
+    CONNECTION_CREATED: own
+      ? 'activity:friendRequestedSelf'
+      : 'activity:friendRequested',
+    CONNECTION_ACCEPTED: own
+      ? 'activity:friendAcceptedSelf'
+      : 'activity:friendAcceptedYours',
+    CONNECTION_DECLINED: own
+      ? 'activity:friendDeclinedSelf'
+      : 'activity:friendDeclinedYours',
     CONNECTION_CANCELLED: own
-      ? `You cancelled your friend request to ${other}`
-      : `${actor} cancelled their friend request`,
-    CONNECTION_USER_BLOCKED: `${actor} blocked ${other}`,
-    CONNECTION_USER_UNBLOCKED: `${actor} unblocked ${other}`
+      ? 'activity:friendCancelledOwn'
+      : 'activity:friendCancelled',
+    CONNECTION_USER_BLOCKED: own ? 'activity:blockedSelf' : 'activity:blocked',
+    CONNECTION_USER_UNBLOCKED: own
+      ? 'activity:unblockedSelf'
+      : 'activity:unblocked'
+  } as const;
+  return {
+    title: i18n.t(
+      keys[item.eventType as keyof typeof keys] ??
+        (own ? 'activity:friendChangedSelf' : 'activity:friendChanged'),
+      { actor, other }
+    )
   };
-  return { title: titles[item.eventType] ?? `${actor} updated a friendship` };
 }
 
 export function activityDayLabel(value: string) {
@@ -114,8 +175,8 @@ export function activityDayLabel(value: string) {
   const today = new Date();
   const yesterday = new Date(today);
   yesterday.setUTCDate(today.getUTCDate() - 1);
-  if (sameDay(date, today)) return 'Today';
-  if (sameDay(date, yesterday)) return 'Yesterday';
+  if (sameDay(date, today)) return i18n.t('common:today');
+  if (sameDay(date, yesterday)) return i18n.t('common:yesterday');
   return formatDate(date, date.getUTCFullYear() !== today.getUTCFullYear());
 }
 

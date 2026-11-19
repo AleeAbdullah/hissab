@@ -5,6 +5,7 @@ import {
   UsersRound,
   type LucideIcon
 } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
 import type { ActivityItem, DisplayCurrency } from '@/api/contracts';
@@ -12,6 +13,7 @@ import { IconTile, ListRow } from '@/components/ui';
 import { Text } from '@/components/ui/text';
 import { activityRow } from '@/features/activity/presentation';
 import { CATEGORY_ICONS } from '@/features/personal/components/category-picker';
+import { isolate } from '@/i18n';
 import { cn } from '@/lib/utils';
 
 export function ActivityEventRow({
@@ -25,6 +27,7 @@ export function ActivityEventRow({
   item: ActivityItem;
   divided?: boolean;
 }) {
+  const { t } = useTranslation(['activity', 'common']);
   const row = activityRow(item, displayCurrency, currentUserId);
   const icon: LucideIcon =
     'categoryCode' in row && row.categoryCode
@@ -55,14 +58,18 @@ export function ActivityEventRow({
     <ListRow
       href={href}
       divided={divided}
-      accessibilityLabel={[
-        row.title,
-        subtitle,
-        amount && (deleted ? `${amount}, deleted` : amount),
-        effect
-      ]
-        .filter(Boolean)
-        .join('. ')}
+      accessibilityLabel={t('rowLabel', {
+        title: isolate(row.title),
+        subtitle: isolate(subtitle ?? ''),
+        amount: isolate(
+          amount
+            ? deleted
+              ? t('deletedAmount', { amount: isolate(amount) })
+              : amount
+            : ''
+        ),
+        effect: isolate(effect ?? '')
+      })}
       leading={<IconTile icon={icon} />}
       title={row.title}
       subtitle={subtitle}

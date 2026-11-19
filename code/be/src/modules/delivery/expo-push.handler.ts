@@ -4,6 +4,7 @@ import { sql } from 'drizzle-orm';
 
 import type { EnvironmentVariables } from '../../config/environment';
 import { DatabaseService } from '../../database/database.service';
+import { renderNotificationCopy } from './copy';
 import {
   type ClaimedOutboxEvent,
   type OutboxHandler,
@@ -22,6 +23,7 @@ interface NotificationRow {
   title: string;
   body: string;
   payload: Record<string, unknown>;
+  locale: string;
   push_enabled: boolean;
   kind_enabled: boolean;
 }
@@ -124,6 +126,9 @@ export class ExpoPushHandler implements OutboxHandler, OnModuleInit {
 
     let scheduledReceipt = false;
     let retryableFailure = false;
+    const rendered =
+      renderNotificationCopy(notification.locale, notification.payload.copy) ??
+      notification;
     for (let offset = 0; offset < pending.rows.length; offset += 100) {
       const deliveries = pending.rows.slice(offset, offset + 100);
       const response = await this.postJson<ExpoTicketResponse>(
@@ -131,8 +136,8 @@ export class ExpoPushHandler implements OutboxHandler, OnModuleInit {
         deliveries.map((delivery) => ({
           to: delivery.token,
           ...(notification.kind === 'REMINDER' ? {} : { sound: 'default' }),
-          title: notification.title,
-          body: notification.body,
+          title: rendered.title,
+          body: rendered.body,
           collapseId: notification.id,
           tag: notification.id,
           data: {
@@ -260,6 +265,7 @@ export class ExpoPushHandler implements OutboxHandler, OnModuleInit {
               notification.kind, notification.event_type,
               notification.aggregate_id, notification.ledger_id,
               notification.title, notification.body, notification.payload,
+              recipient.locale,
               coalesce(preference.push_enabled, true) as push_enabled,
               case notification.kind
                 when 'EXPENSE' then coalesce(preference.expense_activity_enabled, true)
@@ -268,9 +274,10 @@ export class ExpoPushHandler implements OutboxHandler, OnModuleInit {
                 when 'REMINDER' then coalesce(preference.reminders_enabled, true)
               end as kind_enabled
        from notifications as notification
+       join users as recipient on recipient.id = notification.recipient_user_id
        left join notification_preferences as preference
          on preference.user_id = notification.recipient_user_id
-       where notification.id = $1::uuid`,
+       where notification.id = $1::uuid and recipient.status = 'ACTIVE'`,
       [id],
     );
     return result.rows[0] ?? null;

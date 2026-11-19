@@ -18,29 +18,36 @@ export function buildExpenseBody(input: {
 }):
   | { body: CreateExpenseDto }
   | {
-      error: string;
+      error:
+        | 'enterAnAmountGreaterThanZero'
+        | 'enterADescription'
+        | 'chooseACategory'
+        | 'enterAValidDateAsYyyyMm'
+        | 'payerAmountsMustAddUpToThe'
+        | 'chooseAtLeastOneParticipant'
+        | 'exactSplitAmountsMustAddUpTo'
+        | 'eachSelectedPersonNeedsAnAmountGreater';
       field:
         'amount' | 'description' | 'category' | 'date' | 'payers' | 'split';
     } {
   const totalMinor = parseMinorAmount(input.amount);
   if (!totalMinor || BigInt(totalMinor) <= 0n)
-    return { error: 'Enter an amount greater than zero.', field: 'amount' };
+    return { error: 'enterAnAmountGreaterThanZero', field: 'amount' };
   if (!input.description.trim())
-    return { error: 'Enter a description.', field: 'description' };
+    return { error: 'enterADescription', field: 'description' };
   if (!input.categoryCode)
-    return { error: 'Choose a category.', field: 'category' };
+    return { error: 'chooseACategory', field: 'category' };
   const occurredAt = dateToIso(input.occurredDate);
-  if (!occurredAt)
-    return { error: 'Enter a valid date as YYYY-MM-DD.', field: 'date' };
+  if (!occurredAt) return { error: 'enterAValidDateAsYyyyMm', field: 'date' };
   const payers = allocationsFor(input.payerUserIds, input.payerAmounts);
   if ('error' in payers) return { ...payers, field: 'payers' };
   if (sum(payers.map((payer) => payer.amountMinor)) !== BigInt(totalMinor))
     return {
-      error: 'Payer amounts must add up to the total.',
+      error: 'payerAmountsMustAddUpToThe',
       field: 'payers'
     };
   if (!input.participantUserIds.length)
-    return { error: 'Choose at least one participant.', field: 'split' };
+    return { error: 'chooseAtLeastOneParticipant', field: 'split' };
   if (input.splitMethod === 'EQUAL') {
     return {
       body: {
@@ -66,7 +73,7 @@ export function buildExpenseBody(input: {
     BigInt(totalMinor)
   )
     return {
-      error: 'Exact split amounts must add up to the total.',
+      error: 'exactSplitAmountsMustAddUpTo',
       field: 'split'
     };
   return {
@@ -116,7 +123,7 @@ function allocationsFor(userIds: string[], values: AmountInputs) {
         !allocation.amountMinor || BigInt(allocation.amountMinor) <= 0n
     )
   )
-    return { error: 'Each selected person needs an amount greater than zero.' };
+    return { error: 'eachSelectedPersonNeedsAnAmountGreater' as const };
   return allocations as { userId: string; amountMinor: string }[];
 }
 

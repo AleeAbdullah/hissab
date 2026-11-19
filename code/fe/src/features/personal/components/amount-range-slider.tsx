@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
-import { View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { I18nManager, View } from 'react-native';
 
 import type { DisplayCurrency } from '@/api/contracts';
 import { formatMinorAmount } from '@/lib/money';
@@ -19,6 +20,7 @@ export function AmountRangeSlider({
   upperMinor: string;
   onChange: (minimum: string, maximum: string) => void;
 }) {
+  const { t } = useTranslation(['personal', 'common']);
   const [width, setWidth] = useState(0);
   const track = useRef<View>(null);
   const trackLeft = useRef(0);
@@ -79,7 +81,8 @@ export function AmountRangeSlider({
       }}
       onStartShouldSetResponder={() => true}
       onResponderGrant={(event) => {
-        const x = event.nativeEvent.pageX - trackLeft.current;
+        const physicalX = event.nativeEvent.pageX - trackLeft.current;
+        const x = I18nManager.isRTL ? width - physicalX : physicalX;
         const distanceMinimum = Math.abs(x - minimumX);
         const distanceMaximum = Math.abs(x - maximumX);
         moving.current =
@@ -90,7 +93,11 @@ export function AmountRangeSlider({
         move(x);
       }}
       onResponderMove={(event) =>
-        move(event.nativeEvent.pageX - trackLeft.current)
+        move(
+          I18nManager.isRTL
+            ? width - (event.nativeEvent.pageX - trackLeft.current)
+            : event.nativeEvent.pageX - trackLeft.current
+        )
       }
     >
       <View className="mx-6 h-2 rounded-full bg-secondary" />
@@ -99,7 +106,7 @@ export function AmountRangeSlider({
           <View
             className="bg-primary/50 absolute h-2 rounded-full"
             style={{
-              left: minimumX,
+              start: minimumX,
               width: Math.max(0, maximumX - minimumX)
             }}
           />
@@ -110,10 +117,12 @@ export function AmountRangeSlider({
             <View
               key={thumb.kind}
               className="absolute h-12 w-12 items-center justify-center"
-              style={{ left: thumb.x - THUMB_REGION / 2 }}
+              style={{ start: thumb.x - THUMB_REGION / 2 }}
               accessible
               accessibilityRole="adjustable"
-              accessibilityLabel={`${thumb.kind} amount`}
+              accessibilityLabel={t(
+                thumb.kind === 'minimum' ? 'minimumAmount' : 'maximumAmount'
+              )}
               accessibilityValue={{
                 text: formatMinorAmount(thumb.value.toString(), displayCurrency)
               }}

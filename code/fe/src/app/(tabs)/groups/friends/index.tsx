@@ -3,6 +3,7 @@ import { Link } from 'expo-router';
 import { Stack } from 'expo-router/stack';
 import { Plus, UserPlus } from 'lucide-react-native';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
 import {
@@ -27,8 +28,10 @@ import {
   connectionsQuery,
   pendingRequestsQuery
 } from '@/features/connections/api';
+import { isolate } from '@/i18n';
 
 export default function FriendsScreen() {
+  const { t } = useTranslation(['connections', 'common']);
   const [search, setSearch] = useState('');
   const query = search.trim().toLowerCase();
   const connections = useQuery(connectionsQuery);
@@ -46,19 +49,21 @@ export default function FriendsScreen() {
     (request) => request.direction === 'incoming'
   ).length;
   const sent = pending.length - incoming;
-  const requestSummary = [
-    incoming ? `${incoming} waiting for you` : null,
-    sent ? `${sent} sent` : null
-  ]
-    .filter(Boolean)
-    .join(' · ');
+  const requestSummary =
+    incoming && sent
+      ? t('requestSummary', { incoming, sent })
+      : incoming
+        ? t('waitingForYou', { count: incoming })
+        : sent
+          ? t('sent', { count: sent })
+          : '';
 
   return (
     <>
       <Stack.Screen
         options={{
           headerSearchBarOptions: {
-            placeholder: 'Search',
+            placeholder: t('search'),
             placement: 'stacked',
             hideWhenScrolling: false,
             autoCapitalize: 'none',
@@ -70,7 +75,7 @@ export default function FriendsScreen() {
                 className="w-12 px-0"
                 variant="ghost"
                 role="link"
-                accessibilityLabel="Add friend"
+                accessibilityLabel={t('addFriend')}
               >
                 <Icon as={Plus} size={24} className="text-primary" />
               </Button>
@@ -98,15 +103,17 @@ export default function FriendsScreen() {
           {pending.length && !query ? (
             <ListRow
               href="/groups/friends/requests"
-              title="Requests"
+              title={t('requests')}
               subtitle={requestSummary}
-              accessibilityLabel={`Friend requests, ${requestSummary}`}
+              accessibilityLabel={t('friendRequests', {
+                summary: isolate(requestSummary)
+              })}
               leading={<IconTile icon={UserPlus} />}
               trailing={
                 incoming ? (
                   <View className="min-w-6 items-center rounded-full bg-primary px-2 py-0.5">
                     <Text className="text-xs font-semibold leading-4 text-primary-foreground">
-                      {incoming > 99 ? '99+' : incoming}
+                      {incoming > 99 ? t('overCount', { count: 99 }) : incoming}
                     </Text>
                   </View>
                 ) : null
@@ -115,7 +122,7 @@ export default function FriendsScreen() {
           ) : null}
           {filtered.length ? (
             <View className="gap-1">
-              <SectionLabel>DIRECT BALANCES</SectionLabel>
+              <SectionLabel>{t('directBalances')}</SectionLabel>
               <View>
                 {filtered.map((friend, index) => {
                   // A ledger with no records is absent from balances, so it is settled.
@@ -130,13 +137,13 @@ export default function FriendsScreen() {
                       title={friend.displayName}
                       subtitle={friend.email ?? undefined}
                       divided={index > 0}
-                      accessibilityLabel={[
-                        friend.displayName,
-                        friend.email,
-                        netBalanceLabel(netMinor, currency)
-                      ]
-                        .filter(Boolean)
-                        .join(', ')}
+                      accessibilityLabel={t('rowLabel', {
+                        name: isolate(friend.displayName),
+                        email: isolate(friend.email ?? ''),
+                        balance: isolate(
+                          netBalanceLabel(netMinor, currency) ?? ''
+                        )
+                      })}
                       href={{
                         pathname: '/groups/friends/[friendId]',
                         params: {
@@ -156,7 +163,7 @@ export default function FriendsScreen() {
                 selectable
                 className="pt-2 text-[13px] leading-[18px] text-muted-foreground"
               >
-                Group balances aren’t included.
+                {t('groupBalancesArenTIncluded')}
               </Text>
             </View>
           ) : connections.isSuccess ? (
@@ -166,13 +173,13 @@ export default function FriendsScreen() {
                 className="text-center text-[17px] leading-[23px] text-muted-foreground"
               >
                 {query
-                  ? 'No friends match your search.'
-                  : 'No friends yet. Add someone by the exact email address on their account.'}
+                  ? t('noFriendsMatchYourSearch')
+                  : t('noFriendsYetAddSomeoneByTheExactEmailAddress')}
               </Text>
               {!query ? (
                 <Link href="/connection-new" asChild>
                   <Button role="link">
-                    <Text>Add friend</Text>
+                    <Text>{t('addFriend')}</Text>
                   </Button>
                 </Link>
               ) : null}

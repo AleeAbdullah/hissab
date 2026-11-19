@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { ChevronDown, ChevronUp } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   Keyboard,
@@ -44,11 +45,6 @@ export type PersonalTransactionFormDraft = {
 
 type FieldErrors = Partial<Record<PersonalTransactionField, string>>;
 
-const TYPES: { label: string; value: PersonalTransactionType }[] = [
-  { label: 'Expense', value: 'EXPENSE' },
-  { label: 'Income', value: 'INCOME' }
-];
-
 export function PersonalTransactionEditor({
   displayCurrency,
   error,
@@ -66,6 +62,11 @@ export function PersonalTransactionEditor({
   saving: boolean;
   transaction?: PersonalTransaction;
 }) {
+  const { t } = useTranslation(['personal', 'common']);
+  const TYPES: { label: string; value: PersonalTransactionType }[] = [
+    { label: t('expense'), value: 'EXPENSE' },
+    { label: t('income'), value: 'INCOME' }
+  ];
   const insets = useSafeAreaInsets();
   const [keyboardHeight, setKeyboardHeight] = useState(
     () => Keyboard.metrics()?.height ?? 0
@@ -165,7 +166,7 @@ export function PersonalTransactionEditor({
       type
     });
     if ('error' in built) {
-      setFieldErrors({ [built.field]: built.error });
+      setFieldErrors({ [built.field]: t(built.error) });
       scrollRef.current?.scrollTo({
         y: Math.max((fieldY.current[built.field] ?? 0) - 16, 0),
         animated: true
@@ -176,12 +177,12 @@ export function PersonalTransactionEditor({
     onSave(built.body);
   };
   const detailsLabel =
-    type === 'INCOME' ? 'Add source or note' : 'Add merchant or note';
+    type === 'INCOME' ? t('addSourceOrNote') : t('addMerchantOrNote');
   const saveLabel = transaction
-    ? 'Save changes'
+    ? t('saveChanges')
     : type === 'INCOME'
-      ? 'Save income'
-      : 'Save expense';
+      ? t('saveIncome')
+      : t('saveExpense');
 
   return (
     <View
@@ -204,7 +205,7 @@ export function PersonalTransactionEditor({
             onChange={changeType}
           />
           <Text className="text-[13px] leading-[18px] text-muted-foreground">
-            Only you can see this.
+            {t('onlyYouCanSeeThis')}
           </Text>
         </View>
 
@@ -231,8 +232,8 @@ export function PersonalTransactionEditor({
           }}
         >
           <Field
-            label="What was it for?"
-            placeholder={type === 'INCOME' ? 'e.g. Salary' : 'e.g. Groceries'}
+            label={t('whatWasItFor')}
+            placeholder={type === 'INCOME' ? t('egSalary') : t('egGroceries')}
             value={description}
             error={fieldErrors.description}
             onChangeText={(value) => {
@@ -248,7 +249,9 @@ export function PersonalTransactionEditor({
             fieldY.current.category = event.nativeEvent.layout.y;
           }}
         >
-          <Text className="text-[13px] text-muted-foreground">Category</Text>
+          <Text className="text-[13px] text-muted-foreground">
+            {t('category')}
+          </Text>
           <CategoryPicker
             categories={availableCategories}
             loading={categories.isLoading}
@@ -288,7 +291,10 @@ export function PersonalTransactionEditor({
           <Button
             variant="ghost"
             className="min-h-12 w-full justify-start gap-2 px-0"
-            accessibilityLabel={`${detailsLabel}, ${detailsOpen ? 'expanded' : 'collapsed'}`}
+            accessibilityLabel={t(
+              detailsOpen ? 'detailsExpanded' : 'detailsCollapsed',
+              { label: detailsLabel }
+            )}
             accessibilityState={{ expanded: detailsOpen }}
             onPress={() => setDetailsOpen((open) => !open)}
           >
@@ -304,12 +310,12 @@ export function PersonalTransactionEditor({
           {detailsOpen ? (
             <>
               <Field
-                label={type === 'INCOME' ? 'Source' : 'Merchant'}
+                label={type === 'INCOME' ? t('source') : t('merchant')}
                 value={merchantOrSource}
                 onChangeText={setMerchantOrSource}
               />
               <Field
-                label="Notes"
+                label={t('notes')}
                 multiline
                 value={notes}
                 onChangeText={setNotes}

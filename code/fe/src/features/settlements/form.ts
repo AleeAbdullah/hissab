@@ -8,16 +8,19 @@ export function buildSettlementBody(input: {
   fromUserId: string;
   occurredDate: string;
   toUserId: string;
-}): { body: CreateSettlementDto } | { error: string } {
+}):
+  | { body: CreateSettlementDto }
+  | {
+      error:
+        'amountPositive' | 'choosePeople' | 'differentPeople' | 'validDate';
+    } {
   const amountMinor = parseMinorAmount(input.amount);
   if (!amountMinor || BigInt(amountMinor) <= 0n)
-    return { error: 'Enter an amount greater than zero.' };
-  if (!input.fromUserId || !input.toUserId)
-    return { error: 'Choose who paid and who received the payment.' };
-  if (input.fromUserId === input.toUserId)
-    return { error: 'The payer and recipient must be different people.' };
+    return { error: 'amountPositive' };
+  if (!input.fromUserId || !input.toUserId) return { error: 'choosePeople' };
+  if (input.fromUserId === input.toUserId) return { error: 'differentPeople' };
   const occurredAt = dateToIso(input.occurredDate);
-  if (!occurredAt) return { error: 'Enter a valid date as YYYY-MM-DD.' };
+  if (!occurredAt) return { error: 'validDate' };
   return {
     body: {
       amountMinor,

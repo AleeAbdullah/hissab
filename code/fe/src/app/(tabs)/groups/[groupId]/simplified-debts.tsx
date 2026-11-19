@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
 import { Stack } from 'expo-router/stack';
+import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
 import {
@@ -16,9 +17,11 @@ import { Text } from '@/components/ui/text';
 import { profileQuery } from '@/features/account/api';
 import { ledgerBalancesQuery } from '@/features/balances/api';
 import { simplifyLedgerBalances } from '@/features/balances/simplify';
+import { isolate } from '@/i18n';
 import { formatMinorAmount } from '@/lib/money';
 
 export default function SimplifiedDebtsScreen() {
+  const { t } = useTranslation(['groups', 'common']);
   const { groupId } = useLocalSearchParams<{ groupId: string }>();
   const balances = useQuery(ledgerBalancesQuery(groupId));
   const profile = useQuery(profileQuery);
@@ -31,7 +34,7 @@ export default function SimplifiedDebtsScreen() {
           error={
             balances.error ??
             profile.error ??
-            new Error('Simplified debts are unavailable.')
+            new Error(t('simplifiedDebtsAreUnavailable'))
           }
         />
       </Screen>
@@ -41,33 +44,38 @@ export default function SimplifiedDebtsScreen() {
   if (!payments)
     return (
       <Screen>
-        <ErrorMessage
-          error={new Error('Group balances do not add up to zero.')}
-        />
+        <ErrorMessage error={new Error(t('groupBalancesDoNotAddUpToZero'))} />
       </Screen>
     );
 
   return (
     <Screen>
-      <Stack.Screen options={{ title: 'Simplified debts' }} />
-      <SectionLabel>SUGGESTED PAYMENTS</SectionLabel>
+      <Stack.Screen options={{ title: t('simplifiedDebts') }} />
+      <SectionLabel>{t('suggestedPayments')}</SectionLabel>
       {payments.length ? (
         <View>
           {payments.map((payment, index) => {
             const payer =
               payment.fromUserId === profile.data.id
-                ? 'You'
+                ? t('you')
                 : payment.fromDisplayName;
             const recipient =
               payment.toUserId === profile.data.id
-                ? 'you'
+                ? t('you2')
                 : payment.toDisplayName;
             return (
               <ListRow
                 key={`${payment.fromUserId}:${payment.toUserId}`}
                 divided={index > 0}
                 leading={<Avatar name={payment.fromDisplayName} />}
-                title={`${payer} ${payer === 'You' ? 'pay' : 'pays'} ${recipient}`}
+                title={t(
+                  payment.fromUserId === profile.data.id
+                    ? 'youPay'
+                    : payment.toUserId === profile.data.id
+                      ? 'paysYou'
+                      : 'personPays',
+                  { name: isolate(payer), recipient: isolate(recipient) }
+                )}
                 trailing={
                   <Text
                     selectable
@@ -84,16 +92,15 @@ export default function SimplifiedDebtsScreen() {
           })}
         </View>
       ) : (
-        <Notice title="Everyone is settled">
-          No suggested payments are needed for this group.
+        <Notice title={t('everyoneIsSettled')}>
+          {t('noSuggestedPaymentsAreNeededForThisGroup')}
         </Notice>
       )}
       <Text
         selectable
         className="text-[13px] leading-[18px] text-muted-foreground"
       >
-        Suggestions only. Nothing changes until someone records one of these
-        payments.
+        {t('suggestionsOnlyNothingChangesUntilSomeoneRecordsOneOfThese')}
       </Text>
     </Screen>
   );

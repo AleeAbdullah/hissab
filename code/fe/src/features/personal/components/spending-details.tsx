@@ -9,6 +9,7 @@ import {
   ChevronUp
 } from 'lucide-react-native';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, View } from 'react-native';
 
 import type { DisplayCurrency } from '@/api/contracts';
@@ -47,6 +48,8 @@ import {
   spendingShareLabel,
   type SpendingPeriod
 } from '@/features/personal/spending';
+import { isolate } from '@/i18n';
+import { categoryName } from '@/i18n/categories';
 import { formatMinorAmount } from '@/lib/money';
 import { cn } from '@/lib/utils';
 
@@ -55,6 +58,7 @@ export function SpendingDetails({
 }: {
   displayCurrency: DisplayCurrency;
 }) {
+  const { t } = useTranslation(['personal', 'common']);
   const [period, setPeriod] = useState<SpendingPeriod>('1M');
   const [graph, setGraph] = useState<'line' | 'bar' | 'donut'>('line');
   const [showAmounts, setShowAmounts] = useState(false);
@@ -118,25 +122,25 @@ export function SpendingDetails({
   return (
     <>
       <View className={cn('gap-1', refreshing && 'opacity-50')}>
-        <Text className="text-base text-muted-foreground">Spent</Text>
+        <Text className="text-base text-muted-foreground">{t('spent')}</Text>
         {report.data ? (
           <AmountText className="text-[32px] font-semibold leading-[38px]">
             {formatMinorAmount(report.data.expenseMinor, displayCurrency)}
           </AmountText>
         ) : (
           <Text
-            accessibilityLabel="Spending amount is loading"
+            accessibilityLabel={t('spendingAmountIsLoading')}
             className="text-[32px] font-semibold leading-[38px] text-muted-foreground"
           >
-            —
+            {t('loadingPlaceholder')}
           </Text>
         )}
         {period === '1M' ? (
-          <View className="-ml-3 flex-row items-center">
+          <View className="-ms-3 flex-row items-center">
             <Button
               variant="ghost"
               className="w-11 px-0"
-              accessibilityLabel="Previous month"
+              accessibilityLabel={t('previousMonth')}
               onPress={() => setMonthOffset(monthOffset - 1)}
             >
               <Icon as={ChevronLeft} size={20} className="text-primary" />
@@ -144,12 +148,15 @@ export function SpendingDetails({
             <Text className="text-[15px] leading-[22px] text-muted-foreground">
               {shown.monthOffset
                 ? spendingRangeLabel(shownRange)
-                : `${SPENDING_PERIOD_NAMES[shownPeriod]} · ${spendingRangeLabel(shownRange)}`}
+                : t('periodRange', {
+                    period: SPENDING_PERIOD_NAMES[shownPeriod],
+                    range: isolate(spendingRangeLabel(shownRange))
+                  })}
             </Text>
             <Button
               variant="ghost"
               className="w-11 px-0"
-              accessibilityLabel="Next month"
+              accessibilityLabel={t('nextMonth')}
               disabled={monthOffset === 0}
               onPress={() => setMonthOffset(monthOffset + 1)}
             >
@@ -164,8 +171,10 @@ export function SpendingDetails({
           </View>
         ) : (
           <Text className="text-[15px] leading-[22px] text-muted-foreground">
-            {SPENDING_PERIOD_NAMES[shownPeriod]} ·{' '}
-            {spendingRangeLabel(shownRange)}
+            {t('periodRange', {
+              period: SPENDING_PERIOD_NAMES[shownPeriod],
+              range: isolate(spendingRangeLabel(shownRange))
+            })}
           </Text>
         )}
       </View>
@@ -178,12 +187,12 @@ export function SpendingDetails({
           <View className="min-w-0 flex-1 flex-row items-center gap-2">
             <Text className="shrink text-[15px] leading-[22px] text-muted-foreground">
               {graph === 'donut'
-                ? 'By category'
+                ? t('byCategory')
                 : spendingSeriesName(graph, shownBucket)}
             </Text>
             {refreshing ? (
               <ActivityIndicator
-                accessibilityLabel="Refreshing spending"
+                accessibilityLabel={t('refreshingSpending')}
                 className="text-primary"
               />
             ) : null}
@@ -196,14 +205,16 @@ export function SpendingDetails({
               {
                 value: 'line',
                 icon: ChartLine,
-                label: 'Cumulative line graph'
+                label: t('cumulativeLineGraph')
               },
               {
                 value: 'bar',
                 icon: ChartColumn,
-                label: `${spendingSeriesName('bar', shownBucket)} bar graph`
+                label: t('barGraph', {
+                  series: spendingSeriesName('bar', shownBucket)
+                })
               },
-              { value: 'donut', icon: ChartPie, label: 'Category donut graph' }
+              { value: 'donut', icon: ChartPie, label: t('categoryDonutGraph') }
             ]}
           />
         </View>
@@ -211,7 +222,7 @@ export function SpendingDetails({
           {report.isLoading ? (
             <SpendingPlotFrame>
               <ActivityIndicator
-                accessibilityLabel="Loading spending"
+                accessibilityLabel={t('loadingSpending')}
                 className="text-primary"
               />
             </SpendingPlotFrame>
@@ -219,10 +230,10 @@ export function SpendingDetails({
             <SpendingPlotFrame>
               <View className="w-full gap-2">
                 <ErrorMessage
-                  error={report.error ?? new Error('Spending is unavailable.')}
+                  error={report.error ?? new Error(t('spendingIsUnavailable'))}
                 />
                 <Button variant="outline" onPress={() => report.refetch()}>
-                  <Text>Try again</Text>
+                  <Text>{t('tryAgain')}</Text>
                 </Button>
               </View>
             </SpendingPlotFrame>
@@ -236,7 +247,7 @@ export function SpendingDetails({
             ) : categoriesLoading ? (
               <SpendingPlotFrame>
                 <ActivityIndicator
-                  accessibilityLabel="Loading category graph"
+                  accessibilityLabel={t('loadingCategoryGraph')}
                   className="text-primary"
                 />
               </SpendingPlotFrame>
@@ -250,7 +261,7 @@ export function SpendingDetails({
               range={shownRange}
               bucket={shownBucket}
               displayCurrency={displayCurrency}
-              emptyLabel="No spending recorded for this period."
+              emptyLabel={t('noSpendingRecordedForThisPeriod')}
             />
           )}
         </View>
@@ -258,7 +269,16 @@ export function SpendingDetails({
       <SegmentedControl
         options={SPENDING_PERIODS.map((value) => ({
           value,
-          label: value,
+          label: t(
+            (
+              {
+                '1W': 'periodWeek',
+                '1M': 'periodMonth',
+                '6M': 'periodSixMonths',
+                '1Y': 'periodYear'
+              } as const
+            )[value]
+          ),
           accessibilityLabel: SPENDING_PERIOD_NAMES[value]
         }))}
         value={period}
@@ -269,7 +289,7 @@ export function SpendingDetails({
       />
       {report.data && !report.error && hasSpending ? (
         <View className="mt-4 gap-3">
-          <SectionLabel>CATEGORIES</SectionLabel>
+          <SectionLabel>{t('categories')}</SectionLabel>
           {categoryError ? (
             <View className="gap-2">
               <ErrorMessage error={categoryError} />
@@ -282,11 +302,11 @@ export function SpendingDetails({
                   });
                 }}
               >
-                <Text>Retry categories</Text>
+                <Text>{t('retryCategories')}</Text>
               </Button>
             </View>
           ) : categoriesLoading ? (
-            <Text>Loading categories…</Text>
+            <Text>{t('loadingCategoriesProgress')}</Text>
           ) : (
             <View>
               {categoryRows.map((category, rank) => {
@@ -302,7 +322,11 @@ export function SpendingDetails({
                   <ListRow
                     key={category.code}
                     divided={rank > 0}
-                    accessibilityLabel={`${category.name}, ${amount}, ${share} of spending. Show transactions.`}
+                    accessibilityLabel={t('categorySpending', {
+                      category: categoryName(category.code),
+                      amount: isolate(amount),
+                      share: isolate(share)
+                    })}
                     href={{
                       pathname: '/personal/transactions',
                       params: {
@@ -313,8 +337,8 @@ export function SpendingDetails({
                       }
                     }}
                     leading={<IconTile icon={CATEGORY_ICONS[category.code]} />}
-                    title={category.name}
-                    subtitle={`${share} of spending`}
+                    title={categoryName(category.code)}
+                    subtitle={t('shareOfSpending', { share: isolate(share) })}
                     trailing={
                       <Text
                         selectable
@@ -336,8 +360,15 @@ export function SpendingDetails({
             onPress={() => setShowAmounts(!showAmounts)}
           >
             <Text>
-              {showAmounts ? 'Hide' : 'Show'} amounts by{' '}
-              {shownBucket === 'MONTH' ? 'month' : 'day'}
+              {t(
+                shownBucket === 'MONTH'
+                  ? showAmounts
+                    ? 'hideMonthly'
+                    : 'showMonthly'
+                  : showAmounts
+                    ? 'hideDaily'
+                    : 'showDaily'
+              )}
             </Text>
             <Icon
               as={showAmounts ? ChevronUp : ChevronDown}

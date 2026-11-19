@@ -1,3 +1,5 @@
+import type { Locale } from '../../common/locale';
+
 export interface AuthRequestMetadata {
   deviceName?: string;
   ipAddress?: string;
@@ -9,6 +11,7 @@ export interface AuthUser {
   email: string;
   displayName: string;
   displayCurrency: string;
+  locale: Locale;
 }
 
 export interface AuthTokens {

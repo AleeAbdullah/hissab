@@ -1,10 +1,12 @@
+import { i18n, intlLocale } from '@/i18n';
+
 const dateValue = (value: string | Date) =>
   value instanceof Date
     ? value
     : new Date(value.length === 10 ? `${value}T00:00:00.000Z` : value);
 
 export function formatDate(value: string | Date, includeYear = true) {
-  return new Intl.DateTimeFormat('en-GB', {
+  return new Intl.DateTimeFormat(intlLocale(), {
     day: 'numeric',
     month: 'short',
     ...(includeYear ? { year: 'numeric' as const } : {}),
@@ -16,7 +18,7 @@ export function formatDate(value: string | Date, includeYear = true) {
 
 export function formatTime(value: string | Date) {
   return (
-    new Intl.DateTimeFormat('en-GB', {
+    new Intl.DateTimeFormat(intlLocale(), {
       hour: '2-digit',
       minute: '2-digit',
       hourCycle: 'h23',
@@ -30,9 +32,12 @@ export function formatDateTime(value: string | Date) {
 }
 
 export function formatPeriod(from?: string, to?: string) {
-  if (!from && !to) return 'All time';
-  if (!from) return to ? `Until ${formatDate(to)}` : 'All time';
-  if (!to) return `From ${formatDate(from)}`;
+  if (!from && !to) return i18n.t('common:allTime');
+  if (!from)
+    return to
+      ? i18n.t('common:untilDate', { date: formatDate(to) })
+      : i18n.t('common:allTime');
+  if (!to) return i18n.t('common:fromDate', { date: formatDate(from) });
   if (from === to) return formatDate(from);
   const start = dateValue(from);
   const end = dateValue(to);
@@ -45,8 +50,10 @@ export function formatPeriod(from?: string, to?: string) {
   ).getUTCDate();
   if (sameMonth && start.getUTCDate() === 1 && end.getUTCDate() === monthEnd)
     return formatMonth(start);
-  if (sameMonth) return `${start.getUTCDate()}–${formatDate(to)}`;
-  return `${formatDate(from, !sameYear)} – ${formatDate(to)}`;
+  return i18n.t('common:dateRange', {
+    from: formatDate(from, !sameYear),
+    to: formatDate(to)
+  });
 }
 
 export function currentPeriodDates(
@@ -96,8 +103,10 @@ export function shiftDate(value: string, days: number) {
 }
 
 export function dateLabel(value: string, today = todayDate()) {
-  if (value === today) return `Today · ${formatDate(value)}`;
-  if (value === shiftDate(today, -1)) return `Yesterday · ${formatDate(value)}`;
+  if (value === today)
+    return i18n.t('common:todayDate', { date: formatDate(value) });
+  if (value === shiftDate(today, -1))
+    return i18n.t('common:yesterdayDate', { date: formatDate(value) });
   return dateToIso(value) ? formatDate(value) : value;
 }
 
@@ -113,9 +122,16 @@ export function localPickerDate(value?: string) {
 }
 
 export function formatMonth(value: string | Date) {
-  return new Intl.DateTimeFormat('en-GB', {
+  return new Intl.DateTimeFormat(intlLocale(), {
     month: 'long',
     year: 'numeric',
+    timeZone: 'UTC'
+  }).format(dateValue(value));
+}
+
+export function formatShortMonth(value: string | Date) {
+  return new Intl.DateTimeFormat(intlLocale(), {
+    month: 'short',
     timeZone: 'UTC'
   }).format(dateValue(value));
 }

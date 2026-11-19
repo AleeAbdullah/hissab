@@ -11,6 +11,7 @@ import {
   type LucideIcon
 } from 'lucide-react-native';
 import { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   AccessibilityInfo,
   Modal,
@@ -25,17 +26,18 @@ import { ErrorMessage } from '@/components/ui';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
+import { isolate } from '@/i18n';
 
 export const activityAreas: {
   label: string;
   value?: ActivityArea;
   icon: LucideIcon;
 }[] = [
-  { label: 'All', icon: Layers },
-  { label: 'Expenses', value: 'EXPENSE', icon: FileText },
-  { label: 'Payments', value: 'SETTLEMENT', icon: ArrowLeftRight },
-  { label: 'Groups', value: 'GROUP', icon: UsersRound },
-  { label: 'Friends', value: 'CONNECTION', icon: UserRound }
+  { label: 'all', icon: Layers },
+  { label: 'expenses', value: 'EXPENSE', icon: FileText },
+  { label: 'payments', value: 'SETTLEMENT', icon: ArrowLeftRight },
+  { label: 'groups', value: 'GROUP', icon: UsersRound },
+  { label: 'friends', value: 'CONNECTION', icon: UserRound }
 ];
 export type ActivityFilters = { area?: ActivityArea; ledgerId?: string };
 export type ActivityLedgerChoice = {
@@ -62,6 +64,7 @@ export function ActivityFilterSheet({
   onClose: () => void;
   onApply: (filters: ActivityFilters) => void;
 }) {
+  const { t } = useTranslation(['activity', 'common']);
   const area = filters.area;
   const [ledgerId, setLedgerId] = useState(filters.ledgerId);
   const [expanded, setExpanded] = useState<'ledger' | null>('ledger');
@@ -70,7 +73,10 @@ export function ActivityFilterSheet({
   const section = (id: 'ledger', title: string, summary?: string) => (
     <Button
       variant="ghost"
-      accessibilityLabel={`${title}, ${summary ?? ''}`}
+      accessibilityLabel={t(summary ? 'summaryLabel' : 'plainLabel', {
+        title: isolate(title),
+        summary: isolate(summary ?? '')
+      })}
       accessibilityState={{ expanded: expanded === id }}
       onPress={() => setExpanded(expanded === id ? null : id)}
       className="min-h-16 justify-start rounded-none border-b border-border px-0 py-2"
@@ -96,7 +102,10 @@ export function ActivityFilterSheet({
       key={id}
       variant="ghost"
       role="radio"
-      accessibilityLabel={`${title}${subtitle ? `, ${subtitle}` : ''}`}
+      accessibilityLabel={t(subtitle ? 'summaryLabel' : 'plainLabel', {
+        title: isolate(title),
+        summary: isolate(subtitle ?? '')
+      })}
       accessibilityState={{ selected, checked: selected }}
       onPress={onPress}
       className="w-full justify-start rounded-none border-b border-border py-3"
@@ -151,13 +160,13 @@ export function ActivityFilterSheet({
               className="min-w-0 flex-1"
             >
               <Text className="text-[32px] font-semibold leading-[38px]">
-                Filters
+                {t('filters')}
               </Text>
             </View>
             <Button
               className="w-12 px-0"
               variant="ghost"
-              accessibilityLabel="Close filters"
+              accessibilityLabel={t('closeFilters')}
               onPress={onClose}
             >
               <Icon as={X} size={24} />
@@ -172,25 +181,25 @@ export function ActivityFilterSheet({
               <View className="gap-2">
                 <ErrorMessage error={error} />
                 <Button variant="outline" onPress={onRetry}>
-                  <Text>Retry loading ledgers</Text>
+                  <Text>{t('retryLoadingLedgers')}</Text>
                 </Button>
               </View>
             ) : null}
             {section(
               'ledger',
-              'Group or friend',
+              t('groupOrFriend'),
               ledgers.find((item) => item.id === ledgerId)?.name ??
-                'All groups and friends'
+                t('allGroupsAndFriends')
             )}
             {expanded === 'ledger' ? (
               <>
                 {choice(
                   'all-ledgers',
-                  'All groups and friends',
+                  t('allGroupsAndFriends'),
                   !ledgerId,
                   () => setLedgerId(undefined)
                 )}
-                {loading ? <Text>Loading ledgers…</Text> : null}
+                {loading ? <Text>{t('loadingLedgers')}</Text> : null}
                 {[undefined, 'GROUP', 'DIRECT'].map((type) => {
                   const choices = ledgers.filter((item) => item.type === type);
                   return choices.length ? (
@@ -200,10 +209,10 @@ export function ActivityFilterSheet({
                         className="pt-4 text-[15px] font-semibold text-muted-foreground"
                       >
                         {type === 'GROUP'
-                          ? 'Groups'
+                          ? t('groups')
                           : type === 'DIRECT'
-                            ? 'Friends'
-                            : 'Selected history'}
+                            ? t('friends')
+                            : t('selectedHistory')}
                       </Text>
                       {choices.map((item) =>
                         choice(
@@ -222,14 +231,16 @@ export function ActivityFilterSheet({
           </ScrollView>
           <View className="gap-2 border-t border-border px-5 py-3">
             <Button onPress={() => onApply({ area, ledgerId })}>
-              <Text>See results</Text>
+              <Text>{t('seeResults')}</Text>
             </Button>
             <Button
               variant="ghost"
               disabled={!count}
               onPress={() => setLedgerId(undefined)}
             >
-              <Text className="text-primary">Clear filters ({count})</Text>
+              <Text className="text-primary">
+                {t('clearFilters', { count })}
+              </Text>
             </Button>
           </View>
         </SafeAreaView>

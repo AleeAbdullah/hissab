@@ -1,6 +1,7 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
+import { copy } from './copy';
 import type { EnvironmentVariables } from '../../config/environment';
 import { DatabaseService } from '../../database/database.service';
 import {
@@ -75,11 +76,15 @@ export class EmailHandler implements OutboxHandler, OnModuleInit {
     if (typeof token !== 'string') {
       return; // Already sent; the token was scrubbed afterwards.
     }
-    const result = await this.database.pool.query<{ email: string | null }>(
-      `select email from users where id = $1::uuid and status = 'ACTIVE'`,
+    const result = await this.database.pool.query<{
+      email: string | null;
+      locale: string;
+    }>(
+      `select email, locale from users where id = $1::uuid and status = 'ACTIVE'`,
       [event.aggregateId],
     );
     const email = result.rows[0]?.email;
+    const locale = result.rows[0]?.locale;
     if (email) {
       // The token stays in the URL fragment so it never reaches web server logs.
       const link = `${this.config.getOrThrow<string>('PUBLIC_WEB_URL')}/reset-password/#token=${encodeURIComponent(token)}`;
@@ -89,15 +94,15 @@ export class EmailHandler implements OutboxHandler, OnModuleInit {
       await this.send(
         {
           to: email,
-          subject: 'Reset your Tally Stick password',
+          subject: copy(locale, 'reset.subject'),
           text: [
-            'Someone asked to reset the password for your Tally Stick account.',
+            copy(locale, 'reset.intro'),
             '',
-            `Open this link on the phone where Tally Stick is installed to choose a new password. It expires in ${minutes} minutes and works once.`,
+            copy(locale, 'reset.instructions', { minutes: String(minutes) }),
             '',
             link,
             '',
-            "If you didn't ask for this, ignore this email. Your password won't change.",
+            copy(locale, 'reset.ignore'),
           ].join('\n'),
         },
         event.id,

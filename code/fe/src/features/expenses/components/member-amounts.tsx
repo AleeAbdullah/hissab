@@ -1,4 +1,5 @@
 import { Check } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import { TextInput, View } from 'react-native';
 
 import type { DisplayCurrency } from '@/api/contracts';
@@ -9,9 +10,11 @@ import { Icon } from '@/components/ui/icon';
 import { surfaceVariants } from '@/components/ui/surface';
 import { Text } from '@/components/ui/text';
 import type { LedgerDraftMember } from '@/features/ledger/draft';
+import { isolate } from '@/i18n';
+import { logicalTextAlign } from '@/i18n/locale';
 import { cn } from '@/lib/utils';
 
-// One row per member: tick and name on the left, their amount on the right.
+// One row per member: tick and name at the start, their amount at the end.
 export function MemberAmounts({
   amounts,
   displayCurrency,
@@ -35,6 +38,7 @@ export function MemberAmounts({
   onSelectionChange: (userIds: string[]) => void;
   onAmountRef?: (userId: string, node: TextInput | null) => void;
 }) {
+  const { t, i18n } = useTranslation(['expenses', 'common']);
   return (
     <View>
       <SectionLabel>{label}</SectionLabel>
@@ -92,15 +96,18 @@ export function MemberAmounts({
                 <TextInput
                   ref={(node) => onAmountRef?.(member.userId, node)}
                   inputAccessoryViewID={DONE_BAR_ID}
-                  accessibilityLabel={`${member.displayName} amount`}
+                  accessibilityLabel={t('memberAmount', {
+                    name: isolate(member.displayName)
+                  })}
                   keyboardType="decimal-pad"
-                  placeholder="0.00"
+                  placeholder={t('amountPlaceholder')}
                   editable={!disabled}
                   value={amounts[member.userId] ?? ''}
                   onChangeText={(value) =>
                     onAmountsChange({ ...amounts, [member.userId]: value })
                   }
-                  className="flex-1 py-0 text-right text-base leading-5 text-foreground placeholder:text-muted-foreground"
+                  className="flex-1 py-0 text-base leading-5 text-foreground placeholder:text-muted-foreground"
+                  style={{ textAlign: logicalTextAlign('end', i18n.language) }}
                 />
               </View>
             ) : null}

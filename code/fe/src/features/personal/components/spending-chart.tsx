@@ -1,5 +1,6 @@
 import { useState, type PropsWithChildren } from 'react';
-import { View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { I18nManager, View } from 'react-native';
 import { BarChart, LineChart } from 'react-native-gifted-charts';
 
 import type { DisplayCurrency, PersonalReportBucket } from '@/api/contracts';
@@ -14,9 +15,10 @@ import {
   spendingSeriesName,
   type SpendingBucket
 } from '@/features/personal/spending';
+import { isolate } from '@/i18n';
+import { logicalTextAlign } from '@/i18n/locale';
 import { formatMinorAmount } from '@/lib/money';
 import { THEME_VARIABLES, useThemeVariable } from '@/lib/theme';
-import { cn } from '@/lib/utils';
 
 const SCALE_STRIP_HEIGHT = 24;
 const AXIS_LABEL_WIDTH = 64;
@@ -60,6 +62,7 @@ export function SpendingChart({
   compact?: boolean;
   emptyLabel: string;
 }) {
+  const { t } = useTranslation(['personal', 'common']);
   const [measuredWidth, setMeasuredWidth] = useState(0);
   const primary = useThemeVariable(THEME_VARIABLES.primary);
   const border = useThemeVariable(THEME_VARIABLES.border);
@@ -119,15 +122,22 @@ export function SpendingChart({
       className="gap-2"
       accessible
       accessibilityRole="image"
-      accessibilityLabel={`${spendingSeriesName(variant, bucket)} spending, ${formatMinorAmount(total, displayCurrency)}. ${
-        points
-          .filter((point) => BigInt(point.amountMinor) > 0n)
-          .map(
-            (point) =>
-              `${periodLabel(point.period, bucket)}: ${formatMinorAmount(point.amountMinor, displayCurrency)}`
-          )
-          .join('; ') || 'No spending recorded.'
-      }`}
+      accessibilityLabel={t('chartLabel', {
+        series: spendingSeriesName(variant, bucket),
+        amount: isolate(formatMinorAmount(total, displayCurrency)),
+        items:
+          points
+            .filter((point) => BigInt(point.amountMinor) > 0n)
+            .map((point) =>
+              t('itemValue', {
+                label: isolate(periodLabel(point.period, bucket)),
+                value: isolate(
+                  formatMinorAmount(point.amountMinor, displayCurrency)
+                )
+              })
+            )
+            .join(t('listSeparator')) || t('noSpendingRecorded')
+      })}
     >
       <View
         style={{ height: plotHeight }}
@@ -156,7 +166,12 @@ export function SpendingChart({
               </View>
             )}
             {width > 0 ? (
-              <View style={{ height: chartHeight }}>
+              <View
+                style={{
+                  height: chartHeight,
+                  transform: [{ scaleX: I18nManager.isRTL ? -1 : 1 }]
+                }}
+              >
                 {isBar ? (
                   <BarChart
                     {...sharedAxisProps}
@@ -216,6 +231,7 @@ function AxisLabels({
   labels: { text: string; x: number }[];
   width: number;
 }) {
+  const { i18n } = useTranslation();
   const lefts = labels.map((label, index) =>
     index === 0
       ? 0
@@ -234,17 +250,16 @@ function AxisLabels({
               key={index}
               // Same cap as the scale label: wider text would split "14 Nov" mid-word in its box.
               maxFontSizeMultiplier={1.5}
-              className={cn(
-                'text-xs text-muted-foreground',
-                index === 0
-                  ? 'text-left'
-                  : index === labels.length - 1
-                    ? 'text-right'
-                    : 'text-center'
-              )}
+              className="text-xs text-muted-foreground"
               style={{
+                textAlign:
+                  index === 0
+                    ? logicalTextAlign('start', i18n.language)
+                    : index === labels.length - 1
+                      ? logicalTextAlign('end', i18n.language)
+                      : 'center',
                 width: AXIS_LABEL_WIDTH,
-                marginLeft:
+                marginStart:
                   lefts[index] -
                   (index === 0 ? 0 : lefts[index - 1] + AXIS_LABEL_WIDTH)
               }}

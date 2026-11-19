@@ -1,9 +1,11 @@
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, View } from 'react-native';
 
 import type { ConnectionRequest } from '@/api/contracts';
 import { Avatar, Card } from '@/components/ui';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
+import { isolate } from '@/i18n';
 
 export function ConnectionRequestCard({
   request,
@@ -24,6 +26,7 @@ export function ConnectionRequestCard({
   onReport?: () => void;
   onBlock?: () => void;
 }) {
+  const { t } = useTranslation(['connections', 'common']);
   const incoming = request.direction === 'incoming';
   return (
     <Card>
@@ -38,9 +41,7 @@ export function ConnectionRequestCard({
               selectable
               className="text-xs leading-4 text-muted-foreground"
             >
-              {incoming
-                ? 'Wants to connect with you'
-                : 'Friend request sent'}
+              {incoming ? t('wantsToConnectWithYou') : t('friendRequestSent')}
             </Text>
           </View>
           {incoming && (onReport || onBlock) ? (
@@ -49,10 +50,12 @@ export function ConnectionRequestCard({
                 <Button
                   size="compact"
                   variant="outline"
-                  accessibilityLabel={`Report ${request.personDisplayName}`}
+                  accessibilityLabel={t('report', {
+                    name: isolate(request.personDisplayName)
+                  })}
                   onPress={onReport}
                 >
-                  <Text>Report</Text>
+                  <Text>{t('report2')}</Text>
                 </Button>
               ) : null}
               {onBlock ? (
@@ -60,10 +63,12 @@ export function ConnectionRequestCard({
                   size="compact"
                   variant="destructiveOutline"
                   disabled={disabled}
-                  accessibilityLabel={`Block ${request.personDisplayName}`}
+                  accessibilityLabel={t('block', {
+                    name: isolate(request.personDisplayName)
+                  })}
                   onPress={onBlock}
                 >
-                  <Text>Block</Text>
+                  <Text>{t('block2')}</Text>
                 </Button>
               ) : null}
             </View>
@@ -83,7 +88,7 @@ export function ConnectionRequestCard({
                 {loading ? (
                   <ActivityIndicator className="text-primary-foreground" />
                 ) : (
-                  <Text>Accept</Text>
+                  <Text>{t('accept')}</Text>
                 )}
               </Button>
             </View>
@@ -93,7 +98,7 @@ export function ConnectionRequestCard({
                 disabled={disabled}
                 onPress={onDecline}
               >
-                <Text>Decline</Text>
+                <Text>{t('decline')}</Text>
               </Button>
             </View>
           </View>
@@ -110,7 +115,7 @@ export function ConnectionRequestCard({
             {loading ? (
               <ActivityIndicator className="text-destructive" />
             ) : (
-              <Text>Cancel request</Text>
+              <Text>{t('cancelRequest')}</Text>
             )}
           </Button>
         )}

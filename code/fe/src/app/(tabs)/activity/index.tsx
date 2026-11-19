@@ -2,6 +2,7 @@ import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { ListFilter, X } from 'lucide-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   AccessibilityInfo,
   ActivityIndicator,
@@ -40,10 +41,12 @@ import {
 } from '@/features/activity/presentation';
 import { connectionsQuery } from '@/features/connections/api';
 import { groupsQuery } from '@/features/groups/api';
+import { isolate } from '@/i18n';
 import { usePullToRefresh } from '@/lib/pull-to-refresh';
 import { THEME_VARIABLES, useThemeVariable } from '@/lib/theme';
 
 export default function ActivityScreen() {
+  const { t } = useTranslation(['activity', 'common']);
   const primary = useThemeVariable(THEME_VARIABLES.primary);
   const params = useLocalSearchParams<{
     area?: string;
@@ -69,16 +72,13 @@ export default function ActivityScreen() {
     () => activity.data?.pages.flatMap((page) => page.items) ?? [],
     [activity.data]
   );
-  const sections = useMemo(
-    () => groupByDay(collapseInvitations(items)),
-    [items]
-  );
+  const sections = groupByDay(collapseInvitations(items));
   const ledgers: ActivityLedgerChoice[] = [
     ...(groups.data ?? []).map((group) => ({
       id: group.id,
       name: group.name,
       type: 'GROUP' as const,
-      subtitle: group.status === 'ARCHIVED' ? 'Archived' : ''
+      subtitle: group.status === 'ARCHIVED' ? t('archived') : ''
     })),
     ...(connections.data ?? []).map((connection) => ({
       id: connection.ledgerId,
@@ -97,8 +97,8 @@ export default function ActivityScreen() {
         items.find((item) => item.ledger?.id === filters.ledgerId)?.ledger
           ?.name ??
         params.ledgerName ??
-        'Archived ledger',
-      subtitle: 'Selected ledger · history'
+        t('archivedLedger'),
+      subtitle: t('selectedLedgerHistory')
     });
   }
   const selectedLedgerName = ledgers.find(
@@ -148,7 +148,7 @@ export default function ActivityScreen() {
             <Button
               className="w-12 px-0"
               variant="ghost"
-              accessibilityLabel="Filter by group or friend"
+              accessibilityLabel={t('filterByGroupOrFriend')}
               accessibilityState={{ expanded: open }}
               onPress={(event) => {
                 filterButton.current = event.currentTarget;
@@ -189,7 +189,10 @@ export default function ActivityScreen() {
               {activityAreas.map((area) => (
                 <Chip
                   key={area.value ?? 'all'}
-                  label={area.label}
+                  label={t(
+                    area.label as
+                      'all' | 'expenses' | 'payments' | 'groups' | 'friends'
+                  )}
                   selected={filters.area === area.value}
                   onPress={() => setArea(area.value)}
                 />
@@ -199,9 +202,11 @@ export default function ActivityScreen() {
               <View className="flex-row">
                 <Chip
                   selected
-                  label={selectedLedgerName ?? 'Selected ledger'}
+                  label={selectedLedgerName ?? t('selectedLedger')}
                   trailingIcon={X}
-                  accessibilityLabel={`Remove ${selectedLedgerName} filter`}
+                  accessibilityLabel={t('removeFilter', {
+                    name: isolate(selectedLedgerName ?? t('selectedLedger'))
+                  })}
                   onPress={() => apply({ ...filters, ledgerId: undefined })}
                 />
               </View>
@@ -241,7 +246,7 @@ export default function ActivityScreen() {
                 {activity.isFetchingNextPage ? (
                   <ActivityIndicator className="text-primary" />
                 ) : (
-                  <Text>Load more activity</Text>
+                  <Text>{t('loadMoreActivity')}</Text>
                 )}
               </Button>
             ) : null}
@@ -267,6 +272,7 @@ export default function ActivityScreen() {
 }
 
 function EmptyActivity({ filtered }: { filtered: boolean }) {
+  const { t } = useTranslation(['activity', 'common']);
   return (
     <View className="items-center gap-2 py-10">
       <Text
@@ -274,13 +280,13 @@ function EmptyActivity({ filtered }: { filtered: boolean }) {
         className="text-center text-xl font-semibold leading-[26px]"
       >
         {filtered
-          ? 'No activity with these filters'
-          : 'Nothing has happened yet'}
+          ? t('noActivityWithTheseFilters')
+          : t('nothingHasHappenedYet')}
       </Text>
       <Text selectable className="text-center leading-6 text-muted-foreground">
         {filtered
-          ? 'Try another type, group or friend.'
-          : 'Shared expenses, payments, groups and friends will appear here.'}
+          ? t('tryAnotherTypeGroupOrFriend')
+          : t('sharedExpensesPaymentsGroupsAndFriendsWill')}
       </Text>
     </View>
   );

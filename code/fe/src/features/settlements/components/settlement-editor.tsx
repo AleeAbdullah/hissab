@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, View, ScrollView, TextInput } from 'react-native';
 
 import type {
@@ -21,6 +22,7 @@ import {
   settlementInitialValues,
   settlementPreview
 } from '@/features/settlements/form';
+import { isolate } from '@/i18n';
 import { todayDate, formatDate } from '@/lib/dates';
 import { parseMinorAmount, minorToInput, formatMinorAmount } from '@/lib/money';
 
@@ -43,7 +45,7 @@ export function SettlementEditor({
   saving,
   settlement,
   initialPayment,
-  ledgerName = 'Shared ledger',
+  ledgerName,
   error
 }: {
   balances?: LedgerBalances;
@@ -60,6 +62,7 @@ export function SettlementEditor({
   ledgerName?: string;
   error?: unknown;
 }) {
+  const { t } = useTranslation(['settlements', 'common']);
   const dialog = useDialog();
   const initial = settlement
     ? settlementInitialValues(settlement)
@@ -108,12 +111,19 @@ export function SettlementEditor({
       : null;
   const balanceText = (value: bigint) =>
     value === 0n
-      ? 'settled'
-      : `${value > 0n ? 'owed' : 'owes'} ${formatMinorAmount((value < 0n ? -value : value).toString(), displayCurrency)}`;
+      ? t('settled')
+      : t(value > 0n ? 'owed' : 'owes', {
+          amount: isolate(
+            formatMinorAmount(
+              (value < 0n ? -value : value).toString(),
+              displayCurrency
+            )
+          )
+        });
   const save = () => {
     if (saving || submitting.current) return;
     if ('error' in body) {
-      setValidation(body.error);
+      setValidation(t(body.error));
       scroll.current?.scrollTo({ y: 0, animated: false });
       if (
         !parseMinorAmount(amount) ||
@@ -123,49 +133,67 @@ export function SettlementEditor({
       return;
     }
     if (!preview) {
-      setValidation(
-        'Authoritative balances are needed to review this payment.'
-      );
+      setValidation(t('needBalances'));
       return;
     }
     const from =
       members.find((member) => member.userId === body.body.fromUserId)
-        ?.displayName ?? 'Payer';
+        ?.displayName ?? t('payer');
     const to =
       members.find((member) => member.userId === body.body.toUserId)
-        ?.displayName ?? 'Recipient';
+        ?.displayName ?? t('recipient');
     const warning = preview.excess > 0n || preview.wrongDirection;
-    const effect = `${from}: ${balanceText(preview.fromBefore)} → ${balanceText(preview.fromAfter)}. ${to}: ${balanceText(preview.toBefore)} → ${balanceText(preview.toAfter)}.`;
+    const effect = t('effect', {
+      from: isolate(from),
+      to: isolate(to),
+      fromBefore: balanceText(preview.fromBefore),
+      fromAfter: balanceText(preview.fromAfter),
+      toBefore: balanceText(preview.toBefore),
+      toAfter: balanceText(preview.toAfter)
+    });
     const warningCopy = preview.wrongDirection
-      ? 'This payment does not match the current debt direction. Review the resulting balances.'
-      : `The amount beyond the current payable balance is ${formatMinorAmount(preview.excess.toString(), displayCurrency)} and becomes credit.`;
+      ? t('directionWarning')
+      : t('creditWarning', {
+          amount: isolate(
+            formatMinorAmount(preview.excess.toString(), displayCurrency)
+          )
+        });
     setValidation(null);
     dialog(
       warning
         ? preview.wrongDirection
-          ? 'Check payment direction'
-          : 'This creates credit'
+          ? t('checkDirection')
+          : t('createsCredit')
         : settlement
-          ? 'Save payment changes?'
-          : 'Record external payment?',
-      `${from} paid ${to} ${formatMinorAmount(body.body.amountMinor, displayCurrency)} outside Tally Stick on ${formatDate(occurredDate)} (UTC). ${warning ? warningCopy + ' ' : ''}${effect} Tally Stick records it; it does not move money.`,
+          ? t('saveQuestion')
+          : t('recordQuestion'),
+      t(warning ? 'warningConfirmation' : 'confirmation', {
+        from: isolate(from),
+        to: isolate(to),
+        amount: isolate(
+          formatMinorAmount(body.body.amountMinor, displayCurrency)
+        ),
+        date: isolate(formatDate(occurredDate)),
+        effect,
+        warning: warningCopy
+      }),
       [
         {
           text: preview.wrongDirection
-            ? 'Edit payment'
+            ? t('editPayment')
             : warning
-              ? 'Edit amount'
-              : 'Cancel',
+              ? t('editAmount')
+              : t('common:cancel'),
           style: 'cancel'
         },
         {
           text: warning
             ? settlement
-              ? 'Save with credit'
-              : 'Record with credit'
+              ? t('saveCredit')
+              : t('recordCredit')
             : settlement
-              ? 'Save changes'
-              : 'Record payment',
+              ? t('saveChanges')
+              : t('recordPayment'),
           onPress: () => {
             if (submitting.current) return;
             submitting.current = true;
@@ -190,32 +218,38 @@ export function SettlementEditor({
     return (
       <Screen>
         <Text accessibilityRole="header" className="text-2xl font-semibold">
-          Which balance do you want to settle?
+          {t('whichBalance')}
         </Text>
-        <Text selectable>{ledgerName}</Text>
-        <SectionLabel>Suggested payments</SectionLabel>
+        <Text selectable>{ledgerName ?? t('sharedLedger')}</Text>
+        <SectionLabel>{t('suggested')}</SectionLabel>
         <Text selectable className="text-muted-foreground">
-          Based on Simplify debts. Tally Stick tracks each member&apos;s total
-          in this group, not who owes whom. Nothing is recorded until you
-          confirm.
+          {t('suggestedHint')}
         </Text>
         {error ? <ErrorMessage error={error} /> : null}
         {!balances ? (
-          <Text>Loading balances…</Text>
+          <Text>{t('loadingBalances')}</Text>
         ) : payments === null ? (
           <ErrorMessage
-            error={new Error('Group balances do not add up to zero.')}
+            fallback={t('unbalanced')}
+            error={new Error(t('unbalanced'))}
           />
         ) : candidates.length ? (
           candidates.map((payment) => (
             <Row
               key={`${payment.fromUserId}:${payment.toUserId}`}
-              title={
-                (payment.fromUserId === currentUserId
-                  ? `You pay ${payment.toDisplayName}`
-                  : `${payment.fromDisplayName} pays you`) +
-                ` · ${formatMinorAmount(payment.amountMinor, displayCurrency)}`
-              }
+              title={t(
+                payment.fromUserId === currentUserId ? 'youPay' : 'paysYou',
+                {
+                  name: isolate(
+                    payment.fromUserId === currentUserId
+                      ? payment.toDisplayName
+                      : payment.fromDisplayName
+                  ),
+                  amount: isolate(
+                    formatMinorAmount(payment.amountMinor, displayCurrency)
+                  )
+                }
+              )}
               onPress={() => {
                 setFromUserId(payment.fromUserId);
                 setToUserId(payment.toUserId);
@@ -226,7 +260,7 @@ export function SettlementEditor({
             />
           ))
         ) : (
-          <Text selectable>No suggested payments involve you.</Text>
+          <Text selectable>{t('noSuggestions')}</Text>
         )}
         <Button
           variant="link"
@@ -242,7 +276,7 @@ export function SettlementEditor({
             setPicking(false);
           }}
         >
-          <Text>Record a different payment</Text>
+          <Text>{t('differentPayment')}</Text>
         </Button>
       </Screen>
     );
@@ -263,23 +297,25 @@ export function SettlementEditor({
             {saving ? (
               <ActivityIndicator className="text-primary-foreground" />
             ) : (
-              <Text>{settlement ? 'Review changes' : 'Review payment'}</Text>
+              <Text>
+                {settlement ? t('reviewChanges') : t('reviewPayment')}
+              </Text>
             )}
           </Button>
         </View>
       }
     >
       <Text selectable className="text-[15px] text-muted-foreground">
-        {ledgerName}
+        {ledgerName ?? t('sharedLedger')}
       </Text>
       {savedDraft && !initialPayment && !settlement ? (
         <Text selectable className="text-muted-foreground">
-          Restored your saved payment draft. Review the people and amount.
+          {t('restored')}
         </Text>
       ) : null}
       {settlement ? (
         <Text selectable className="text-muted-foreground">
-          Saving creates a replacement revision; history is kept.
+          {t('revision')}
         </Text>
       ) : null}
       {validation ? (
@@ -304,7 +340,7 @@ export function SettlementEditor({
         }}
       />
       <View pointerEvents={saving ? 'none' : 'auto'} className="gap-3">
-        <SectionLabel>PAID BY</SectionLabel>
+        <SectionLabel>{t('paidBy')}</SectionLabel>
         <ChoiceChips
           choices={members.map((member) => ({
             label: member.displayName,
@@ -317,7 +353,7 @@ export function SettlementEditor({
             if (value === toUserId) setToUserId('');
           }}
         />
-        <SectionLabel>RECEIVED BY</SectionLabel>
+        <SectionLabel>{t('receivedBy')}</SectionLabel>
         <ChoiceChips
           // The payer can't also receive, so they're left out of this row.
           choices={members
@@ -332,12 +368,10 @@ export function SettlementEditor({
           }}
         />
       </View>
-      {members.length < 2 ? (
-        <Text selectable>An external payment needs two active members.</Text>
-      ) : null}
+      {members.length < 2 ? <Text selectable>{t('twoMembers')}</Text> : null}
       {preview ? (
         <View className="gap-2">
-          <SectionLabel>AFTER THIS PAYMENT</SectionLabel>
+          <SectionLabel>{t('afterPayment')}</SectionLabel>
           {[
             {
               id: fromUserId,
@@ -351,18 +385,20 @@ export function SettlementEditor({
               selectable
               className="text-[15px] leading-[22px]"
             >
-              {
-                members.find((person) => person.userId === member.id)
-                  ?.displayName
-              }
-              : {balanceText(member.before)} → {balanceText(member.after)}
+              {t('memberEffect', {
+                name: isolate(
+                  members.find((person) => person.userId === member.id)
+                    ?.displayName ?? t('member')
+                ),
+                before: balanceText(member.before),
+                after: balanceText(member.after)
+              })}
             </Text>
           ))}
         </View>
       ) : null}
       <Text selectable className="text-[13px] text-muted-foreground">
-        Record money already paid or received elsewhere. Tally Stick does not
-        move money.
+        {t('externalOnly')}
       </Text>
       {/* New records close with the X; only edits need an explicit discard here. */}
       {onDiscard && settlement ? (
@@ -371,7 +407,7 @@ export function SettlementEditor({
           disabled={saving}
           onPress={onDiscard}
         >
-          <Text>Discard changes</Text>
+          <Text>{t('discardChanges')}</Text>
         </Button>
       ) : null}
     </Screen>

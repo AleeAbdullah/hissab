@@ -1,4 +1,5 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, View } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
@@ -15,8 +16,10 @@ import { useDialog } from '@/components/ui/dialog';
 import { Text } from '@/components/ui/text';
 import { blocksQuery, unblock } from '@/features/connections/api';
 import { homeQuery } from '@/features/home/api';
+import { isolate } from '@/i18n';
 
 export function BlockedPeopleScreen() {
+  const { t } = useTranslation(['connections', 'common']);
   const dialog = useDialog();
   const query = useQuery(blocksQuery);
   const mutation = useMutation({
@@ -39,11 +42,13 @@ export function BlockedPeopleScreen() {
           selectable
           className="py-8 text-center text-[15px] leading-[22px] text-muted-foreground"
         >
-          No blocked people.
+          {t('noBlockedPeople')}
         </Text>
       ) : null}
       {query.data?.length ? (
-        <SectionLabel>BLOCKED · {query.data.length}</SectionLabel>
+        <SectionLabel>
+          {t('blocked', { count: query.data.length })}
+        </SectionLabel>
       ) : null}
       {query.data?.length ? (
         <View>
@@ -57,7 +62,9 @@ export function BlockedPeopleScreen() {
                 <Button
                   variant="outline"
                   size="compact"
-                  accessibilityLabel={`Unblock ${person.displayName}`}
+                  accessibilityLabel={t('unblock', {
+                    name: isolate(person.displayName)
+                  })}
                   disabled={mutation.isPending}
                   accessibilityState={{
                     disabled: mutation.isPending,
@@ -66,12 +73,12 @@ export function BlockedPeopleScreen() {
                   }}
                   onPress={() =>
                     dialog(
-                      'Unblock this person?',
-                      'They can send a new connection request after you unblock them.',
+                      t('unblockThisPerson'),
+                      t('theyCanSendANewConnectionRequestAfterYouUnblock'),
                       [
-                        { text: 'Cancel', style: 'cancel' },
+                        { text: t('common:cancel'), style: 'cancel' },
                         {
-                          text: 'Unblock',
+                          text: t('unblock2'),
                           onPress: () => mutation.mutate(person.userId)
                         }
                       ]
@@ -82,7 +89,7 @@ export function BlockedPeopleScreen() {
                   mutation.variables === person.userId ? (
                     <ActivityIndicator className="text-primary" />
                   ) : (
-                    <Text>Unblock</Text>
+                    <Text>{t('unblock2')}</Text>
                   )}
                 </Button>
               }
@@ -92,7 +99,7 @@ export function BlockedPeopleScreen() {
       ) : null}
       {query.data?.length ? (
         <Text selectable className="text-xs leading-4 text-muted-foreground">
-          Unblocking does not restore a connection or resend a request.
+          {t('unblockingDoesNotRestoreAConnectionOrResendARequest')}
         </Text>
       ) : null}
     </Screen>

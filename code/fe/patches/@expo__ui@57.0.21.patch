@@ -1,0 +1,274 @@
+diff --git a/android/src/main/java/expo/modules/ui/DatePickerView.kt b/android/src/main/java/expo/modules/ui/DatePickerView.kt
+index 339b4df78056aa3c79008c477ee37cd92d740c71..4761a11381647440a3529deed4bfccf77c740b57 100644
+--- a/android/src/main/java/expo/modules/ui/DatePickerView.kt
++++ b/android/src/main/java/expo/modules/ui/DatePickerView.kt
+@@ -17,6 +17,7 @@ import androidx.compose.material3.TimePicker
+ import androidx.compose.material3.TimePickerDefaults
+ import androidx.compose.material3.TimePickerLayoutType
+ import androidx.compose.material3.TimePickerState
++import android.content.res.Configuration
+ import android.view.WindowManager
+ import androidx.compose.foundation.layout.wrapContentHeight
+ import androidx.compose.runtime.Composable
+@@ -26,6 +27,7 @@ import androidx.compose.runtime.SideEffect
+ import androidx.compose.runtime.remember
+ import androidx.compose.ui.Alignment
+ import androidx.compose.ui.Modifier
++import androidx.compose.ui.platform.LocalContext
+ import androidx.compose.ui.platform.LocalConfiguration
+ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+ import androidx.compose.ui.platform.LocalView
+@@ -35,6 +37,7 @@ import expo.modules.kotlin.records.Record
+ import expo.modules.kotlin.types.Enumerable
+ import expo.modules.kotlin.views.ComposeProps
+ import expo.modules.kotlin.views.FunctionalComposableScope
++import java.util.Locale
+ import java.util.Calendar
+ import java.util.Date
+ import android.graphics.Color as AndroidColor
+@@ -174,7 +177,8 @@ data class DatePickerDialogProps(
+   val dismissButtonLabel: String? = null,
+   val color: AndroidColor? = null,
+   val elementColors: DateTimePickerColorOverrides = DateTimePickerColorOverrides(),
+-  val selectableDates: SelectableDatesRecord? = null
++  val selectableDates: SelectableDatesRecord? = null,
++  val locale: String? = null
+ ) : ComposeProps
+ 
+ @OptimizedComposeProps
+@@ -188,9 +192,9 @@ data class TimePickerDialogProps(
+ ) : ComposeProps
+ 
+ private fun toUtcDayMillis(localMillis: Long): Long {
+-  val cal = Calendar.getInstance()
++  val cal = Calendar.getInstance(Locale.ROOT)
+   cal.timeInMillis = localMillis
+-  val utcCal = Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"))
++  val utcCal = Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"), Locale.ROOT)
+   utcCal.set(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH), 0, 0, 0)
+   utcCal.set(Calendar.MILLISECOND, 0)
+   return utcCal.timeInMillis
+@@ -207,12 +211,12 @@ fun rememberSelectableDates(selectableDatesRecord: SelectableDatesRecord?): Sele
+       val endUtcDayMillis = end?.let { toUtcDayMillis(it) }
+ 
+       val startYear = start?.let {
+-        val cal = Calendar.getInstance()
++        val cal = Calendar.getInstance(Locale.ROOT)
+         cal.timeInMillis = it
+         cal.get(Calendar.YEAR)
+       }
+       val endYear = end?.let {
+-        val cal = Calendar.getInstance()
++        val cal = Calendar.getInstance(Locale.ROOT)
+         cal.timeInMillis = it
+         cal.get(Calendar.YEAR)
+       }
+@@ -252,10 +256,10 @@ fun rememberDatePickerYearRange(
+   return remember(start, end, initialDateMillis, initialEndDateMillis) {
+     val defaults = DatePickerDefaults.YearRange
+     val yearOf = { millis: Long ->
+-      Calendar.getInstance().apply { timeInMillis = millis }.get(Calendar.YEAR)
++      Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"), Locale.ROOT).apply { timeInMillis = millis }.get(Calendar.YEAR)
+     }
+-    val startYear = start?.let(yearOf) ?: defaults.first
+-    val endYear = end?.let(yearOf) ?: defaults.last
++    val startYear = start?.let { yearOf(toUtcDayMillis(it)) } ?: defaults.first
++    val endYear = end?.let { yearOf(toUtcDayMillis(it)) } ?: defaults.last
+     // Keep the initially selected/displayed year inside the range so Material3 doesn't discard the
+     // selection
+     val initialStartYear = yearOf(initialDateMillis)
+@@ -346,14 +350,23 @@ internal fun ApplyDatePickerDialogKeyboardBehavior(displayMode: DisplayMode) {
+ @OptIn(ExperimentalMaterial3Api::class)
+ @Composable
+ fun ExpoDatePickerDialogContent(props: DatePickerDialogProps, onDateSelected: (DatePickerResult) -> Unit, onDismissRequest: () -> Unit) {
+-  val locale = LocalConfiguration.current.locales[0]
++  val context = LocalContext.current
++  val configuration = LocalConfiguration.current
++  val requestedLocale = props.locale?.takeIf { it.isNotBlank() }?.let { Locale.forLanguageTag(it) }
++  val locale = requestedLocale ?: configuration.locales[0]
++  val calendarConfiguration = remember(configuration, requestedLocale) {
++    Configuration(configuration).apply { requestedLocale?.let { setLocale(it) } }
++  }
++  val calendarContext = remember(context, calendarConfiguration, requestedLocale) {
++    if (requestedLocale == null) context else context.createConfigurationContext(calendarConfiguration)
++  }
+   val variant = props.variant.toDisplayMode()
+   val selectableDates = rememberSelectableDates(props.selectableDates)
+   val fallbackDate = remember { Date().time }
+   val initialDate = props.initialDate ?: fallbackDate
+   val yearRange = rememberDatePickerYearRange(props.selectableDates, initialDate)
+ 
+-  val state = remember(variant, initialDate, selectableDates, yearRange) {
++  val state = remember(locale, variant, initialDate, selectableDates, yearRange) {
+     DatePickerState(
+       initialDisplayMode = variant,
+       locale = locale,
+@@ -372,12 +385,12 @@ fun ExpoDatePickerDialogContent(props: DatePickerDialogProps, onDateSelected: (D
+     onDismissRequest = { onDismissRequest() },
+     confirmButton = {
+       TextButton(onClick = { onDateSelected(DatePickerResult(date = state.selectedDateMillis)) }, enabled = state.selectedDateMillis != null, colors = buttonColors) {
+-        Text(props.confirmButtonLabel ?: stringResource(android.R.string.ok))
++        Text(props.confirmButtonLabel ?: calendarContext.getString(android.R.string.ok))
+       }
+     },
+     dismissButton = {
+       TextButton(onClick = { onDismissRequest() }, colors = buttonColors) {
+-        Text(props.dismissButtonLabel ?: stringResource(android.R.string.cancel))
++        Text(props.dismissButtonLabel ?: calendarContext.getString(android.R.string.cancel))
+       }
+     },
+     colors = colors
+@@ -387,7 +400,11 @@ fun ExpoDatePickerDialogContent(props: DatePickerDialogProps, onDateSelected: (D
+ 
+     // Material3's year-selector chevron tints from the ambient LocalContentColor (which defaults to
+     // black), not `navigationContentColor`; bind the local so the chevron honors the navigation color.
+-    CompositionLocalProvider(LocalContentColor provides colors.navigationContentColor) {
++    CompositionLocalProvider(
++      LocalContext provides calendarContext,
++      LocalConfiguration provides calendarConfiguration,
++      LocalContentColor provides colors.navigationContentColor
++    ) {
+       DatePicker(
+         modifier = if (displayMode == DisplayMode.Picker) {
+           Modifier.wrapContentHeight(align = Alignment.Top, unbounded = true)
+diff --git a/build/community/datetime-picker/types.d.ts b/build/community/datetime-picker/types.d.ts
+index 3b27d869618dbaf5113523f584ab03873732982d..81f3782ef4beb08f5248e8f33026df63ae36532c 100644
+--- a/build/community/datetime-picker/types.d.ts
++++ b/build/community/datetime-picker/types.d.ts
+@@ -83,7 +83,7 @@ export interface DateTimePickerProps extends Pick<ViewProps, 'style'> {
+     disabled?: boolean;
+     /**
+      * Locale identifier (e.g. 'en_US', 'fr_FR') for the picker display.
+-     * @platform ios
++     * On Android, applies to date dialogs.
+      */
+     locale?: string;
+     /**
+diff --git a/build/jetpack-compose/DatePicker/index.d.ts b/build/jetpack-compose/DatePicker/index.d.ts
+index b69460be25ae8c3372d1e28a4a5eef5156fa0542..83abe8baad386aab0ac70eaba845e58961e2f47c 100644
+--- a/build/jetpack-compose/DatePicker/index.d.ts
++++ b/build/jetpack-compose/DatePicker/index.d.ts
+@@ -217,6 +217,8 @@ export interface DateRangePickerProps {
+  */
+ export declare function DateRangePicker(props: DateRangePickerProps): import("react/jsx-runtime").JSX.Element;
+ export interface DatePickerDialogProps {
++    /** BCP 47 locale used for calendar text and numbers. */
++    locale?: string;
+     /**
+      * The initially selected date. When omitted, the dialog opens on the current month with no
+      * selection and the confirm button stays disabled until a date is picked.
+diff --git a/ios/DatePickerView.swift b/ios/DatePickerView.swift
+index 24db7b13b0eb4e935cacfdc5b34978d13a290246..dd463ce204bb64f7186ec54426acf84fdd3e41c2 100644
+--- a/ios/DatePickerView.swift
++++ b/ios/DatePickerView.swift
+@@ -21,6 +21,7 @@ internal struct DatePickerView: ExpoSwiftUI.View {
+     Text("DatePicker is not supported on tvOS")
+ #else
+     createDatePicker()
++      .environment(\.calendar, Calendar(identifier: .gregorian))
+       .frame(minWidth: isGraphicalStyle ? 320 : nil)
+       .onChange(of: date) { newDate in
+         if props.selection == newDate { return }
+diff --git a/ios/Modifiers/EnvironmentModifier.swift b/ios/Modifiers/EnvironmentModifier.swift
+index 71e01933ff5e2b8b339b81acbfe51f6f36f459ed..7aa155b25e7dbb1cb23eb59fcbe289ddcde3989c 100644
+--- a/ios/Modifiers/EnvironmentModifier.swift
++++ b/ios/Modifiers/EnvironmentModifier.swift
+@@ -61,11 +61,8 @@ internal struct EnvironmentModifier: ViewModifier, Record {
+         content
+       }
+     case .locale:
+-      if Locale.availableIdentifiers.contains(value) {
+-        content.environment(\.locale, Locale(identifier: value))
+-      } else {
+-        content
+-      }
++      // BCP 47 tags with calendar/digit extensions are valid but not enumerated.
++      content.environment(\.locale, Locale(components: Locale.Components(identifier: value)))
+     case .timeZone:
+       if let tz = TimeZone(identifier: value) {
+         content.environment(\.timeZone, tz)
+diff --git a/src/community/datetime-picker/DateTimePicker.android.tsx b/src/community/datetime-picker/DateTimePicker.android.tsx
+index 75f3ce5c31f1226becb792dc32b9622762263286..fe2077c25d4dde9154e65595b41bbff3bec727a5 100644
+--- a/src/community/datetime-picker/DateTimePicker.android.tsx
++++ b/src/community/datetime-picker/DateTimePicker.android.tsx
+@@ -40,6 +40,7 @@ export function DateTimePicker(props: DateTimePickerProps) {
+     onValueChange,
+     onDismiss: onDismissProp,
+     mode = 'date',
++    locale,
+     minimumDate,
+     maximumDate,
+     display = 'default',
+@@ -70,18 +71,26 @@ export function DateTimePicker(props: DateTimePickerProps) {
+   };
+ 
+   const onDateSelected = (date: Date) => {
++    // Material3 dates are UTC days; the community API returns a local date.
++    const selected = mode === 'time' ? date : new Date(
++      date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(),
++      value.getHours(), value.getMinutes(), value.getSeconds(), value.getMilliseconds()
++    );
+     if (onValueChange) {
+-      onValueChange(buildChangeEvent(date), date);
++      onValueChange(buildChangeEvent(selected), selected);
+     } else {
+-      onChange?.(buildEvent(date), date);
++      onChange?.(buildEvent(selected), selected);
+     }
+   };
+ 
+   const selectableDates =
+     minimumDate || maximumDate ? { start: minimumDate, end: maximumDate } : undefined;
+ 
++  const initialDate = mode === 'time' ? value.toISOString() : new Date(
++    Date.UTC(value.getFullYear(), value.getMonth(), value.getDate())
++  ).toISOString();
+   const dialogProps = {
+-    initialDate: value.toISOString(),
++    initialDate,
+     color: accentColor,
+     confirmButtonLabel: positiveButton?.label,
+     dismissButtonLabel: negativeButton?.label,
+@@ -101,6 +110,7 @@ export function DateTimePicker(props: DateTimePickerProps) {
+       <Host style={style}>
+         <AndroidDatePickerDialog
+           {...dialogProps}
++          locale={locale}
+           variant={displayToAndroidVariant(display)}
+           selectableDates={selectableDates}
+         />
+@@ -111,7 +121,7 @@ export function DateTimePicker(props: DateTimePickerProps) {
+   return (
+     <Host matchContents={{ vertical: true }} style={style}>
+       <AndroidPicker
+-        initialDate={value.toISOString()}
++        initialDate={initialDate}
+         displayedComponents={modeToDisplayedComponents(mode)}
+         variant={displayToAndroidVariant(display)}
+         selectableDates={selectableDates}
+diff --git a/src/community/datetime-picker/types.tsx b/src/community/datetime-picker/types.tsx
+index 4189698f706ef3c5ef79290eb97d6591fc20744f..4b5459957f76f2533222bb4a1f08c015e0ef109d 100644
+--- a/src/community/datetime-picker/types.tsx
++++ b/src/community/datetime-picker/types.tsx
+@@ -88,7 +88,7 @@ export interface DateTimePickerProps extends Pick<ViewProps, 'style'> {
+   disabled?: boolean;
+   /**
+    * Locale identifier (e.g. 'en_US', 'fr_FR') for the picker display.
+-   * @platform ios
++   * On Android, applies to date dialogs.
+    */
+   locale?: string;
+   /**
+diff --git a/src/jetpack-compose/DatePicker/index.tsx b/src/jetpack-compose/DatePicker/index.tsx
+index a0fef1865806139b52a4e1219553182117b0d11e..33cf3921802fc2d39cc63e1065a9ef44cea56007 100644
+--- a/src/jetpack-compose/DatePicker/index.tsx
++++ b/src/jetpack-compose/DatePicker/index.tsx
+@@ -325,6 +325,8 @@ export function DateRangePicker(props: DateRangePickerProps) {
+ // -- Dialog views (used internally by the compat layer) ---------------------
+ 
+ export interface DatePickerDialogProps {
++  /** BCP 47 locale used for calendar text and numbers. */
++  locale?: string;
+   /**
+    * The initially selected date. When omitted, the dialog opens on the current month with no
+    * selection and the confirm button stays disabled until a date is picked.

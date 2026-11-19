@@ -10,6 +10,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 
 import type { EnvironmentVariables } from '../../config/environment';
+import { resolveLocale } from '../../common/locale';
 import {
   DatabaseService,
   type DatabaseTransaction,
@@ -59,12 +60,12 @@ export class AuthService {
       config.getOrThrow('PASSWORD_RESET_TTL_SECONDS') * 1_000;
   }
 
-  register(
+  async register(
     idempotencyKey: string,
     dto: RegisterDto,
     metadata: AuthRequestMetadata,
   ): Promise<AuthTokens> {
-    return this.idempotency.execute(
+    const tokens = await this.idempotency.execute(
       {
         actor: { kind: 'email', subject: dto.email },
         key: idempotencyKey,
@@ -91,6 +92,7 @@ export class AuthService {
             email: dto.email,
             passwordHash,
             displayName: dto.displayName,
+            locale: dto.locale,
           });
         } catch (error) {
           if (isUniqueViolation(error)) {
@@ -105,14 +107,15 @@ export class AuthService {
         return this.issueSession(transaction, user, metadata);
       },
     );
+    return { ...tokens, user: this.publicUser(tokens.user) };
   }
 
-  signIn(
+  async signIn(
     idempotencyKey: string,
     dto: SignInDto,
     metadata: AuthRequestMetadata,
   ): Promise<AuthTokens> {
-    return this.idempotency.execute(
+    const tokens = await this.idempotency.execute(
       {
         actor: { kind: 'email', subject: dto.email },
         key: idempotencyKey,
@@ -137,6 +140,7 @@ export class AuthService {
         return tokens;
       },
     );
+    return { ...tokens, user: this.publicUser(tokens.user) };
   }
 
   async refresh(
@@ -222,7 +226,7 @@ export class AuthService {
     if (!attempt.ok) {
       throw new UnauthorizedException('Refresh token is invalid or expired.');
     }
-    return attempt.value;
+    return { ...attempt.value, user: this.publicUser(attempt.value.user) };
   }
 
   signOut(
@@ -527,7 +531,17 @@ export class AuthService {
       refreshToken,
       refreshTokenExpiresAt: refreshTokenExpiresAt.toISOString(),
       sessionId,
-      user,
+      user: this.publicUser(user),
+    };
+  }
+
+  private publicUser(user: AuthUser): AuthUser {
+    return {
+      id: user.id,
+      email: user.email,
+      displayName: user.displayName,
+      displayCurrency: user.displayCurrency,
+      locale: resolveLocale(user.locale),
     };
   }
 

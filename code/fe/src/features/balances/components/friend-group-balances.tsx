@@ -1,5 +1,6 @@
 import { useQueries, useQuery } from '@tanstack/react-query';
 import { UsersRound } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
 import type { DisplayCurrency } from '@/api/contracts';
@@ -8,6 +9,7 @@ import { Text } from '@/components/ui/text';
 import { ledgerBalancesQuery } from '@/features/balances/api';
 import { simplifyLedgerBalances } from '@/features/balances/simplify';
 import { groupsQuery } from '@/features/groups/api';
+import { isolate } from '@/i18n';
 import { formatMinorAmount } from '@/lib/money';
 
 // A friend page only shows the direct ledger, so list the suggested payments
@@ -23,6 +25,7 @@ export function FriendGroupBalances({
   viewerId: string;
   displayCurrency: DisplayCurrency;
 }) {
+  const { t } = useTranslation(['balances', 'common']);
   const groups = useQuery(groupsQuery);
   const active = (groups.data ?? []).filter(
     (group) => group.status === 'ACTIVE' && group.membershipStatus === 'ACTIVE'
@@ -43,7 +46,7 @@ export function FriendGroupBalances({
   if (!rows.length) return null;
   return (
     <View>
-      <SectionLabel>IN SHARED GROUPS</SectionLabel>
+      <SectionLabel>{t('inSharedGroups')}</SectionLabel>
       {rows.map(({ group, payment }, index) => (
         <ListRow
           key={group.id}
@@ -56,8 +59,8 @@ export function FriendGroupBalances({
           title={group.name}
           subtitle={
             payment.fromUserId === viewerId
-              ? `You pay ${friendName}`
-              : `${friendName} pays you`
+              ? t('youPay', { name: isolate(friendName) })
+              : t('paysYou', { name: isolate(friendName) })
           }
           trailing={
             <Text
@@ -73,7 +76,7 @@ export function FriendGroupBalances({
         selectable
         className="pt-2 text-[13px] leading-[18px] text-muted-foreground"
       >
-        Suggested payments from each group&apos;s balances.
+        {t('suggestedPaymentsFromEachGroupSBalances')}
       </Text>
     </View>
   );

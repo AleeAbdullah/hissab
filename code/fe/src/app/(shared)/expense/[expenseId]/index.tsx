@@ -1,5 +1,6 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link, router, useLocalSearchParams } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, View } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
@@ -25,10 +26,13 @@ import { deleteExpense, expenseQuery } from '@/features/expenses/api';
 import { homeQuery } from '@/features/home/api';
 import { useLedgerName } from '@/features/ledger/use-ledger-name';
 import { CATEGORY_ICONS } from '@/features/personal/components/category-picker';
+import { i18n, isolate } from '@/i18n';
+import { categoryName } from '@/i18n/categories';
 import { formatDate } from '@/lib/dates';
 import { formatMinorAmount } from '@/lib/money';
 
 export default function ExpenseDetailScreen() {
+  const { t } = useTranslation(['expenses', 'common']);
   const dialog = useDialog();
   const { expenseId } = useLocalSearchParams<{ expenseId: string }>();
   const expense = useQuery(expenseQuery(expenseId));
@@ -59,7 +63,7 @@ export default function ExpenseDetailScreen() {
       <Screen>
         <ErrorMessage
           error={
-            expense.error ?? profile.error ?? new Error('Expense not found.')
+            expense.error ?? profile.error ?? new Error(t('expenseNotFound'))
           }
         />
       </Screen>
@@ -67,7 +71,7 @@ export default function ExpenseDetailScreen() {
   const names = new Map(
     balances.data?.members.map((member) => [member.userId, member.displayName])
   );
-  const name = (userId: string) => names.get(userId) ?? 'Member';
+  const name = (userId: string) => names.get(userId) ?? t('member');
   const editable =
     expense.data.status === 'ACTIVE' &&
     expense.data.createdByUserId === profile.data.id;
@@ -84,11 +88,12 @@ export default function ExpenseDetailScreen() {
           profile.data.displayCurrency
         )}
         meta={[
-          expense.data.category.name,
+          categoryName(expense.data.category.code),
           ledgerName,
           formatDate(expense.data.occurredAt)
         ]
           .filter(Boolean)
+          .map((value) => isolate(value ?? ''))
           .join(' · ')}
         deleted={expense.data.status === 'DELETED'}
       />
@@ -106,20 +111,19 @@ export default function ExpenseDetailScreen() {
         </Text>
       ) : null}
       {expense.data.status === 'DELETED' ? (
-        <Notice title="Deleted expense">
-          This record remains in Tally Stick’s audit history and no longer
-          affects balances.
+        <Notice title={t('deletedExpense')}>
+          {t('thisRecordRemainsInTallySticksAudit')}
         </Notice>
       ) : null}
       <Allocations
-        title="PAID BY"
+        title={t('paidByHeading')}
         items={expense.data.payers}
         displayCurrency={profile.data.displayCurrency}
         name={name}
         viewerId={profile.data.id}
       />
       <Allocations
-        title="SPLIT BETWEEN"
+        title={t('splitBetween')}
         items={expense.data.participants.map((item) => ({
           userId: item.userId,
           amountMinor: item.owedMinor
@@ -138,7 +142,7 @@ export default function ExpenseDetailScreen() {
             asChild
           >
             <Button variant="outline" role="link">
-              <Text>Edit expense</Text>
+              <Text>{t('editExpense')}</Text>
             </Button>
           </Link>
           <Button
@@ -150,12 +154,21 @@ export default function ExpenseDetailScreen() {
             }}
             onPress={() =>
               dialog(
-                'Delete expense?',
-                `Delete “${expense.data.description}” (${formatMinorAmount(expense.data.totalMinor, profile.data.displayCurrency)})${ledgerName ? ` in ${ledgerName}` : ''}? It stops counting in balances; its history stays visible.`,
+                t('confirmDeleteExpense'),
+                t(ledgerName ? 'deleteInLedger' : 'deleteDetails', {
+                  description: isolate(expense.data.description),
+                  amount: isolate(
+                    formatMinorAmount(
+                      expense.data.totalMinor,
+                      profile.data.displayCurrency
+                    )
+                  ),
+                  ledger: isolate(ledgerName ?? '')
+                }),
                 [
-                  { text: 'Keep expense', style: 'cancel' },
+                  { text: t('keepExpense'), style: 'cancel' },
                   {
-                    text: 'Delete expense',
+                    text: t('deleteExpense'),
                     style: 'destructive',
                     onPress: () => remove.mutate()
                   }
@@ -166,7 +179,7 @@ export default function ExpenseDetailScreen() {
             {remove.isPending ? (
               <ActivityIndicator className="text-destructive" />
             ) : (
-              <Text>Delete expense</Text>
+              <Text>{t('deleteExpense')}</Text>
             )}
           </Button>
         </View>
@@ -188,6 +201,7 @@ function Allocations({
   title: string;
   viewerId: string;
 }) {
+  const { t } = useTranslation(['expenses', 'common']);
   return (
     <View>
       <SectionLabel>{title}</SectionLabel>
@@ -201,7 +215,7 @@ function Allocations({
             key={item.userId}
             divided={index > 0}
             leading={<Avatar name={name(item.userId)} />}
-            title={item.userId === viewerId ? 'You' : name(item.userId)}
+            title={item.userId === viewerId ? t('you') : name(item.userId)}
             trailing={
               <Text
                 selectable
@@ -234,8 +248,10 @@ function viewerEffect(
     (net < 0n ? -net : net).toString(),
     displayCurrency
   );
-  if (paid === 0n && owed === 0n) return "You're not part of this expense";
-  if (net > 0n) return `You lent ${amount}`;
-  if (net < 0n) return `You borrowed ${amount}`;
-  return 'You paid your share';
+  if (paid === 0n && owed === 0n)
+    return i18n.t('expenses:youreNotPartOfThisExpense');
+  if (net > 0n) return i18n.t('expenses:youLent', { amount: isolate(amount) });
+  if (net < 0n)
+    return i18n.t('expenses:youBorrowed', { amount: isolate(amount) });
+  return i18n.t('expenses:youPaidYourShare');
 }

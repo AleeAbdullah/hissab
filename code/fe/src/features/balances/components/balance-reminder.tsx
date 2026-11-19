@@ -1,5 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import type { LedgerBalances } from '@/api/contracts';
 import { queryClient } from '@/api/query-client';
@@ -8,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { useDialog } from '@/components/ui/dialog';
 import { Text } from '@/components/ui/text';
 import { createReminder } from '@/features/reminders/api';
+import { isolate } from '@/i18n';
 import { formatDateTime } from '@/lib/dates';
 
 export function BalanceReminder({
@@ -19,6 +21,7 @@ export function BalanceReminder({
   ledgerName: string;
   member: LedgerBalances['members'][number];
 }) {
+  const { t } = useTranslation(['balances', 'common']);
   const dialog = useDialog();
   const [now, setNow] = useState(Date.now);
   const until = member.reminderAvailableAt
@@ -33,9 +36,11 @@ export function BalanceReminder({
     onSuccess: async () => {
       await refresh();
       dialog(
-        'Reminder sent',
-        `Tally Stick notified ${member.displayName} about the unsettled balance.`,
-        [{ text: 'Done' }],
+        t('reminderSent'),
+        t('tallyStickNotifiedAboutTheUnsettledBalance', {
+          name: isolate(member.displayName)
+        }),
+        [{ text: t('common:done') }],
         { tone: 'success' }
       );
     },
@@ -61,26 +66,34 @@ export function BalanceReminder({
           selectable
           className="text-[13px] leading-[18px] text-muted-foreground"
         >
-          Reminder available {formatDateTime(new Date(until))}
+          {t('reminderAvailable', {
+            date: isolate(formatDateTime(new Date(until)))
+          })}
         </Text>
       ) : (
         <Button
           variant="outline"
           size="compact"
           disabled={mutation.isPending}
-          accessibilityLabel={`Remind ${member.displayName} about ${ledgerName}`}
+          accessibilityLabel={t('remindAbout', {
+            name: isolate(member.displayName),
+            ledger: isolate(ledgerName)
+          })}
           accessibilityState={{
             disabled: mutation.isPending,
             busy: mutation.isPending
           }}
           onPress={() =>
             dialog(
-              'Send balance reminder?',
-              `${member.displayName} will receive a private notification about their unsettled balance in ${ledgerName}.`,
+              t('sendBalanceReminder'),
+              t('willReceiveAPrivateNotificationAboutTheirUnsettledBalanceIn', {
+                name: isolate(member.displayName),
+                ledger: isolate(ledgerName)
+              }),
               [
-                { text: 'Cancel', style: 'cancel' },
+                { text: t('common:cancel'), style: 'cancel' },
                 {
-                  text: 'Send reminder',
+                  text: t('sendReminder'),
                   onPress: () => {
                     if (!mutation.isPending) mutation.mutate();
                   }
@@ -89,7 +102,7 @@ export function BalanceReminder({
             )
           }
         >
-          <Text>{mutation.isPending ? 'Sending…' : 'Remind'}</Text>
+          <Text>{mutation.isPending ? t('sending') : t('remind')}</Text>
         </Button>
       )}
       {mutation.error ? <ErrorMessage error={mutation.error} /> : null}

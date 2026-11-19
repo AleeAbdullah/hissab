@@ -19,6 +19,82 @@ const themeBoundaryFiles = [
 module.exports = defineConfig([
   expoConfig,
   {
+    // All visible copy must come from typed translation keys.
+    files: [
+      'src/features/**/*.{ts,tsx}',
+      'src/components/**/*.{ts,tsx}',
+      'src/app/**/*.tsx'
+    ],
+    plugins: {
+      i18n: {
+        rules: {
+          'no-jsx-copy': {
+            meta: {
+              type: 'problem',
+              schema: [],
+              messages: { raw: 'Use a typed translation key for visible copy.' }
+            },
+            create(context) {
+              const report = (node) =>
+                context.report({ node, messageId: 'raw' });
+              const visibleProps = new Set([
+                'title',
+                'label',
+                'placeholder',
+                'accessibilityLabel',
+                'accessibilityHint',
+                'subtitle'
+              ]);
+              const inspect = (node) => {
+                if (
+                  node.type === 'Literal' &&
+                  typeof node.value === 'string' &&
+                  node.value.trim()
+                )
+                  report(node);
+                if (
+                  node.type === 'TemplateLiteral' &&
+                  node.quasis.some((part) => part.value.raw.trim())
+                )
+                  report(node);
+                if (node.type === 'ConditionalExpression') {
+                  inspect(node.consequent);
+                  inspect(node.alternate);
+                }
+                if (node.type === 'LogicalExpression') inspect(node.right);
+                if (node.type === 'BinaryExpression') {
+                  inspect(node.left);
+                  inspect(node.right);
+                }
+              };
+              return {
+                JSXText(node) {
+                  if (node.value.trim()) report(node);
+                },
+                JSXAttribute(node) {
+                  if (
+                    visibleProps.has(node.name.name) &&
+                    node.value?.type === 'Literal' &&
+                    typeof node.value.value === 'string'
+                  )
+                    report(node);
+                },
+                JSXExpressionContainer(node) {
+                  if (
+                    node.parent.type !== 'JSXAttribute' ||
+                    visibleProps.has(node.parent.name.name)
+                  )
+                    inspect(node.expression);
+                }
+              };
+            }
+          }
+        }
+      }
+    },
+    rules: { 'i18n/no-jsx-copy': 'error' }
+  },
+  {
     ignores: ['dist/*', 'src/api/generated/**']
   },
   {

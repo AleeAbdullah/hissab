@@ -13,6 +13,7 @@ import {
   type ReactNode,
   type Ref
 } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   Keyboard,
@@ -29,11 +30,14 @@ import {
   useSafeAreaInsets
 } from 'react-native-safe-area-context';
 
+import { ApiError } from '@/api/transport';
 import { Icons } from '@/components/icons';
 import { Button as RnrButton } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { surfaceVariants } from '@/components/ui/surface';
 import { Text } from '@/components/ui/text';
+import { isolate } from '@/i18n';
+import { logicalTextAlign } from '@/i18n/locale';
 import { useLargeText } from '@/lib/text-scale';
 import { cn } from '@/lib/utils';
 
@@ -334,6 +338,7 @@ export function Row({
   disabled?: boolean;
   className?: string;
 }) {
+  const { i18n } = useTranslation();
   const largeText = useLargeText();
   // At large text sizes the detail moves under the title so neither splits mid-word.
   const detailText = detail ? (
@@ -341,9 +346,14 @@ export function Row({
       selectable
       className={cn(
         'text-[15px] leading-5 text-muted-foreground',
-        !largeText && 'max-w-[42%] text-right',
+        !largeText && 'max-w-[42%]',
         detailClassName
       )}
+      style={
+        !largeText
+          ? { textAlign: logicalTextAlign('end', i18n.language) }
+          : undefined
+      }
     >
       {detail}
     </Text>
@@ -422,6 +432,7 @@ export function Avatar({
   large?: boolean;
   hero?: boolean;
 }) {
+  const { t } = useTranslation('common');
   const initials =
     name
       .trim()
@@ -431,7 +442,7 @@ export function Avatar({
       .join('') || '?';
   return (
     <View
-      accessibilityLabel={`${name} avatar`}
+      accessibilityLabel={t('avatar', { name: isolate(name) })}
       className={cn(
         'items-center justify-center rounded-full bg-secondary',
         hero ? 'size-[88px]' : large ? 'size-14' : 'size-10'
@@ -552,6 +563,7 @@ export function Field({
   trailing?: ReactNode;
   inputRef?: Ref<TextInput>;
 }) {
+  const { t, i18n } = useTranslation('common');
   const [passwordVisible, setPasswordVisible] = useState(false);
   const isPassword = secureTextEntry === true;
   return (
@@ -562,7 +574,7 @@ export function Field({
       <View
         className={cn(
           surfaceVariants({ variant: 'control' }),
-          'flex-row items-center pl-3',
+          'flex-row items-center ps-3',
           error && 'border-destructive'
         )}
       >
@@ -575,7 +587,13 @@ export function Field({
             'flex-1 self-stretch py-2.5 text-[17px] text-foreground placeholder:text-muted-foreground',
             className
           )}
-          style={style}
+          style={[
+            {
+              writingDirection: i18n.dir(),
+              textAlign: i18n.dir() === 'rtl' ? 'right' : 'left'
+            },
+            style
+          ]}
         />
         {trailing}
         {isPassword ? (
@@ -583,7 +601,7 @@ export function Field({
             className="w-12 px-0"
             variant="ghost"
             accessibilityLabel={
-              passwordVisible ? 'Hide password' : 'Show password'
+              passwordVisible ? t('hidePassword') : t('showPassword')
             }
             onPress={() => setPasswordVisible((value) => !value)}
           >
@@ -691,17 +709,30 @@ export function Notice({
 }
 
 export function Loading() {
+  const { t } = useTranslation('common');
   return (
     <View className="flex-1 items-center justify-center bg-background">
-      <ActivityIndicator className="text-primary" />
+      <ActivityIndicator
+        accessibilityLabel={t('loading')}
+        className="text-primary"
+      />
     </View>
   );
 }
 
-export function ErrorMessage({ error }: { error: unknown }) {
+export function ErrorMessage({
+  error,
+  fallback
+}: {
+  error: unknown;
+  fallback?: string;
+}) {
+  const { t } = useTranslation('common');
   return (
     <Notice error>
-      {error instanceof Error ? error.message : 'Something went wrong.'}
+      {error instanceof ApiError
+        ? error.message
+        : (fallback ?? (error instanceof Error ? error.message : t('error')))}
     </Notice>
   );
 }

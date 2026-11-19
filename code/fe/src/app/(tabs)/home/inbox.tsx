@@ -2,6 +2,7 @@ import { useInfiniteQuery, useMutation, useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { Stack } from 'expo-router/stack';
 import { useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, RefreshControl } from 'react-native';
 
 import type { InAppNotification } from '@/api/contracts';
@@ -22,6 +23,7 @@ import { usePullToRefresh } from '@/lib/pull-to-refresh';
 import { THEME_VARIABLES, useThemeVariable } from '@/lib/theme';
 
 export default function InboxScreen() {
+  const { t } = useTranslation(['home', 'common']);
   const primary = useThemeVariable(THEME_VARIABLES.primaryText);
   const inbox = useInfiniteQuery(notificationInboxInfiniteQuery());
   const count = useQuery(unreadCountQuery);
@@ -69,7 +71,7 @@ export default function InboxScreen() {
                 {mutation.isPending && mutation.variables === null ? (
                   <ActivityIndicator className="text-primary" />
                 ) : (
-                  <Text>Mark all read</Text>
+                  <Text>{t('markAllRead')}</Text>
                 )}
               </Button>
             ) : null
