@@ -1,6 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator } from 'react-native';
 
 import { ErrorMessage, Field, Notice, Screen } from '@/components/ui';
@@ -9,6 +10,7 @@ import { Text } from '@/components/ui/text';
 import { changePassword } from '@/features/auth/api';
 
 export default function ChangePasswordScreen() {
+  const { t } = useTranslation(['account', 'common']);
   const router = useRouter();
   const [current, setCurrent] = useState('');
   const [password, setPassword] = useState('');
@@ -23,33 +25,32 @@ export default function ChangePasswordScreen() {
 
   return (
     <Screen>
-      <Notice title="Every device will be signed out">
-        Changing your password ends every session, including this one. You will
-        return to Sign in.
+      <Notice title={t('everyDeviceWillBeSignedOut')}>
+        {t('changingYourPasswordEndsEverySessionIncludingThisOne')}
       </Notice>
       {mutation.error ? <ErrorMessage error={mutation.error} /> : null}
       <Field
-        label="Current password"
+        label={t('currentPassword')}
         secureTextEntry
         autoComplete="current-password"
         value={current}
         onChangeText={setCurrent}
       />
       <Field
-        label="New password"
+        label={t('newPassword')}
         secureTextEntry
         autoComplete="new-password"
         value={password}
         onChangeText={setPassword}
-        hint="At least 12 characters. Longer beats complicated."
+        hint={t('atLeast12CharactersLongerBeatsComplicated')}
       />
       <Field
-        label="Confirm new password"
+        label={t('confirmNewPassword')}
         secureTextEntry
         autoComplete="new-password"
         value={confirm}
         onChangeText={setConfirm}
-        error={mismatch ? 'The two new passwords do not match.' : undefined}
+        error={mismatch ? t('theTwoNewPasswordsDoNotMatch') : undefined}
       />
       <Button
         disabled={!valid || mutation.isPending}
@@ -62,7 +63,7 @@ export default function ChangePasswordScreen() {
         {mutation.isPending ? (
           <ActivityIndicator className="text-primary-foreground" />
         ) : (
-          <Text>Change password</Text>
+          <Text>{t('changePassword')}</Text>
         )}
       </Button>
     </Screen>

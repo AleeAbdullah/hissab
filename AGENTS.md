@@ -36,6 +36,10 @@ Preserve the audit contents and screen numbers. These screenshots are historical
 - Shared and Personal are separate contexts. Shared activity must not silently become a personal transaction or vice versa.
 - Financial amounts are currency-neutral integer minor units. Tally Stick does not hold, send, convert, or record a money denomination.
 - Each user may select a `displayCurrency` in Settings from PKR, USD, GBP, EUR, AED, and SAR. It controls only the symbol rendered by that user’s frontend, may differ between viewers, and never converts or changes a financial record.
+- Each user has a `locale` preference selected in Settings from: `en` (English), `ur-Latn-PK` (Roman Urdu), `ur-PK` (Urdu, RTL), `ar` (Arabic, RTL), `es` (Spanish), `fr` (French), `hi` (Hindi), and `zh-Hans` (Simplified Chinese). It changes only language, number grouping, and date presentation; never amounts, currency, or ledger behavior. New accounts default to the device locale when supported, otherwise `en`. The server stores it so pushes and the password-reset email render in the recipient's locale.
+- Roman Urdu is chosen explicitly and never inferred from the device. Its fallback chain is `ur-Latn-PK` → `en`, never Urdu script. Text direction follows the selected locale, not the device.
+- All locales use Western digits (0–9) and the Gregorian calendar, including Arabic and Urdu. Amount fields also accept Arabic-Indic and Extended Arabic-Indic digits and normalize them before parsing.
+- English is the source language. Translations are machine-generated until a native speaker reviews them.
 - The target shared-expense model supports multiple payers and Equal or Exact splits only.
 - Shared-expense APIs operate on both direct friend ledgers and group ledgers.
 - Shared expenses use a fixed system category list in v1. User- and group-defined shared categories are out of scope.
@@ -71,7 +75,7 @@ Preserve the audit contents and screen numbers. These screenshots are historical
 - The Inbox is a dedicated screen opened from a top-right Home action; notification preferences stay in Account. An unread badge may show only the authoritative server unread count, never a count estimated from loaded pages, and is hidden while that count is loading or unavailable.
 - Realtime delivery uses authenticated Socket.IO invalidations without replay; clients refetch authoritative HTTP state after reconnect or invalidation.
 - A manual reminder requires the sender to be owed and the recipient to owe in the same active ledger. Apply one rolling 24-hour cooldown per recipient and ledger, regardless of sender.
-- Reminder push copy is `Balance reminder from {name}` and `You have an unsettled balance in {ledger}.`; do not include an amount on the lock screen.
+- Reminder push copy is `Balance reminder from {name}` and `You have an unsettled balance in {ledger}.` (English source; each locale translates it); do not include an amount on the lock screen in any locale.
 - Receipt attachments are intentionally deferred for both shared expenses and personal transactions. Do not add attachment routes or storage without new product-owner approval.
 - Account export is an authenticated, read-only, streamed, versioned JSON snapshot. It includes the user's profile/preferences, social and membership state, complete accessible shared financial revision history, personal transaction history, visible activity, reminders, and notifications. Include other users' IDs and display names only when needed for financial context; exclude their email addresses and all secrets, token hashes, device tokens, IP addresses, outbox rows, and idempotency rows. It includes the user’s display preference but no financial currency data.
 - Account deletion requires the current password, exact `DELETE` confirmation, authentication, and an idempotency key. It is irreversible and has no grace period.
@@ -173,6 +177,7 @@ Explicitly post-v1 or out of scope:
 
 - Use TanStack Query for server state. Approved query reads and form drafts persist as versioned, user-scoped filesystem JSON; hydrate cached reads before authenticated consumers render. The server remains authoritative. SQLite persistence is deferred.
 - Keep route files focused on composition. Reuse existing components and hooks before adding helpers.
+- All user-visible copy comes from `react-i18next` keys in per-feature namespaces; never hardcode English in components. Build sentences from whole-sentence templates with named placeholders, never by concatenation. Format numbers and dates only through the shared locale-aware formatters. Use start/end, not left/right, for layout so RTL locales mirror correctly.
 - Use the generated client for request shapes and the shared response contracts for parsing.
 - A visible control must work or be visibly disabled with truthful copy.
 - Every app-owned choice, confirmation, warning, error, and success prompt uses the shared app dialog on Android and iOS (KAN-4). OS permissions, folder pickers, and share sheets stay native.
@@ -204,15 +209,15 @@ Explicitly post-v1 or out of scope:
 - Android native tab labels may cap font scaling to keep all five labels visible. This exception applies only to tab labels; screen content retains 200% text support.
 - Do not communicate positive/negative money or status using color alone.
 - Charts require a textual equivalent.
-- The current icon and splash assets are temporary until final brand approval.
+- The app icon is final: two equal Copper halves joined by three diamond notches. Its sources live in `code/fe/assets/images/icons/` and `web/public/brand/`; splash backgrounds are Paper (light) and Ink (dark).
 
 ## Open product-owner decisions
 
 Do not guess these:
 
-- final wordmark and app icon;
+- final wordmark;
 - duplicate-warning heuristic;
-- localization, RTL, and tablet support.
+- tablet support.
 
 ## Verification
 

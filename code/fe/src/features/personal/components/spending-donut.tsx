@@ -1,12 +1,16 @@
+import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 import { PieChart } from 'react-native-gifted-charts';
 
+import type { PersonalCategoryCode } from '@/api/contracts';
 import { Text } from '@/components/ui/text';
 import { SpendingPlotFrame } from '@/features/personal/components/spending-chart';
 import {
   spendingRatio,
   spendingShareLabel
 } from '@/features/personal/spending';
+import { isolate } from '@/i18n';
+import { categoryName } from '@/i18n/categories';
 import { THEME_VARIABLES, useThemeVariable } from '@/lib/theme';
 
 // Single-hue ramp: the top categories step down in opacity, the rest share one neutral.
@@ -47,8 +51,9 @@ export function CategorySwatch({ rank }: { rank: number }) {
 export function SpendingDonut({
   categories
 }: {
-  categories: { name: string; amountMinor: string }[];
+  categories: { code: PersonalCategoryCode; amountMinor: string }[];
 }) {
+  const { t } = useTranslation(['personal', 'common']);
   const colorFor = useCategoryColor();
   const card = useThemeVariable(THEME_VARIABLES.card);
   const total = categories
@@ -79,7 +84,19 @@ export function SpendingDonut({
       <View
         accessible
         accessibilityRole="image"
-        accessibilityLabel={`Spending by category. ${categories.map((category) => `${category.name}: ${spendingShareLabel(category.amountMinor, total)}`).join('; ') || 'No spending recorded.'}`}
+        accessibilityLabel={t('donutLabel', {
+          items:
+            categories
+              .map((category) =>
+                t('itemValue', {
+                  label: categoryName(category.code),
+                  value: isolate(
+                    spendingShareLabel(category.amountMinor, total)
+                  )
+                })
+              )
+              .join(t('listSeparator')) || t('noSpendingRecorded')
+        })}
       >
         <PieChart
           data={
@@ -101,7 +118,7 @@ export function SpendingDonut({
                 maxFontSizeMultiplier={1.3}
                 className="text-center text-sm text-muted-foreground"
               >
-                {leader?.name ?? 'No spending'}
+                {leader ? categoryName(leader.code) : t('noSpending')}
               </Text>
               {leader ? (
                 <Text

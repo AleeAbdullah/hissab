@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { and, eq, inArray, or, type SQL, sql } from 'drizzle-orm';
 
+import { resolveLocale } from '../../common/locale';
 import type { DisplayCurrency } from '../../common/display-currency';
 import {
   DatabaseService,
@@ -44,6 +45,7 @@ interface AccountRow {
   email: string | null;
   displayName: string;
   displayCurrency: string;
+  locale: string;
   status: 'ACTIVE' | 'DEACTIVATED' | 'ANONYMIZED';
   createdAt: Date;
   updatedAt: Date;
@@ -162,6 +164,7 @@ export class AccountRepository {
                    person.email,
                    person.display_name as "displayName",
                    person.display_currency as "displayCurrency",
+                   person.locale,
                    person.status,
                    person.created_at as "createdAt",
                    person.updated_at as "updatedAt",
@@ -221,6 +224,7 @@ export class AccountRepository {
             email: account.email,
             displayName: account.displayName,
             displayCurrency: account.displayCurrency as DisplayCurrency,
+            locale: resolveLocale(account.locale),
             status: 'ACTIVE',
             createdAt: account.createdAt,
             updatedAt: account.updatedAt,
@@ -493,6 +497,7 @@ export class AccountRepository {
         email: null,
         displayName: 'Deleted user',
         displayCurrency: 'PKR',
+        locale: 'en',
         deletedAt: now,
         updatedAt: now,
       })

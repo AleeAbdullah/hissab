@@ -1,0 +1,18 @@
+{
+  "harassmentOrAbuse": "Harasani ya badsulooki",
+  "spamOrScam": "Spam ya dhoka",
+  "inappropriateNameOrContent": "Ghair munasib naam ya mawaad",
+  "impersonation": "Kisi aur ki pehchan apnana",
+  "somethingElse": "Kuch aur",
+  "reportSent": "Report bhej di",
+  "thanksForTellingUsTheTallyStickTeamWillReview": "Batane ka shukriya. Tally Stick team isay dekhegi. {{name}} ko khabar nahi di jayegi.",
+  "tellTheTallyStickTeamAboutAProblemWithReports": "Tally Stick team ko {{name}} ke saath masla batayein. Reports private hain. Group ya hisaab mein kisi ko khabar nahi hoti.",
+  "tellTheTallyStickTeamAboutAProblemWithThe": "Tally Stick team ko group {{name}} ka masla batayein. Reports private hain. Group ya hisaab mein kisi ko khabar nahi hoti.",
+  "reason": "WAJAH",
+  "detailsOptional": "Tafseel (marzi se)",
+  "whatHappenedUpTo1000Characters": "Kya hua? 1,000 huroof tak.",
+  "sendReport": "Report bhejein",
+  "thisPerson": "yeh shakhs",
+  "thisGroup": "yeh group",
+  "openReportFromAPersonOrGroup": "Kisi shakhs ya group se Report kholein."
+}

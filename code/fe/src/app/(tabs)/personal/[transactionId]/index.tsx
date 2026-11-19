@@ -1,5 +1,6 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link, router, useLocalSearchParams } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, View } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
@@ -23,10 +24,13 @@ import {
   personalTransactionQuery
 } from '@/features/personal/api';
 import { CATEGORY_ICONS } from '@/features/personal/components/category-picker';
+import { isolate } from '@/i18n';
+import { categoryName } from '@/i18n/categories';
 import { formatDate } from '@/lib/dates';
 import { formatMinorAmount } from '@/lib/money';
 
 export default function TransactionDetailScreen() {
+  const { t } = useTranslation(['personal', 'common']);
   const dialog = useDialog();
   const { transactionId } = useLocalSearchParams<{ transactionId: string }>();
   const transaction = useQuery(personalTransactionQuery(transactionId));
@@ -50,7 +54,7 @@ export default function TransactionDetailScreen() {
           error={
             transaction.error ??
             profile.error ??
-            new Error('Transaction not found.')
+            new Error(t('transactionNotFound'))
           }
         />
       </Screen>
@@ -62,31 +66,46 @@ export default function TransactionDetailScreen() {
       <DetailHero
         icon={CATEGORY_ICONS[item.category.code]}
         title={item.description}
-        amount={`${item.type === 'INCOME' ? '+' : ''}${formatMinorAmount(
-          item.amountMinor,
-          profile.data.displayCurrency
-        )}`}
-        meta={`${item.type === 'INCOME' ? 'Income' : 'Expense'} · ${formatDate(item.occurredAt)}`}
+        amount={
+          item.type === 'INCOME'
+            ? t('signedIncome', {
+                amount: isolate(
+                  formatMinorAmount(
+                    item.amountMinor,
+                    profile.data.displayCurrency
+                  )
+                )
+              })
+            : formatMinorAmount(item.amountMinor, profile.data.displayCurrency)
+        }
+        meta={t('periodRange', {
+          period: item.type === 'INCOME' ? t('income') : t('expense'),
+          range: isolate(formatDate(item.occurredAt))
+        })}
         deleted={item.status === 'DELETED'}
         positive={item.type === 'INCOME'}
       />
       {item.status === 'DELETED' ? (
-        <Notice title="Deleted transaction">
-          This revision remains in your private audit history and no longer
-          affects reports.
+        <Notice title={t('deletedTransaction')}>
+          {t(
+            'thisRevisionRemainsInYourPrivateAuditHistoryAndNoLongerAffectsReports'
+          )}
         </Notice>
       ) : null}
       <View className="gap-2">
-        <SectionLabel>DETAILS</SectionLabel>
+        <SectionLabel>{t('details')}</SectionLabel>
         <Card>
-          <Row title="Category" detail={item.category.name} />
+          <Row
+            title={t('category')}
+            detail={categoryName(item.category.code)}
+          />
           {item.merchantOrSource ? (
             <Row
-              title={item.type === 'INCOME' ? 'Source' : 'Merchant'}
+              title={item.type === 'INCOME' ? t('source') : t('merchant')}
               detail={item.merchantOrSource}
             />
           ) : null}
-          {item.notes ? <Row title="Notes" subtitle={item.notes} /> : null}
+          {item.notes ? <Row title={t('notes')} subtitle={item.notes} /> : null}
         </Card>
       </View>
       {item.status === 'ACTIVE' ? (
@@ -99,7 +118,7 @@ export default function TransactionDetailScreen() {
             asChild
           >
             <Button variant="outline" role="link">
-              <Text>Edit transaction</Text>
+              <Text>{t('editTransaction')}</Text>
             </Button>
           </Link>
           <Button
@@ -111,12 +130,14 @@ export default function TransactionDetailScreen() {
             }}
             onPress={() =>
               dialog(
-                'Delete transaction?',
-                'This removes its current effect from your reports and keeps an auditable revision.',
+                t('deleteTransactionTitle'),
+                t(
+                  'thisRemovesItsCurrentEffectFromYourReportsAndKeepsAnAuditableRevision'
+                ),
                 [
-                  { text: 'Keep transaction', style: 'cancel' },
+                  { text: t('keepTransaction'), style: 'cancel' },
                   {
-                    text: 'Delete transaction',
+                    text: t('deleteTransaction'),
                     style: 'destructive',
                     onPress: () => remove.mutate()
                   }
@@ -127,7 +148,7 @@ export default function TransactionDetailScreen() {
             {remove.isPending ? (
               <ActivityIndicator className="text-destructive" />
             ) : (
-              <Text>Delete transaction</Text>
+              <Text>{t('deleteTransaction')}</Text>
             )}
           </Button>
         </View>

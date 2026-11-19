@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { Href } from 'expo-router';
 import { Link } from 'expo-router';
 import { ArrowLeftRight, Shapes } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import { RefreshControl, View } from 'react-native';
 
 import type { Home, HomeRecentItem } from '@/api/contracts';
@@ -24,6 +25,8 @@ import { profileQuery } from '@/features/account/api';
 import { groupByDay } from '@/features/activity/presentation';
 import { homeQuery } from '@/features/home/api';
 import { CATEGORY_ICONS } from '@/features/personal/components/category-picker';
+import { i18n, isolate } from '@/i18n';
+import { categoryName } from '@/i18n/categories';
 import { absMinor, formatMinorAmount } from '@/lib/money';
 import { usePullToRefresh } from '@/lib/pull-to-refresh';
 import { useLargeText } from '@/lib/text-scale';
@@ -42,6 +45,7 @@ const amountTone = (net: bigint): AmountTone =>
   net > 0n ? 'positive' : net < 0n ? 'negative' : 'neutral';
 
 export default function HomeScreen() {
+  const { t } = useTranslation(['home', 'common']);
   const primary = useThemeVariable(THEME_VARIABLES.primaryText);
   const home = useQuery(homeQuery);
   const profile = useQuery(profileQuery);
@@ -51,13 +55,13 @@ export default function HomeScreen() {
   if (!home.data)
     return (
       <Screen>
-        <ErrorMessage error={home.error ?? new Error('Home is unavailable.')} />
+        <ErrorMessage error={home.error ?? new Error(t('homeIsUnavailable'))} />
         <Button
           variant="outline"
           disabled={home.isFetching}
           onPress={() => home.refetch()}
         >
-          <Text>Try again</Text>
+          <Text>{t('tryAgain')}</Text>
         </Button>
       </Screen>
     );
@@ -68,12 +72,12 @@ export default function HomeScreen() {
   const ledgers = shared.unsettledLedgerCount;
   const sharedDirection =
     sharedNet > 0n
-      ? 'You’re owed'
+      ? t('youreOwed')
       : sharedNet < 0n
-        ? 'You owe'
+        ? t('youOwe')
         : ledgers
-          ? 'Evens out'
-          : 'All settled';
+          ? t('evensOut')
+          : t('allSettled');
 
   return (
     <Screen
@@ -86,27 +90,34 @@ export default function HomeScreen() {
         <View className={largeText ? undefined : 'flex-row'}>
           <SummaryHalf
             href="/groups"
-            label="Shared"
+            label={t('shared')}
             amount={formatMinorAmount(absMinor(sharedNet), currency)}
             tone={amountTone(sharedNet)}
             caption={
               ledgers
-                ? `${sharedDirection} · ${ledgers} ${ledgers === 1 ? 'balance' : 'balances'}`
+                ? t(
+                    sharedNet > 0n
+                      ? 'owedBalances'
+                      : sharedNet < 0n
+                        ? 'oweBalances'
+                        : 'evenBalances',
+                    { count: ledgers }
+                  )
                 : sharedDirection
             }
           />
           <SummaryHalf
             href="/personal"
-            label="This month"
+            label={t('thisMonth')}
             amount={formatMinorAmount(absMinor(personalNet), currency)}
             tone={amountTone(personalNet)}
-            caption={personalNet < 0n ? 'Overspent' : 'Left over'}
+            caption={personalNet < 0n ? t('overspent') : t('leftOver')}
             divided
           />
         </View>
       </Card>
       <View className="gap-2">
-        <SectionLabel>RECENT</SectionLabel>
+        <SectionLabel>{t('recent')}</SectionLabel>
         {recent.length ? (
           groupByDay(recent).map((day) => (
             <View key={day.title}>
@@ -124,7 +135,7 @@ export default function HomeScreen() {
           ))
         ) : (
           <Text selectable className="leading-6 text-muted-foreground">
-            No recent activity yet.
+            {t('noRecentActivityYet')}
           </Text>
         )}
       </View>
@@ -147,16 +158,21 @@ function SummaryHalf({
   caption: string;
   divided?: boolean;
 }) {
+  const { t } = useTranslation(['home', 'common']);
   const largeText = useLargeText();
   return (
     <Link href={href} asChild>
       <Button
         variant="ghost"
         role="link"
-        accessibilityLabel={`${label}. ${caption}. ${amount}`}
+        accessibilityLabel={t('summaryLabel', {
+          label: isolate(label),
+          caption: isolate(caption),
+          amount: isolate(amount)
+        })}
         className={cn(
           'h-auto flex-1 flex-col items-stretch justify-start gap-0.5 rounded-none p-4',
-          divided && (largeText ? 'border-t' : 'border-l'),
+          divided && (largeText ? 'border-t' : 'border-s'),
           'border-border'
         )}
       >
@@ -208,7 +224,11 @@ function RecentRow({
       title={title}
       subtitle={subtitle}
       divided={divided}
-      accessibilityLabel={[title, subtitle, amount].filter(Boolean).join('. ')}
+      accessibilityLabel={i18n.t('home:rowLabel', {
+        title: isolate(title),
+        subtitle: isolate(subtitle),
+        amount: isolate(amount ?? '')
+      })}
       leading={
         <IconTile
           icon={
@@ -248,17 +268,25 @@ function recentPresentation(
   tone: AmountTone;
   href: Href;
 } {
-  const where = item.ledger?.name ?? 'Shared ledger';
+  const where = item.ledger?.name ?? i18n.t('home:sharedLedger');
   const deleted = item.eventType?.endsWith('_DELETED') ?? false;
-  const edited = item.eventType?.endsWith('_REPLACED') ? ' · edited' : '';
+  const edited = item.eventType?.endsWith('_REPLACED') ?? false;
   const money = (minor: string) => formatMinorAmount(minor, currency);
   if (item.kind === 'PERSONAL_INCOME' || item.kind === 'PERSONAL_EXPENSE') {
     const income = item.kind === 'PERSONAL_INCOME';
-    const tag = income ? 'Income' : 'Expense';
+    const tag = income ? i18n.t('home:income') : i18n.t('home:expense');
     return {
-      title: item.description ?? item.category?.name ?? tag,
-      subtitle: item.category?.name ?? tag,
-      amount: income ? `+${money(item.amountMinor)}` : money(item.amountMinor),
+      title:
+        item.description ??
+        (item.category ? categoryName(item.category.code) : undefined) ??
+        tag,
+      subtitle:
+        (item.category ? categoryName(item.category.code) : undefined) ?? tag,
+      amount: income
+        ? i18n.t('personal:signedIncome', {
+            amount: isolate(money(item.amountMinor))
+          })
+        : money(item.amountMinor),
       tone: income ? 'positive' : 'neutral',
       href: {
         pathname: '/personal/[transactionId]',
@@ -268,8 +296,15 @@ function recentPresentation(
   }
   if (item.kind === 'SHARED_EXPENSE')
     return {
-      title: item.description ?? 'Shared expense',
-      subtitle: `${deleted ? 'Deleted' : 'Your share'} · ${where}${edited}`,
+      title: item.description ?? i18n.t('home:sharedExpense'),
+      subtitle: i18n.t(
+        deleted
+          ? 'home:sharedDeleted'
+          : edited
+            ? 'home:sharedEdited'
+            : 'home:sharedShare',
+        { ledger: isolate(where) }
+      ),
       // A snapshot saved before shareMinor existed shows no amount until the refetch lands.
       amount:
         deleted || item.shareMinor == null ? null : money(item.shareMinor),
@@ -277,11 +312,32 @@ function recentPresentation(
       href: { pathname: '/expense/[expenseId]', params: { expenseId: item.id } }
     };
   const name = (user: HomeRecentItem['from'], fallback: string) =>
-    !user ? fallback : user.userId === viewerId ? 'You' : user.displayName;
-  const to = name(item.to, 'member');
+    !user
+      ? fallback
+      : user.userId === viewerId
+        ? i18n.t('home:you')
+        : user.displayName;
+  const to = name(item.to, i18n.t('home:member'));
   return {
-    title: `${name(item.from, 'Member')} paid ${to === 'You' ? 'you' : to}`,
-    subtitle: `${deleted ? 'Payment deleted' : 'Payment'} · ${where}${edited}`,
+    title: i18n.t(
+      item.from?.userId === viewerId
+        ? 'home:paidByYou'
+        : item.to?.userId === viewerId
+          ? 'home:paidToYou'
+          : 'home:paidPerson',
+      {
+        from: isolate(name(item.from, i18n.t('home:member'))),
+        to: isolate(to)
+      }
+    ),
+    subtitle: i18n.t(
+      deleted
+        ? 'home:paymentDeleted'
+        : edited
+          ? 'home:paymentEdited'
+          : 'home:paymentLedger',
+      { ledger: isolate(where) }
+    ),
     amount: deleted ? null : money(item.amountMinor),
     tone: 'neutral',
     href: { pathname: '/payment/[paymentId]', params: { paymentId: item.id } }

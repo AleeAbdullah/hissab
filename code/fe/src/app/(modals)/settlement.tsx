@@ -3,6 +3,7 @@ import { router, Stack } from 'expo-router';
 import { useNavigation, usePreventRemove } from 'expo-router/react-navigation';
 import { X } from 'lucide-react-native';
 import { useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { queryClient } from '@/api/query-client';
 import { Loading, Notice, Screen } from '@/components/ui';
@@ -23,6 +24,7 @@ import {
 } from '@/features/settlements/components/settlement-editor';
 
 export default function SettlementScreen() {
+  const { t } = useTranslation(['settlements', 'common']);
   const dialog = useDialog();
   const navigation = useNavigation();
   const allowExit = useRef(false);
@@ -64,9 +66,7 @@ export default function SettlementScreen() {
   if (!draft)
     return (
       <Screen>
-        <Notice title="Choose a ledger">
-          Open Record payment from an active group or friend ledger.
-        </Notice>
+        <Notice title={t('chooseLedger')}>{t('openLedger')}</Notice>
       </Screen>
     );
   const discard = () => {
@@ -77,36 +77,32 @@ export default function SettlementScreen() {
       router.back();
       return;
     }
-    dialog(
-      'Discard draft?',
-      'This removes the saved payment details from this device.',
-      [
-        { text: 'Keep editing', style: 'cancel' },
-        {
-          text: 'Discard draft',
-          style: 'destructive',
-          onPress: () => {
-            allowExit.current = true;
-            persistedDraft.clear();
-            clearDraft();
-            router.back();
-          }
+    dialog(t('discardDraftQuestion'), t('discardDraftBody'), [
+      { text: t('keepEditing'), style: 'cancel' },
+      {
+        text: t('discardDraft'),
+        style: 'destructive',
+        onPress: () => {
+          allowExit.current = true;
+          persistedDraft.clear();
+          clearDraft();
+          router.back();
         }
-      ]
-    );
+      }
+    ]);
   };
   return (
     <>
       <Stack.Screen
         options={{
-          title: 'Record payment',
+          title: t('recordPayment'),
           gestureEnabled: !busy,
           headerRight: () => (
             <Button
               className="w-12 px-0"
               variant="ghost"
               disabled={busy}
-              accessibilityLabel="Close editor"
+              accessibilityLabel={t('closeEditor')}
               onPress={discard}
             >
               <Icon as={X} size={22} />

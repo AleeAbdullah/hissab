@@ -1,5 +1,6 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, View } from 'react-native';
 
 import type { NotificationPreferences } from '@/api/contracts';
@@ -23,35 +24,36 @@ import { useSession } from '@/features/auth/session';
 
 type PreferenceKey = Exclude<keyof NotificationPreferences, 'updatedAt'>;
 
-const options: { key: PreferenceKey; title: string; description: string }[] = [
-  {
-    key: 'pushEnabled',
-    title: 'Push notifications',
-    description: 'Receive Tally Stick alerts on this device.'
-  },
-  {
-    key: 'expenseActivityEnabled',
-    title: 'Expenses',
-    description: 'New and updated shared expenses.'
-  },
-  {
-    key: 'settlementActivityEnabled',
-    title: 'Settlements',
-    description: 'Recorded and updated settlements.'
-  },
-  {
-    key: 'socialActivityEnabled',
-    title: 'Social activity',
-    description: 'Connection and group invitation updates.'
-  },
-  {
-    key: 'remindersEnabled',
-    title: 'Balance reminders',
-    description: 'Manual reminders from people you owe.'
-  }
-];
-
 export default function NotificationsScreen() {
+  const { t } = useTranslation(['account', 'common']);
+  const options: { key: PreferenceKey; title: string; description: string }[] =
+    [
+      {
+        key: 'pushEnabled',
+        title: t('pushNotifications'),
+        description: t('receiveTallyStickAlertsOnThisDevice')
+      },
+      {
+        key: 'expenseActivityEnabled',
+        title: t('expenses'),
+        description: t('newAndUpdatedSharedExpenses')
+      },
+      {
+        key: 'settlementActivityEnabled',
+        title: t('settlements'),
+        description: t('recordedAndUpdatedSettlements')
+      },
+      {
+        key: 'socialActivityEnabled',
+        title: t('socialActivity'),
+        description: t('connectionAndGroupInvitationUpdates')
+      },
+      {
+        key: 'remindersEnabled',
+        title: t('balanceReminders'),
+        description: t('manualRemindersFromPeopleYouOwe')
+      }
+    ];
   const dialog = useDialog();
   const session = useSession();
   const preferences = useQuery(notificationPreferencesQuery);
@@ -94,7 +96,7 @@ export default function NotificationsScreen() {
       setSetupError(
         error instanceof Error
           ? error.message
-          : 'Could not update notification settings.'
+          : t('couldNotUpdateNotificationSettings')
       );
     } finally {
       updating.current = false;
@@ -112,12 +114,12 @@ export default function NotificationsScreen() {
             disabled={preferences.isFetching}
             onPress={() => preferences.refetch()}
           >
-            <Text>Try again</Text>
+            <Text>{t('common:tryAgain')}</Text>
           </Button>
         </View>
       ) : null}
       {setupError ? (
-        <Notice title="Could not update notifications" error>
+        <Notice title={t('couldNotUpdateNotifications')} error>
           {setupError}
         </Notice>
       ) : null}
@@ -151,7 +153,7 @@ export default function NotificationsScreen() {
         selectable
         className="text-[13px] leading-[18px] text-muted-foreground"
       >
-        These choose which alerts push sends. The inbox shows everything.
+        {t('theseChooseWhichAlertsPushSendsTheInboxShows')}
       </Text>
       {deviceRegistered ? (
         <Button
@@ -163,12 +165,12 @@ export default function NotificationsScreen() {
           }}
           onPress={() =>
             dialog(
-              'Disable push on this device?',
-              'This stops push alerts on this installation. Other devices remain unchanged.',
+              t('disablePushOnThisDevice'),
+              t('thisStopsPushAlertsOnThisInstallationOtherDevices'),
               [
-                { text: 'Cancel', style: 'cancel' },
+                { text: t('common:cancel'), style: 'cancel' },
                 {
-                  text: 'Disable',
+                  text: t('disable'),
                   style: 'destructive',
                   onPress: () =>
                     revokePush.mutate(undefined, {
@@ -177,7 +179,7 @@ export default function NotificationsScreen() {
                         setSetupError(
                           error instanceof Error
                             ? error.message
-                            : 'Could not disable push notifications.'
+                            : t('couldNotDisablePushNotifications')
                         )
                     })
                 }
@@ -188,7 +190,7 @@ export default function NotificationsScreen() {
           {revokePush.isPending ? (
             <ActivityIndicator className="text-destructive" />
           ) : (
-            <Text>Disable push on this device</Text>
+            <Text>{t('disablePushOnThisDevice2')}</Text>
           )}
         </Button>
       ) : null}
@@ -211,6 +213,7 @@ function PreferenceRow({
   onChange: (value: boolean) => void;
   unavailable: boolean;
 }) {
+  const { t } = useTranslation(['account', 'common']);
   return (
     <View className="gap-2 border-b border-border p-4">
       <View className="min-h-12 flex-row items-center gap-3">
@@ -224,7 +227,7 @@ function PreferenceRow({
           accessibilityLabel={title}
           accessibilityHint={
             unavailable
-              ? "Push isn't available in this version of Tally Stick. Your inbox still gets every update."
+              ? t('pushIsntAvailableInThisVersionOfTallyStick')
               : description
           }
           value={value}
@@ -234,9 +237,7 @@ function PreferenceRow({
       </View>
       {unavailable ? (
         <Text className="text-[13px] leading-[18px] text-muted-foreground">
-          {
-            "Push isn't available in this version of Tally Stick. Your inbox still gets every update."
-          }
+          {t('pushIsntAvailableInThisVersionOfTallyStick')}
         </Text>
       ) : null}
     </View>

@@ -1,6 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { Link } from 'expo-router';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, View } from 'react-native';
 
 import { Icons } from '@/components/icons';
@@ -11,8 +12,10 @@ import { Text } from '@/components/ui/text';
 import { forgotPassword } from '@/features/auth/api';
 import { AuthPageHeader } from '@/features/auth/components/auth-page-header';
 import { isEmail } from '@/features/auth/validation';
+import { isolate } from '@/i18n';
 
 export default function ForgotPasswordScreen() {
+  const { t } = useTranslation(['auth', 'common']);
   const [email, setEmail] = useState('');
   const [emailTouched, setEmailTouched] = useState(false);
   const mutation = useMutation({ mutationFn: forgotPassword });
@@ -25,23 +28,21 @@ export default function ForgotPasswordScreen() {
             <Icon as={Icons.check} size={32} className="text-primary" />
           </View>
           <Text selectable className="text-xl font-semibold leading-[25px]">
-            Check your email
+            {t('checkYourEmail')}
           </Text>
           <Text
             selectable
             className="text-[15px] leading-[22px] text-muted-foreground"
           >
-            If an account exists for {email}, we&apos;ve sent a link to set a
-            new password. Open it on this phone within 60 minutes. Check your
-            spam folder if it doesn&apos;t arrive.
+            {t('resetEmailSent', { email: isolate(email) })}
           </Text>
           <Text selectable className="text-xs leading-4 text-muted-foreground">
-            We do not confirm whether an email is registered.
+            {t('weDoNotConfirmWhetherAnEmailIsRegistered')}
           </Text>
         </View>
         <Link href="/sign-in" asChild>
           <Button variant="outline" role="link">
-            <Text>Back to sign in</Text>
+            <Text>{t('backToSignIn')}</Text>
           </Button>
         </Link>
       </Screen>
@@ -67,19 +68,19 @@ export default function ForgotPasswordScreen() {
           {mutation.isPending ? (
             <ActivityIndicator className="text-primary-foreground" />
           ) : (
-            <Text>Send reset link</Text>
+            <Text>{t('sendResetLink')}</Text>
           )}
         </Button>
       }
     >
       <AuthPageHeader
-        title="Reset password"
-        description="Enter the email on your account and we'll send a link to set a new password."
+        title={t('resetPassword')}
+        description={t('enterTheEmailOnYourAccountAndWellSend')}
       />
       {mutation.error ? <ErrorMessage error={mutation.error} /> : null}
       <Field
-        label="Email"
-        placeholder="you@example.com"
+        label={t('email')}
+        placeholder={t('youexamplecom')}
         keyboardType="email-address"
         autoCapitalize="none"
         autoComplete="email"
@@ -91,7 +92,7 @@ export default function ForgotPasswordScreen() {
         onBlur={() => setEmailTouched(true)}
         error={
           emailTouched && email.trim() && !emailValid
-            ? 'Enter a full email address, like name@example.com.'
+            ? t('enterAFullEmailAddressLikeNameexamplecom')
             : undefined
         }
         value={email}

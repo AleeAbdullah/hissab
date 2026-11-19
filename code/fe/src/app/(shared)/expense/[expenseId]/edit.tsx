@@ -3,6 +3,7 @@ import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useNavigation, usePreventRemove } from 'expo-router/react-navigation';
 import { X } from 'lucide-react-native';
 import { useCallback, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import type { SharedExpense } from '@/api/contracts';
 import { queryClient } from '@/api/query-client';
@@ -25,6 +26,7 @@ import { homeQuery } from '@/features/home/api';
 import { useLedgerName } from '@/features/ledger/use-ledger-name';
 
 export default function EditExpenseScreen() {
+  const { t } = useTranslation(['expenses', 'common']);
   const { expenseId } = useLocalSearchParams<{ expenseId: string }>();
   const expense = useQuery(expenseQuery(expenseId));
   const dialog = useDialog();
@@ -56,12 +58,12 @@ export default function EditExpenseScreen() {
     onError: (error) => {
       if (error instanceof ApiError && error.status === 409)
         dialog(
-          'Expense changed',
-          'Keep your edits, or load the latest revision. Loading replaces the values in this form.',
+          t('expenseChanged'),
+          t('keepYourEditsOrLoadTheLatest'),
           [
-            { text: 'Keep editing', style: 'cancel' },
+            { text: t('keepEditing'), style: 'cancel' },
             {
-              text: 'Load latest',
+              text: t('loadLatest'),
               onPress: async () => {
                 if (submitting.current) return;
                 setLoadingLatest(true);
@@ -108,21 +110,17 @@ export default function EditExpenseScreen() {
       return;
     }
     if (submitting.current || replace.isPending || loadingLatest) return;
-    dialog(
-      'Discard changes?',
-      'Your changes have not been saved. The recorded history stays unchanged.',
-      [
-        { text: 'Keep editing', style: 'cancel' },
-        {
-          text: 'Discard changes',
-          style: 'destructive',
-          onPress: () => {
-            allowExit.current = true;
-            navigation.dispatch(data.action);
-          }
+    dialog(t('confirmDiscardChanges'), t('yourChangesHaveNotBeenSavedThe'), [
+      { text: t('keepEditing'), style: 'cancel' },
+      {
+        text: t('discardChanges'),
+        style: 'destructive',
+        onPress: () => {
+          allowExit.current = true;
+          navigation.dispatch(data.action);
         }
-      ]
-    );
+      }
+    ]);
   });
   const busy = replace.isPending || replace.isSuccess || loadingLatest;
   if (
@@ -140,7 +138,7 @@ export default function EditExpenseScreen() {
             expense.error ??
             profile.error ??
             balances.error ??
-            new Error('Expense not found.')
+            new Error(t('expenseNotFound'))
           }
         />
       </Screen>
@@ -156,11 +154,7 @@ export default function EditExpenseScreen() {
     return (
       <Screen>
         <ErrorMessage
-          error={
-            new Error(
-              'Only the person who recorded an active expense can edit it.'
-            )
-          }
+          error={new Error(t('onlyThePersonWhoRecordedAnActive'))}
         />
       </Screen>
     );
@@ -168,14 +162,14 @@ export default function EditExpenseScreen() {
     <>
       <Stack.Screen
         options={{
-          title: 'Edit expense',
+          title: t('editExpense'),
           gestureEnabled: !busy,
           headerRight: () => (
             <Button
               className="w-12 px-0"
               variant="ghost"
               disabled={busy}
-              accessibilityLabel="Close editor"
+              accessibilityLabel={t('closeEditor')}
               onPress={() => router.back()}
             >
               <Icon as={X} size={22} />

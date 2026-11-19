@@ -1,9 +1,11 @@
 import { useLocalSearchParams } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 
 import { ErrorMessage, Screen } from '@/components/ui';
 import { ReportForm } from '@/features/reports/components/report-form';
 
 export default function ReportScreen() {
+  const { t } = useTranslation(['reports', 'common']);
   const { targetType, targetId, name } = useLocalSearchParams<{
     targetType?: string;
     targetId?: string;
@@ -18,12 +20,12 @@ export default function ReportScreen() {
         <ReportForm
           targetType={targetType}
           targetId={targetId as string}
-          name={name || (targetType === 'USER' ? 'this person' : 'this group')}
+          name={
+            name || (targetType === 'USER' ? t('thisPerson') : t('thisGroup'))
+          }
         />
       ) : (
-        <ErrorMessage
-          error={new Error('Open Report from a person or group.')}
-        />
+        <ErrorMessage error={new Error(t('openReportFromAPersonOrGroup'))} />
       )}
     </Screen>
   );

@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { ChevronDown, ChevronUp } from 'lucide-react-native';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, ScrollView, TextInput, View } from 'react-native';
 
 import type {
@@ -24,6 +25,7 @@ import {
 } from '@/features/expenses/form';
 import type { LedgerDraftMember } from '@/features/ledger/draft';
 import { CategoryPicker } from '@/features/personal/components/category-picker';
+import { isolate } from '@/i18n';
 import { todayDate } from '@/lib/dates';
 import { parseMinorAmount, minorToInput, formatMinorAmount } from '@/lib/money';
 
@@ -39,14 +41,9 @@ export type ExpenseFormDraft = {
   exactAmounts: Record<string, string>;
 };
 
-const SPLIT_METHODS = [
-  { value: 'EQUAL', label: 'Equal' },
-  { value: 'EXACT', label: 'Exact' }
-] as const;
-
 export function ExpenseEditor({
   currentUserId,
-  ledgerName = 'Shared ledger',
+  ledgerName,
   error,
   displayCurrency,
   expense,
@@ -69,6 +66,11 @@ export function ExpenseEditor({
   savedDraft?: ExpenseFormDraft | null;
   saving: boolean;
 }) {
+  const { t } = useTranslation(['expenses', 'common']);
+  const SPLIT_METHODS = [
+    { value: 'EQUAL', label: t('equal') },
+    { value: 'EXACT', label: t('exact') }
+  ] as const;
   const initial = expense
     ? expenseInitialValues(expense)
     : (savedDraft ?? null);
@@ -94,7 +96,10 @@ export function ExpenseEditor({
   );
   const [exactAmounts, setExactAmounts] = useState(initial?.exactAmounts ?? {});
   const [validation, setValidation] = useState<{
-    error: string;
+    error: Exclude<
+      ReturnType<typeof buildExpenseBody>,
+      { body: unknown }
+    >['error'];
     field: string;
     focusUserId?: string;
   } | null>(null);
@@ -226,11 +231,26 @@ export function ExpenseEditor({
       0n
     );
     const remaining = BigInt(total) - assigned;
+    const amount = isolate(
+      formatMinorAmount(
+        (remaining < 0n ? -remaining : remaining).toString(),
+        displayCurrency
+      )
+    );
     return remaining === 0n
       ? context === 'split'
-        ? `${formatMinorAmount('0', displayCurrency)} left to split ✓`
-        : `Paid ${formatMinorAmount(total, displayCurrency)} of ${formatMinorAmount(total, displayCurrency)} ✓`
-      : `${formatMinorAmount((remaining < 0n ? -remaining : remaining).toString(), displayCurrency)} ${remaining < 0n ? 'overassigned' : context === 'split' ? 'left to split' : 'left to assign'}`;
+        ? t('splitComplete', { amount })
+        : t('paidComplete', {
+            amount: isolate(formatMinorAmount(total, displayCurrency))
+          })
+      : t(
+          remaining < 0n
+            ? 'overassigned'
+            : context === 'split'
+              ? 'splitRemaining'
+              : 'payerRemaining',
+          { amount }
+        );
   };
   const block = (field: string, content: ReactNode) => (
     <View
@@ -244,7 +264,7 @@ export function ExpenseEditor({
           accessibilityLiveRegion="polite"
           className="text-[15px] text-destructive"
         >
-          {validation.error}
+          {t(validation.error)}
         </Text>
       ) : null}
       {content}
@@ -291,23 +311,23 @@ export function ExpenseEditor({
             {saving ? (
               <ActivityIndicator className="text-primary-foreground" />
             ) : (
-              <Text>{expense ? 'Save changes' : 'Save expense'}</Text>
+              <Text>{expense ? t('saveChanges') : t('saveExpense')}</Text>
             )}
           </Button>
         </View>
       }
     >
-      {ledgerName ? (
+      {ledgerName !== '' ? (
         <Text
           selectable
           className="text-[15px] leading-[22px] text-muted-foreground"
         >
-          {ledgerName}
+          {ledgerName ?? t('sharedLedger')}
         </Text>
       ) : null}
       {expense ? (
         <Text selectable className="text-muted-foreground">
-          Saving creates a new revision; history is kept.
+          {t('savingCreatesANewRevisionHistoryIs')}
         </Text>
       ) : null}
       {block(
@@ -325,8 +345,8 @@ export function ExpenseEditor({
         'description',
         <Field
           inputRef={descriptionInput}
-          label="What was it for?"
-          placeholder="e.g. Dinner at Kolachi"
+          label={t('whatWasItFor')}
+          placeholder={t('eGDinnerAtKolachi')}
           value={description}
           onChangeText={(value) => {
             setDescription(value);
@@ -338,7 +358,9 @@ export function ExpenseEditor({
       {block(
         'category',
         <>
-          <Text className="text-[13px] text-muted-foreground">Category</Text>
+          <Text className="text-[13px] text-muted-foreground">
+            {t('category')}
+          </Text>
           <CategoryPicker
             categories={categories.data ?? []}
             loading={categories.isLoading}
@@ -353,7 +375,7 @@ export function ExpenseEditor({
             <>
               <ErrorMessage error={categories.error} />
               <Button variant="outline" onPress={() => categories.refetch()}>
-                <Text>Retry categories</Text>
+                <Text>{t('retryCategories')}</Text>
               </Button>
             </>
           ) : null}
@@ -375,21 +397,22 @@ export function ExpenseEditor({
         <>
           {expand(
             'payers',
-            'Paid by',
+            t('paidBy'),
             payerUserIds.length
               ? payerUserIds
-                  .map(
-                    (id) =>
+                  .map((id) =>
+                    isolate(
                       members.find((member) => member.userId === id)
-                        ?.displayName ?? 'Member'
+                        ?.displayName ?? t('member')
+                    )
                   )
                   .join(', ')
-              : 'Choose payers'
+              : t('choosePayers')
           )}
           {expanded === 'payers' ? (
             <>
               <MemberAmounts
-                label="PAYERS"
+                label={t('payers')}
                 amounts={payerAmounts}
                 displayCurrency={displayCurrency}
                 members={members}
@@ -427,8 +450,10 @@ export function ExpenseEditor({
         <>
           {expand(
             'split',
-            'Split',
-            `${splitMethod === 'EQUAL' ? 'Equal' : 'Exact'} · ${participantUserIds.length} ${participantUserIds.length === 1 ? 'person' : 'people'}`
+            t('split'),
+            t(splitMethod === 'EQUAL' ? 'equalPeople' : 'exactPeople', {
+              count: participantUserIds.length
+            })
           )}
           {splitMethod === 'EQUAL' ? (
             <Text
@@ -436,9 +461,16 @@ export function ExpenseEditor({
               className="text-[15px] leading-[22px] text-muted-foreground"
             >
               {participantUserIds
-                .map(
-                  (id) =>
-                    `${members.find((member) => member.userId === id)?.displayName ?? 'Member'} ${formatMinorAmount(equal[id] ?? '0', displayCurrency)}`
+                .map((id) =>
+                  t('memberShare', {
+                    name: isolate(
+                      members.find((member) => member.userId === id)
+                        ?.displayName ?? t('member')
+                    ),
+                    amount: isolate(
+                      formatMinorAmount(equal[id] ?? '0', displayCurrency)
+                    )
+                  })
                 )
                 .join(' · ')}
             </Text>
@@ -466,7 +498,7 @@ export function ExpenseEditor({
                 }}
               />
               <MemberAmounts
-                label="PARTICIPANTS"
+                label={t('participants')}
                 amounts={exactAmounts}
                 displayCurrency={displayCurrency}
                 members={members}
@@ -495,7 +527,7 @@ export function ExpenseEditor({
                     disabled={saving}
                     onPress={() => setSplitMethod('EQUAL')}
                   >
-                    <Text>Reset to equal split</Text>
+                    <Text>{t('resetToEqualSplit')}</Text>
                   </Button>
                 </>
               ) : null}
@@ -507,8 +539,7 @@ export function ExpenseEditor({
         selectable
         className="text-[13px] leading-[18px] text-muted-foreground"
       >
-        A network connection is required to save. Tally Stick records debts; it
-        does not move money.
+        {t('aNetworkConnectionIsRequiredToSave')}
       </Text>
       {/* New records close with the X; only edits need an explicit discard here. */}
       {onDiscard && expense ? (
@@ -517,7 +548,7 @@ export function ExpenseEditor({
           disabled={saving}
           onPress={onDiscard}
         >
-          <Text>Discard changes</Text>
+          <Text>{t('discardChanges')}</Text>
         </Button>
       ) : null}
     </Screen>

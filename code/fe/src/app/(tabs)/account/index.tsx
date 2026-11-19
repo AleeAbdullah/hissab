@@ -1,6 +1,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import Constants from 'expo-constants';
 import { ExternalLink } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, View } from 'react-native';
 
 import {
@@ -22,15 +23,18 @@ import {
   sessionsQuery
 } from '@/features/account/api';
 import { ExportAccountRow } from '@/features/account/components/export-account-row';
+import { LocalePicker } from '@/features/account/components/locale-picker';
 import { canRegisterPushNotifications } from '@/features/account/push';
 import { isActiveSession } from '@/features/account/sessions';
 import { signOut } from '@/features/auth/api';
+import { isolate } from '@/i18n';
 
 const externalIcon = (
   <Icon as={ExternalLink} size={18} className="text-muted-foreground" />
 );
 
 export default function AccountScreen() {
+  const { t } = useTranslation(['account', 'common']);
   const dialog = useDialog();
   const profile = useQuery(profileQuery);
   const sessions = useQuery(sessionsQuery);
@@ -53,59 +57,64 @@ export default function AccountScreen() {
           />
         </Card>
       ) : null}
-      <SectionLabel>PREFERENCES</SectionLabel>
+      <SectionLabel>{t('preferences')}</SectionLabel>
       <Card>
         <Row
-          title="Display currency"
+          title={t('displayCurrency')}
           detail={profile.data?.displayCurrency}
           href="/account/profile"
         />
+        <LocalePicker savedLocale={profile.data?.locale} />
         <Row
-          title="Notifications"
+          title={t('notifications')}
           detail={
             !canRegisterPushNotifications()
-              ? 'Unavailable'
+              ? t('unavailable')
               : notifications.data?.pushEnabled
-                ? 'On'
+                ? t('on')
                 : notifications.data
-                  ? 'Off'
+                  ? t('off')
                   : undefined
           }
           href="/account/notifications"
         />
       </Card>
-      <SectionLabel>SECURITY</SectionLabel>
+      <SectionLabel>{t('security')}</SectionLabel>
       <Card>
-        <Row title="Change password" href="/account/change-password" />
-        <Row title="Blocked people" href="/account/blocked-people" />
+        <Row title={t('changePassword')} href="/account/change-password" />
+        <Row title={t('blockedPeople')} href="/account/blocked-people" />
         <Row
-          title="Devices and sessions"
+          title={t('devicesAndSessions')}
           detail={
             sessions.data
-              ? `${sessions.data.filter((session) => isActiveSession(session)).length} active`
+              ? t('activeSessions', {
+                  count: sessions.data.filter((session) =>
+                    isActiveSession(session)
+                  ).length
+                })
               : undefined
           }
           href="/account/sessions"
         />
       </Card>
-      <SectionLabel>YOUR DATA</SectionLabel>
+      <SectionLabel>{t('yourData')}</SectionLabel>
       <Card>
         <ExportAccountRow />
         <Row
-          title="Delete account"
+          title={t('deleteAccount')}
           href="/account/delete-account"
           destructive
         />
       </Card>
-      <SectionLabel>LEGAL</SectionLabel>
+      <SectionLabel>{t('legal')}</SectionLabel>
       <Card>
         <Row
-          title="Privacy policy"
+          title={t('privacyPolicy')}
           href="https://hissabapp.vercel.app/privacy/"
           trailing={externalIcon}
         />
         <Row
-          title="Terms and conditions"
+          title={t('termsAndConditions')}
           href="https://hissabapp.vercel.app/terms/"
           trailing={externalIcon}
         />
@@ -119,23 +128,25 @@ export default function AccountScreen() {
             busy: mutation.isPending
           }}
           onPress={() =>
-            dialog('Sign out?', 'This signs out only this device.', [
-              { text: 'Cancel', style: 'cancel' },
-              { text: 'Sign out', onPress: () => mutation.mutate() }
+            dialog(t('signOut'), t('thisSignsOutOnlyThisDevice'), [
+              { text: t('common:cancel'), style: 'cancel' },
+              { text: t('signOut2'), onPress: () => mutation.mutate() }
             ])
           }
         >
           {mutation.isPending ? (
             <ActivityIndicator className="text-primary" />
           ) : (
-            <Text>Sign out</Text>
+            <Text>{t('signOut2')}</Text>
           )}
         </Button>
         <Text
           selectable
           className="text-center text-[13px] text-muted-foreground"
         >
-          Tally Stick {Constants.expoConfig?.version ?? '1.0'}
+          {t('version', {
+            version: isolate(Constants.expoConfig?.version ?? '1.0')
+          })}
         </Text>
       </View>
     </Screen>

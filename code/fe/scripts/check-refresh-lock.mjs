@@ -17,12 +17,28 @@ assert.equal(calls, 1, 'concurrent 401s must share one refresh');
 await runSingleRefresh(refresh);
 assert.equal(calls, 2, 'a later expiry must be able to refresh again');
 
-const { retryableSubmission } = await import(
-  '../src/api/retryable-submission.ts'
+let finishOld;
+const oldLogin = runSingleRefresh(
+  () =>
+    new Promise((resolve) => {
+      finishOld = resolve;
+    }),
+  1
 );
+assert.equal(
+  await runSingleRefresh(async () => 'new-login', 2),
+  'new-login',
+  'a new login must not wait on the previous login refresh'
+);
+finishOld('old-login');
+assert.equal(await oldLogin, 'old-login');
+
+const { retryableSubmission } =
+  await import('../src/api/retryable-submission.ts');
 let keyCount = 0;
 const submit = retryableSubmission(() => `key-${++keyCount}`);
-const fail = (status) => () => Promise.reject(Object.assign(new Error('x'), { status }));
+const fail = (status) => () =>
+  Promise.reject(Object.assign(new Error('x'), { status }));
 const keys = [];
 const record = (key) => {
   keys.push(key);
@@ -31,7 +47,11 @@ const record = (key) => {
 
 await submit({ amount: '100' }, fail(undefined)).catch(() => {});
 await submit({ amount: '100' }, record);
-assert.equal(keys[0], 'key-1', 'a retry after an unknown outcome reuses the key');
+assert.equal(
+  keys[0],
+  'key-1',
+  'a retry after an unknown outcome reuses the key'
+);
 await submit({ amount: '100' }, record);
 assert.equal(keys[1], 'key-2', 'a new submission after success gets a new key');
 await submit({ amount: '100' }, fail(409)).catch(() => {});

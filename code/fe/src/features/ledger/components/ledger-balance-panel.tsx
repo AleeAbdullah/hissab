@@ -1,5 +1,6 @@
 import { Link, router } from 'expo-router';
 import { ChevronRight, CircleCheck } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
 import type { LedgerBalances } from '@/api/contracts';
@@ -11,6 +12,7 @@ import { BalanceReminder } from '@/features/balances/components/balance-reminder
 import { simplifyLedgerBalances } from '@/features/balances/simplify';
 import { useLedgerDraft, type LedgerDraft } from '@/features/ledger/draft';
 import { settleUpDraft } from '@/features/ledger/settle';
+import { isolate } from '@/i18n';
 import { formatMinorAmount } from '@/lib/money';
 
 export function LedgerBalancePanel({
@@ -24,6 +26,7 @@ export function LedgerBalancePanel({
   canRecord: boolean;
   direct?: boolean;
 }) {
+  const { t } = useTranslation(['ledger', 'common']);
   const { startDraft } = useLedgerDraft();
   const own = BigInt(
     balances.members.find((member) => member.userId === draft.currentUserId)
@@ -51,13 +54,17 @@ export function LedgerBalancePanel({
   const direction =
     direct && own !== 0n
       ? own > 0n
-        ? `${others[0]?.displayName ?? 'Your friend'} owes you`
-        : `You owe ${others[0]?.displayName ?? 'your friend'}`
+        ? t('owesYou', {
+            name: isolate(others[0]?.displayName ?? t('yourFriend'))
+          })
+        : t('youOwe', {
+            name: isolate(others[0]?.displayName ?? t('yourFriend'))
+          })
       : own > 0n
-        ? "You're owed"
+        ? t('youReOwed')
         : own < 0n
-          ? 'You owe'
-          : 'All settled';
+          ? t('youOwe2')
+          : t('allSettled');
   const canSettle =
     canRecord && own !== 0n && (direct || Boolean(viewerSuggestions?.length));
   const settle = () => {
@@ -100,7 +107,7 @@ export function LedgerBalancePanel({
             selectable
             className="text-[15px] leading-[22px] text-muted-foreground"
           >
-            Between the two of you, outside groups.
+            {t('betweenTheTwoOfYouOutsideGroups')}
           </Text>
         ) : null}
         {!direct ? (
@@ -109,17 +116,15 @@ export function LedgerBalancePanel({
             className="text-[15px] leading-[22px] text-muted-foreground"
           >
             {openCount
-              ? openCount === 1
-                ? '1 other member has an open balance.'
-                : `${openCount} other members have open balances.`
-              : 'Everyone in this group is settled.'}
+              ? t('openMembers', { count: openCount })
+              : t('everyoneInThisGroupIsSettled')}
           </Text>
         ) : null}
         {canSettle || !direct ? (
           <View className="flex-row flex-wrap gap-2">
             {canSettle ? (
               <Button variant="outline" size="compact" onPress={settle}>
-                <Text>Settle up</Text>
+                <Text>{t('settleUp')}</Text>
               </Button>
             ) : null}
             {!direct ? (
@@ -136,7 +141,7 @@ export function LedgerBalancePanel({
                   role="link"
                   className="justify-start px-0"
                 >
-                  <Text>Balance details</Text>
+                  <Text>{t('balanceDetails')}</Text>
                   <Icon as={ChevronRight} size={20} className="text-primary" />
                 </Button>
               </Link>
@@ -146,11 +151,11 @@ export function LedgerBalancePanel({
         {!direct && suggestions === null ? (
           <>
             <ErrorMessage
-              error={new Error('Group balances do not add up to zero.')}
+              error={new Error(t('groupBalancesDoNotAddUpToZero'))}
             />
             {canRecord ? (
               <Button variant="ghost" role="link" onPress={differentPayment}>
-                <Text>Record a different payment</Text>
+                <Text>{t('recordADifferentPayment')}</Text>
               </Button>
             ) : null}
           </>

@@ -54,6 +54,7 @@ export type HomeRecentItemDto = {
 
 export type HomeDto = {
     currency: 'PKR' | 'USD' | 'GBP' | 'EUR' | 'AED' | 'SAR';
+    locale: 'en' | 'ur-Latn-PK' | 'ur-PK' | 'ar' | 'es' | 'fr' | 'hi' | 'zh-Hans';
     personal: HomePersonalSummaryDto;
     shared: HomeSharedSummaryDto;
     recent: Array<HomeRecentItemDto>;
@@ -238,16 +239,45 @@ export type ReplacePersonalTransactionDto = {
     expectedVersion: number;
 };
 
+export type UserProfileDto = {
+    displayCurrency: 'PKR' | 'USD' | 'GBP' | 'EUR' | 'AED' | 'SAR';
+    locale: 'en' | 'ur-Latn-PK' | 'ur-PK' | 'ar' | 'es' | 'fr' | 'hi' | 'zh-Hans';
+    id: string;
+    email: string;
+    displayName: string;
+    createdAt: string;
+    updatedAt: string;
+};
+
 export type UpdateProfileDto = {
+    locale?: 'en' | 'ur-Latn-PK' | 'ur-PK' | 'ar' | 'es' | 'fr' | 'hi' | 'zh-Hans';
     displayCurrency?: 'PKR' | 'USD' | 'GBP' | 'EUR' | 'AED' | 'SAR';
     displayName?: string;
 };
 
 export type RegisterDto = {
+    locale?: 'en' | 'ur-Latn-PK' | 'ur-PK' | 'ar' | 'es' | 'fr' | 'hi' | 'zh-Hans';
     email: string;
     password: string;
     displayName: string;
     deviceName?: string;
+};
+
+export type AuthUserDto = {
+    displayCurrency: 'PKR' | 'USD' | 'GBP' | 'EUR' | 'AED' | 'SAR';
+    locale: 'en' | 'ur-Latn-PK' | 'ur-PK' | 'ar' | 'es' | 'fr' | 'hi' | 'zh-Hans';
+    id: string;
+    email: string;
+    displayName: string;
+};
+
+export type AuthTokensDto = {
+    user: AuthUserDto;
+    accessToken: string;
+    accessTokenExpiresAt: string;
+    refreshToken: string;
+    refreshTokenExpiresAt: string;
+    sessionId: string;
 };
 
 export type SignInDto = {
@@ -279,6 +309,7 @@ export type ExportProfileDto = {
     email: string;
     displayName: string;
     displayCurrency: 'PKR' | 'USD' | 'GBP' | 'EUR' | 'AED' | 'SAR';
+    locale: 'en' | 'ur-Latn-PK' | 'ur-PK' | 'ar' | 'es' | 'fr' | 'hi' | 'zh-Hans';
     status: 'ACTIVE';
     createdAt: string;
     updatedAt: string;
@@ -989,9 +1020,7 @@ export type UsersGetProfileData = {
 };
 
 export type UsersGetProfileResponses = {
-    200: {
-        [key: string]: unknown;
-    };
+    200: UserProfileDto;
 };
 
 export type UsersGetProfileResponse = UsersGetProfileResponses[keyof UsersGetProfileResponses];
@@ -1010,9 +1039,7 @@ export type UsersUpdateProfileData = {
 };
 
 export type UsersUpdateProfileResponses = {
-    200: {
-        [key: string]: unknown;
-    };
+    200: UserProfileDto;
 };
 
 export type UsersUpdateProfileResponse = UsersUpdateProfileResponses[keyof UsersUpdateProfileResponses];
@@ -1031,9 +1058,7 @@ export type AuthRegisterData = {
 };
 
 export type AuthRegisterResponses = {
-    201: {
-        [key: string]: unknown;
-    };
+    201: AuthTokensDto;
 };
 
 export type AuthRegisterResponse = AuthRegisterResponses[keyof AuthRegisterResponses];
@@ -1052,9 +1077,7 @@ export type AuthSignInData = {
 };
 
 export type AuthSignInResponses = {
-    200: {
-        [key: string]: unknown;
-    };
+    200: AuthTokensDto;
 };
 
 export type AuthSignInResponse = AuthSignInResponses[keyof AuthSignInResponses];
@@ -1073,9 +1096,7 @@ export type AuthRefreshData = {
 };
 
 export type AuthRefreshResponses = {
-    200: {
-        [key: string]: unknown;
-    };
+    200: AuthTokensDto;
 };
 
 export type AuthRefreshResponse = AuthRefreshResponses[keyof AuthRefreshResponses];

@@ -1,6 +1,12 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 
+import { resolveLocale, type Locale } from '../../common/locale';
+import {
+  renderNotificationCopy,
+  type CopyKey,
+  type NotificationCopy,
+} from './copy';
 import { DatabaseService } from '../../database/database.service';
 import { notifications, users } from '../../database/schema';
 import {
@@ -40,8 +46,7 @@ type NotificationKind = 'EXPENSE' | 'SETTLEMENT' | 'SOCIAL' | 'REMINDER';
 interface NotificationSpec {
   recipientUserIds: string[];
   kind: NotificationKind;
-  title: string;
-  body: string;
+  copy: NotificationCopy;
   ledgerType?: 'DIRECT' | 'GROUP';
 }
 
@@ -55,7 +60,7 @@ interface UserNameRow {
 }
 
 interface LedgerContextRow {
-  name: string;
+  name: string | null;
   type: 'DIRECT' | 'GROUP';
 }
 
@@ -86,55 +91,70 @@ export class DomainEventHandler implements OutboxHandler, OnModuleInit {
 
     await this.database.transaction(async (transaction) => {
       if (notification) {
-        for (const recipientUserId of new Set(
-          notification.recipientUserIds.filter(
-            (userId) => userId !== actorUserId,
+        const recipientIds = [
+          ...new Set(
+            notification.recipientUserIds.filter((id) => id !== actorUserId),
           ),
-        )) {
-          const [activeRecipient] = await transaction
-            .select({ id: users.id })
-            .from(users)
-            .where(
-              and(eq(users.id, recipientUserId), eq(users.status, 'ACTIVE')),
-            )
-            .limit(1)
-            .for('update');
-          if (!activeRecipient) {
-            continue;
-          }
-          const [inserted] = await transaction
-            .insert(notifications)
-            .values({
-              sourceOutboxEventId: event.id,
-              recipientUserId,
-              actorUserId,
-              ledgerId,
-              kind: notification.kind,
-              eventType: event.eventType,
-              aggregateType: event.aggregateType,
-              aggregateId: event.aggregateId,
-              title: notification.title,
-              body: notification.body,
-              payload: {
-                area,
+        ];
+        const recipients = recipientIds.length
+          ? await transaction
+              .select({ id: users.id, locale: users.locale })
+              .from(users)
+              .where(
+                and(
+                  inArray(users.id, recipientIds),
+                  eq(users.status, 'ACTIVE'),
+                ),
+              )
+              .orderBy(users.id)
+              .for('update')
+          : [];
+        const groups = new Map<Locale, string[]>();
+        for (const recipient of recipients) {
+          const locale = resolveLocale(recipient.locale);
+          const ids = groups.get(locale) ?? [];
+          ids.push(recipient.id);
+          groups.set(locale, ids);
+        }
+        for (const [locale, ids] of groups) {
+          const rendered = renderNotificationCopy(locale, notification.copy);
+          if (!rendered) throw new Error('Invalid notification copy.');
+          for (const recipientUserId of ids) {
+            const [inserted] = await transaction
+              .insert(notifications)
+              .values({
+                sourceOutboxEventId: event.id,
+                recipientUserId,
+                actorUserId,
+                ledgerId,
+                kind: notification.kind,
                 eventType: event.eventType,
+                aggregateType: event.aggregateType,
                 aggregateId: event.aggregateId,
-                ...(ledgerId ? { ledgerId } : {}),
-                ...(notification.ledgerType
-                  ? { ledgerType: notification.ledgerType }
-                  : {}),
-              },
-            })
-            .onConflictDoNothing()
-            .returning({ id: notifications.id });
+                title: rendered.title,
+                body: rendered.body,
+                payload: {
+                  copy: notification.copy,
+                  area,
+                  eventType: event.eventType,
+                  aggregateId: event.aggregateId,
+                  ...(ledgerId ? { ledgerId } : {}),
+                  ...(notification.ledgerType
+                    ? { ledgerType: notification.ledgerType }
+                    : {}),
+                },
+              })
+              .onConflictDoNothing()
+              .returning({ id: notifications.id });
 
-          if (inserted) {
-            await this.outbox.enqueue(transaction, {
-              eventType: 'notification.push_requested',
-              aggregateType: 'notification',
-              aggregateId: inserted.id,
-              payload: { notificationId: inserted.id },
-            });
+            if (inserted) {
+              await this.outbox.enqueue(transaction, {
+                eventType: 'notification.push_requested',
+                aggregateType: 'notification',
+                aggregateId: inserted.id,
+                payload: { notificationId: inserted.id },
+              });
+            }
           }
         }
       }
@@ -210,27 +230,50 @@ export class DomainEventHandler implements OutboxHandler, OnModuleInit {
     actorUserId: string | null,
     ledgerId: string | null,
   ): Promise<NotificationSpec | null> {
-    const actorName = actorUserId
-      ? await this.userName(actorUserId)
-      : 'Someone';
+    const actorName = actorUserId ? await this.userName(actorUserId) : null;
     const ledger = ledgerId ? await this.ledgerContext(ledgerId) : null;
     const ledgerName = ledger?.name ?? null;
+    const message = (
+      title: CopyKey,
+      body: CopyKey,
+      fallback: 'ledger' | 'group' = 'ledger',
+    ): NotificationCopy => ({
+      title,
+      body,
+      actorName,
+      ledgerName,
+      ledgerFallback: ledger?.type === 'DIRECT' ? 'directLedger' : fallback,
+    });
 
-    if (event.eventType.startsWith('expense.') && ledgerId) {
+    if (
+      (event.eventType === 'expense.created' ||
+        event.eventType === 'expense.replaced' ||
+        event.eventType === 'expense.deleted') &&
+      ledgerId
+    ) {
       return {
         recipientUserIds: await this.activeLedgerMembers(ledgerId, actorUserId),
         kind: 'EXPENSE',
-        title: this.actionTitle(event.eventType, 'Expense'),
-        body: `${actorName} ${this.actionVerb(event.eventType)} an expense${ledgerName ? ` in ${ledgerName}` : ''}.`,
+        copy: message(
+          `${event.eventType}.title`,
+          `${event.eventType}.${ledgerName || ledger?.type === 'DIRECT' ? 'bodyWithLedger' : 'body'}`,
+        ),
         ledgerType: ledger?.type,
       };
     }
-    if (event.eventType.startsWith('settlement.') && ledgerId) {
+    if (
+      (event.eventType === 'settlement.created' ||
+        event.eventType === 'settlement.replaced' ||
+        event.eventType === 'settlement.deleted') &&
+      ledgerId
+    ) {
       return {
         recipientUserIds: await this.activeLedgerMembers(ledgerId, actorUserId),
         kind: 'SETTLEMENT',
-        title: this.actionTitle(event.eventType, 'Settlement'),
-        body: `${actorName} ${this.actionVerb(event.eventType)} a settlement${ledgerName ? ` in ${ledgerName}` : ''}.`,
+        copy: message(
+          `${event.eventType}.title`,
+          `${event.eventType}.${ledgerName || ledger?.type === 'DIRECT' ? 'bodyWithLedger' : 'body'}`,
+        ),
         ledgerType: ledger?.type,
       };
     }
@@ -240,8 +283,11 @@ export class DomainEventHandler implements OutboxHandler, OnModuleInit {
         ? {
             recipientUserIds: [invitedUserId],
             kind: 'SOCIAL',
-            title: 'Group invitation',
-            body: `${actorName} invited you to ${ledgerName ?? 'a group'}.`,
+            copy: message(
+              'group.invitation_sent.title',
+              'group.invitation_sent.body',
+              'group',
+            ),
             ledgerType: ledger?.type,
           }
         : null;
@@ -252,8 +298,10 @@ export class DomainEventHandler implements OutboxHandler, OnModuleInit {
         ? {
             recipientUserIds: [parties.receiver_user_id],
             kind: 'SOCIAL',
-            title: 'Connection request',
-            body: `${actorName} sent you a connection request.`,
+            copy: message(
+              'connection.created.title',
+              'connection.created.body',
+            ),
           }
         : null;
     }
@@ -267,8 +315,10 @@ export class DomainEventHandler implements OutboxHandler, OnModuleInit {
                 : parties.sender_user_id,
             ],
             kind: 'SOCIAL',
-            title: 'Connection accepted',
-            body: `${actorName} accepted your connection request.`,
+            copy: message(
+              'connection.accepted.title',
+              'connection.accepted.body',
+            ),
           }
         : null;
     }
@@ -280,8 +330,7 @@ export class DomainEventHandler implements OutboxHandler, OnModuleInit {
         ? {
             recipientUserIds: [recipientUserId],
             kind: 'REMINDER',
-            title: `Balance reminder from ${actorName}`,
-            body: `You have an unsettled balance in ${ledgerName ?? 'this ledger'}.`,
+            copy: message('reminder.created.title', 'reminder.created.body'),
             ledgerType: ledger?.type,
           }
         : null;
@@ -316,12 +365,12 @@ export class DomainEventHandler implements OutboxHandler, OnModuleInit {
     return result.rows[0] ?? null;
   }
 
-  private async userName(userId: string): Promise<string> {
+  private async userName(userId: string): Promise<string | null> {
     const result = await this.database.pool.query<UserNameRow>(
       'select display_name from users where id = $1::uuid',
       [userId],
     );
-    return result.rows[0]?.display_name ?? 'Someone';
+    return result.rows[0]?.display_name ?? null;
   }
 
   private async ledgerContext(
@@ -330,7 +379,7 @@ export class DomainEventHandler implements OutboxHandler, OnModuleInit {
     const result = await this.database.pool.query<LedgerContextRow>(
       `select case
          when ledger.type = 'GROUP' then profile.name
-         else 'your shared balance'
+         else null
        end as name,
        ledger.type
        from ledgers as ledger
@@ -353,18 +402,6 @@ export class DomainEventHandler implements OutboxHandler, OnModuleInit {
     if (eventType.startsWith('group.')) return 'GROUP';
     if (eventType.startsWith('connection.')) return 'CONNECTION';
     return 'REMINDER';
-  }
-
-  private actionTitle(eventType: string, noun: string): string {
-    if (eventType.endsWith('.created')) return `${noun} added`;
-    if (eventType.endsWith('.replaced')) return `${noun} updated`;
-    return `${noun} deleted`;
-  }
-
-  private actionVerb(eventType: string): string {
-    if (eventType.endsWith('.created')) return 'added';
-    if (eventType.endsWith('.replaced')) return 'updated';
-    return 'deleted';
   }
 
   private optionalString(value: unknown): string | null {

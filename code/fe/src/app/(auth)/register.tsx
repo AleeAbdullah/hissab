@@ -1,6 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { Link, useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, type TextInput, View } from 'react-native';
 
 import { ErrorMessage, Field, Screen } from '@/components/ui';
@@ -16,6 +17,7 @@ import {
 import { isEmail } from '@/features/auth/validation';
 
 export default function RegisterScreen() {
+  const { t } = useTranslation(['auth', 'common']);
   const router = useRouter();
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
@@ -56,12 +58,12 @@ export default function RegisterScreen() {
             {mutation.isPending ? (
               <ActivityIndicator className="text-primary-foreground" />
             ) : (
-              <Text>Create account</Text>
+              <Text>{t('createAccount')}</Text>
             )}
           </Button>
           <View className="flex-row flex-wrap items-center justify-center">
             <Text className="text-[15px] leading-[22px] text-muted-foreground">
-              Already have an account?
+              {t('alreadyHaveAnAccount')}
             </Text>
             <Link href="/sign-in" replace asChild>
               <Button
@@ -70,18 +72,18 @@ export default function RegisterScreen() {
                 role="link"
                 className="px-1.5"
               >
-                <Text>Sign in</Text>
+                <Text>{t('signIn')}</Text>
               </Button>
             </Link>
           </View>
         </View>
       }
     >
-      <AuthPageHeader title="Create account" />
+      <AuthPageHeader title={t('createAccount')} />
       {mutation.error ? <ErrorMessage error={mutation.error} /> : null}
       <Field
-        label="Display name"
-        placeholder="How friends will see you"
+        label={t('displayName')}
+        placeholder={t('howFriendsWillSeeYou')}
         autoComplete="name"
         textContentType="name"
         returnKeyType="next"
@@ -92,8 +94,8 @@ export default function RegisterScreen() {
       />
       <Field
         inputRef={emailRef}
-        label="Email"
-        placeholder="you@example.com"
+        label={t('email')}
+        placeholder={t('youexamplecom')}
         keyboardType="email-address"
         autoCapitalize="none"
         autoComplete="email"
@@ -106,7 +108,7 @@ export default function RegisterScreen() {
         onBlur={() => setEmailTouched(true)}
         error={
           emailTouched && email.trim() && !emailValid
-            ? 'Enter a full email address, like name@example.com.'
+            ? t('enterAFullEmailAddressLikeNameexamplecom')
             : undefined
         }
         value={email}
@@ -114,8 +116,8 @@ export default function RegisterScreen() {
       />
       <Field
         inputRef={passwordRef}
-        label="Password"
-        placeholder="Create a password"
+        label={t('password')}
+        placeholder={t('createAPassword')}
         secureTextEntry
         autoComplete="new-password"
         textContentType="newPassword"

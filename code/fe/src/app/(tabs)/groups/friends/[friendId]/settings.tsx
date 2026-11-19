@@ -1,6 +1,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Stack } from 'expo-router/stack';
+import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
@@ -17,8 +18,10 @@ import {
   connectionsQuery
 } from '@/features/connections/api';
 import { homeQuery } from '@/features/home/api';
+import { isolate } from '@/i18n';
 
 export default function FriendSettingsScreen() {
+  const { t } = useTranslation(['connections', 'common']);
   const dialog = useDialog();
   const { friendId } = useLocalSearchParams<{ friendId: string }>();
   const { data } = useQuery(connectionsQuery);
@@ -46,20 +49,20 @@ export default function FriendSettingsScreen() {
 
   return (
     <Screen>
-      <Stack.Screen options={{ title: 'Friend settings' }} />
+      <Stack.Screen options={{ title: t('friendSettings') }} />
       <View className="flex-row items-center gap-4 py-2">
-        <Avatar name={friend?.displayName ?? 'Friend'} large />
+        <Avatar name={friend?.displayName ?? t('friend')} large />
         <View className="flex-1 gap-0.5">
           <Text selectable className="text-2xl font-bold leading-[30px]">
-            {friend?.displayName ?? 'Friend'}
+            {friend?.displayName ?? t('friend')}
           </Text>
           <Text
             selectable
             className="text-[15px] leading-[22px] text-muted-foreground"
           >
             {friend
-              ? 'Active connection'
-              : 'Open this page from your Friends list.'}
+              ? t('activeConnection')
+              : t('openThisPageFromYourFriendsList')}
           </Text>
         </View>
       </View>
@@ -68,7 +71,7 @@ export default function FriendSettingsScreen() {
       ) : null}
       <Card>
         <Row
-          title="Report person"
+          title={t('reportPerson')}
           href={{
             pathname: '/report',
             params: {
@@ -78,29 +81,33 @@ export default function FriendSettingsScreen() {
             }
           }}
         />
-        <Row title="Blocked people" href="/account/blocked-people" />
+        <Row title={t('blockedPeople')} href="/account/blocked-people" />
       </Card>
       <Card>
         <Row
-          title={`Block ${friend?.displayName ?? 'person'}`}
+          title={t('block', {
+            name: isolate(friend?.displayName ?? t('friend'))
+          })}
           destructive
           disabled={!canBlock || blockFriend.isPending}
-          detail={blockFriend.isPending ? 'Blocking…' : undefined}
+          detail={blockFriend.isPending ? t('blocking') : undefined}
           subtitle={
             balances.isLoading
-              ? 'Checking your balance…'
+              ? t('checkingYourBalance')
               : balances.data && !settled
-                ? 'Settle your balance first.'
-                : 'Archives your shared ledger and removes the connection.'
+                ? t('settleYourBalanceFirst')
+                : t('archivesYourSharedLedgerAndRemovesTheConnection')
           }
           onPress={() =>
             dialog(
-              `Block ${friend?.displayName ?? 'person'}?`,
-              'This archives the settled direct ledger. It does not delete its audit history.',
+              t('block3', {
+                name: isolate(friend?.displayName ?? t('friend'))
+              }),
+              t('thisArchivesTheSettledDirectLedgerItDoesNotDelete'),
               [
-                { text: 'Cancel', style: 'cancel' },
+                { text: t('common:cancel'), style: 'cancel' },
                 {
-                  text: 'Block person',
+                  text: t('blockPerson'),
                   style: 'destructive',
                   onPress: () => blockFriend.mutate()
                 }

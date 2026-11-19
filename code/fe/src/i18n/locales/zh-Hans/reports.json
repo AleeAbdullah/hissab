@@ -1,0 +1,18 @@
+{
+  "harassmentOrAbuse": "骚扰或辱骂",
+  "spamOrScam": "垃圾信息或诈骗",
+  "inappropriateNameOrContent": "不当名称或内容",
+  "impersonation": "冒充他人",
+  "somethingElse": "其他原因",
+  "reportSent": "举报已发送",
+  "thanksForTellingUsTheTallyStickTeamWillReview": "感谢反馈，Tally Stick团队会审核此举报，不会通知{{name}}。",
+  "tellTheTallyStickTeamAboutAProblemWithReports": "向Tally Stick团队反馈与{{name}}有关的问题。举报保密，不会通知群组或账本中的任何人。",
+  "tellTheTallyStickTeamAboutAProblemWithThe": "向Tally Stick团队反馈群组{{name}}的问题。举报保密，不会通知群组或账本中的任何人。",
+  "reason": "原因",
+  "detailsOptional": "详情（选填）",
+  "whatHappenedUpTo1000Characters": "发生了什么？最多1000个字符。",
+  "sendReport": "发送举报",
+  "thisPerson": "此用户",
+  "thisGroup": "此群组",
+  "openReportFromAPersonOrGroup": "请从用户或群组页面打开举报。"
+}

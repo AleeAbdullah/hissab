@@ -1,11 +1,14 @@
 import { router } from 'expo-router';
 import { Stack } from 'expo-router/stack';
 import { ChevronLeft } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
+import { i18n } from '@/i18n';
 
 export default function SharedLayout() {
+  const { t } = useTranslation(['common', 'settlements']);
   return (
     <Stack
       screenOptions={{
@@ -16,19 +19,22 @@ export default function SharedLayout() {
     >
       <Stack.Screen
         name="expense/[expenseId]/index"
-        options={{ title: 'Expense', headerLeft: () => backButton('expense') }}
+        options={{ title: t('expense'), headerLeft: () => backButton('expense') }}
       />
       <Stack.Screen
         name="expense/[expenseId]/edit"
-        options={{ title: 'Edit expense' }}
+        options={{ title: t('editExpense') }}
       />
       <Stack.Screen
         name="payment/[paymentId]/index"
-        options={{ title: 'Payment', headerLeft: () => backButton('payment') }}
+        options={{
+          title: t('settlements:payment'),
+          headerLeft: () => backButton('payment')
+        }}
       />
       <Stack.Screen
         name="payment/[paymentId]/edit"
-        options={{ title: 'Edit payment' }}
+        options={{ title: t('settlements:editPayment') }}
       />
     </Stack>
   );
@@ -40,7 +46,7 @@ function backButton(key: string) {
       key={key}
       variant="ghost"
       className="w-12 px-0"
-      accessibilityLabel="Back"
+      accessibilityLabel={i18n.t('common:back')}
       onPress={() =>
         router.canGoBack() ? router.back() : router.replace('/home')
       }

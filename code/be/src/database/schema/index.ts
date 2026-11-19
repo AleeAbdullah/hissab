@@ -19,6 +19,7 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 
+import { LOCALES } from '../../common/locale';
 import { DISPLAY_CURRENCIES } from '../../common/display-currency';
 
 const citext = customType<{ data: string }>({
@@ -27,7 +28,13 @@ const citext = customType<{ data: string }>({
 
 const displayCurrencyCheck = (column: AnyPgColumn) =>
   sql`${column}::text IN (${sql.join(
-    DISPLAY_CURRENCIES.map((code) => sql`${code}`),
+    DISPLAY_CURRENCIES.map((code) => sql.raw(`'${code}'`)),
+    sql`, `,
+  )})`;
+
+const localeCheck = (column: AnyPgColumn) =>
+  sql`${column} IN (${sql.join(
+    LOCALES.map((code) => sql.raw(`'${code}'`)),
     sql`, `,
   )})`;
 
@@ -114,6 +121,7 @@ export const users = pgTable(
     displayCurrency: char('display_currency', { length: 3 })
       .notNull()
       .default('PKR'),
+    locale: text('locale').notNull().default('en'),
     status: userStatusEnum('status').notNull().default('ACTIVE'),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
@@ -124,6 +132,7 @@ export const users = pgTable(
     deletedAt: timestamp('deleted_at', { withTimezone: true }),
   },
   (table) => [
+    check('users_locale_check', localeCheck(table.locale)),
     uniqueIndex('users_email_uq').on(table.email),
     check(
       'users_display_currency_check',

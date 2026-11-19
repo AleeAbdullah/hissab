@@ -1,11 +1,13 @@
 import { useMutation } from '@tanstack/react-query';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
+import { useTranslation } from 'react-i18next';
 import { Platform } from 'react-native';
 
 import { Row } from '@/components/ui';
 import { useDialog } from '@/components/ui/dialog';
 import { exportAccount } from '@/features/account/api';
+import { i18n } from '@/i18n';
 
 // Android saves through the folder picker; iOS has no equivalent, so it uses the share sheet.
 const usesFolderPicker = Platform.OS === 'android';
@@ -20,7 +22,7 @@ async function saveExport() {
       await Sharing.shareAsync(uri, {
         mimeType: 'application/json',
         UTI: 'public.json',
-        dialogTitle: 'Save your Tally Stick data'
+        dialogTitle: i18n.t('account:saveYourTallyStickData')
       });
     } finally {
       await FileSystem.deleteAsync(uri, { idempotent: true });
@@ -47,25 +49,26 @@ async function saveExport() {
 }
 
 export function ExportAccountRow() {
+  const { t } = useTranslation(['account', 'common']);
   const dialog = useDialog();
   const mutation = useMutation({
     mutationFn: saveExport,
     onSuccess: (saved) => {
       if (saved)
         dialog(
-          'Export saved',
-          'The JSON file is in the folder you chose.',
-          [{ text: 'Done' }],
+          t('exportSaved'),
+          t('theJsonFileIsInTheFolderYouChose'),
+          [{ text: t('common:done') }],
           { tone: 'success' }
         );
     },
     onError: (error) =>
       dialog(
-        'Export failed',
+        t('exportFailed'),
         error.message,
         [
-          { text: 'Close', style: 'cancel' },
-          { text: 'Try again', onPress: () => mutation.mutate() }
+          { text: t('close'), style: 'cancel' },
+          { text: t('common:tryAgain'), onPress: () => mutation.mutate() }
         ],
         { tone: 'error' }
       )
@@ -73,16 +76,16 @@ export function ExportAccountRow() {
 
   return (
     <Row
-      title="Export your data"
-      detail={mutation.isPending ? 'Exporting…' : undefined}
+      title={t('exportYourData')}
+      detail={mutation.isPending ? t('exporting') : undefined}
       disabled={mutation.isPending}
       onPress={() =>
         dialog(
-          'Export your data?',
-          `Save a JSON snapshot of your profile, social state, financial history, activity, reminders, and notifications. ${usesFolderPicker ? 'You’ll choose a folder to save it.' : 'You’ll choose where to save or send it.'}`,
+          t('exportYourData2'),
+          t(usesFolderPicker ? 'exportFolder' : 'exportShare'),
           [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Export', onPress: () => mutation.mutate() }
+            { text: t('common:cancel'), style: 'cancel' },
+            { text: t('export'), onPress: () => mutation.mutate() }
           ]
         )
       }

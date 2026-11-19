@@ -1,5 +1,6 @@
 import { Image } from 'expo-image';
 import { Link } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useColorScheme, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -15,13 +16,13 @@ const illustration = {
   dark: require('@/assets/images/welcome/tally-stick-dark.png')
 };
 
-const points = [
-  'Split equally or exactly',
-  'Every balance adds up',
-  'Record payments made anywhere'
-];
-
 export default function WelcomeScreen() {
+  const { t } = useTranslation(['auth', 'common']);
+  const points = [
+    t('splitEquallyOrExactly'),
+    t('everyBalanceAddsUp'),
+    t('recordPaymentsMadeAnywhere')
+  ];
   const scheme = useColorScheme();
   const largeText = useLargeText();
   return (
@@ -45,7 +46,7 @@ export default function WelcomeScreen() {
                 maxFontSizeMultiplier={LARGE_TEXT_SCALE}
                 className="font-serif text-[56px] font-medium leading-[60px]"
               >
-                Tally Stick
+                {t('tallyStick')}
               </Text>
               <View className="h-px w-12 bg-primary" />
               <View className="gap-2">
@@ -53,13 +54,13 @@ export default function WelcomeScreen() {
                   selectable
                   className="font-serif text-[32px] font-medium leading-[38px]"
                 >
-                  Keep the record clear.
+                  {t('keepTheRecordClear')}
                 </Text>
                 <Text
                   selectable
                   className="text-[15px] leading-[22px] text-muted-foreground"
                 >
-                  Shared expenses, and exactly who owes whom.
+                  {t('sharedExpensesAndExactlyWhoOwesWhom')}
                 </Text>
               </View>
             </View>
@@ -83,19 +84,19 @@ export default function WelcomeScreen() {
           <View className="gap-2.5">
             <Link href="/register" asChild>
               <Button role="link">
-                <Text>Create account</Text>
+                <Text>{t('createAccount')}</Text>
               </Button>
             </Link>
             <Link href="/sign-in" asChild>
               <Button variant="outline" role="link">
-                <Text>Sign in</Text>
+                <Text>{t('signIn')}</Text>
               </Button>
             </Link>
             <Text
               selectable
               className="text-center text-xs leading-4 text-muted-foreground"
             >
-              Tally Stick keeps the record. It never moves money.
+              {t('tallyStickKeepsTheRecordItNeverMovesMoney')}
             </Text>
           </View>
         </View>

@@ -1,6 +1,10 @@
 import { Stack } from 'expo-router/stack';
+import { useTranslation } from 'react-i18next';
+
+import { nativeLargeTitle } from '@/i18n';
 
 export default function ActivityLayout() {
+  const { t } = useTranslation(['activity', 'common']);
   return (
     <Stack
       screenOptions={{
@@ -10,7 +14,7 @@ export default function ActivityLayout() {
     >
       <Stack.Screen
         name="index"
-        options={{ title: 'Activity', headerLargeTitle: true }}
+        options={{ title: t('activity'), headerLargeTitle: nativeLargeTitle }}
       />
     </Stack>
   );

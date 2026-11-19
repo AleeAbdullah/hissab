@@ -256,8 +256,8 @@ h3 {
 
 .brand-icon,
 .brand-lockup img {
-  width: 25px;
-  height: 24px;
+  width: 28px;
+  height: 18px;
 }
 
 .brand-icon {
@@ -556,24 +556,11 @@ h3 {
   box-shadow: 0 0 0 1px var(--device-rim), 0 32px 56px -32px rgb(29 29 27 / 34%);
 }
 
-.screenshot-device::before {
-  position: absolute;
-  z-index: 2;
-  inset-block-start: calc(var(--device-width) * 0.052);
-  inset-inline-start: 50%;
-  width: calc(var(--device-width) * 0.03);
-  aspect-ratio: 1;
-  border-radius: 50%;
-  background: #0a0a0a;
-  box-shadow: 0 0 0 1px rgb(255 255 255 / 6%);
-  content: '';
-  transform: translateX(-50%);
-}
 
 .screenshot-screen {
   overflow: hidden;
   border-radius: calc(var(--device-width) * 0.1);
-  aspect-ratio: 1080 / 2400;
+  aspect-ratio: 1320 / 2868;
   background: #f7f3ec;
 }
 
@@ -589,7 +576,7 @@ h3 {
 }
 
 .screenshot-device-cropped .screenshot-screen {
-  height: calc(var(--device-width) * 0.944 * 2400 / 1080 * var(--show));
+  height: calc(var(--device-width) * 0.944 * 2868 / 1320 * var(--show));
   border-end-start-radius: 0;
   border-end-end-radius: 0;
   aspect-ratio: auto;
@@ -598,7 +585,7 @@ h3 {
 .screenshot-detail {
   position: absolute;
   z-index: 3;
-  inset-block-start: calc(var(--device-width) * 0.028 + var(--device-width) * 0.944 * var(--crop-y) / 1080 - (var(--detail-width) * var(--crop-height) / var(--crop-width) - var(--device-width) * 0.944 * var(--crop-height) / 1080) / 2);
+  inset-block-start: calc(var(--device-width) * 0.028 + var(--device-width) * 0.944 * var(--crop-y) / 1320 - (var(--detail-width) * var(--crop-height) / var(--crop-width) - var(--device-width) * 0.944 * var(--crop-height) / 1320) / 2);
   width: var(--detail-width);
   overflow: hidden;
   border: 1px solid var(--line);
@@ -623,7 +610,7 @@ h3 {
 
 .screenshot-detail-crop img {
   position: absolute;
-  width: calc(1080 / var(--crop-width) * 100%);
+  width: calc(1320 / var(--crop-width) * 100%);
   max-width: none;
   height: auto;
   inset-inline-start: calc(var(--crop-x) / var(--crop-width) * -100%);

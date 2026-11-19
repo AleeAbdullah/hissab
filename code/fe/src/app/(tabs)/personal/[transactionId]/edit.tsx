@@ -1,6 +1,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
 import type { PersonalTransaction } from '@/api/contracts';
@@ -17,6 +18,7 @@ import {
 import { PersonalTransactionEditor } from '@/features/personal/components/personal-transaction-editor';
 
 export default function EditTransactionScreen() {
+  const { t } = useTranslation(['personal', 'common']);
   const { transactionId } = useLocalSearchParams<{ transactionId: string }>();
   const dialog = useDialog();
   const transaction = useQuery(personalTransactionQuery(transactionId));
@@ -33,12 +35,14 @@ export default function EditTransactionScreen() {
     onError: (error) => {
       if (error instanceof ApiError && error.status === 409)
         dialog(
-          'Transaction changed',
-          'Keep your edits, or load the latest revision. Loading replaces the values in this form.',
+          t('transactionChanged'),
+          t(
+            'keepYourEditsOrLoadTheLatestRevisionLoadingReplacesTheValuesInThisForm'
+          ),
           [
-            { text: 'Keep editing', style: 'cancel' },
+            { text: t('keepEditing'), style: 'cancel' },
             {
-              text: 'Load latest',
+              text: t('loadLatest'),
               onPress: async () => {
                 const latest = await transaction.refetch();
                 if (latest.data && !latest.error) {
@@ -73,7 +77,7 @@ export default function EditTransactionScreen() {
           error={
             transaction.error ??
             profile.error ??
-            new Error('Transaction not found.')
+            new Error(t('transactionNotFound'))
           }
         />
       </Screen>
@@ -82,7 +86,7 @@ export default function EditTransactionScreen() {
     return (
       <Screen>
         <ErrorMessage
-          error={new Error('Deleted transactions cannot be edited.')}
+          error={new Error(t('deletedTransactionsCannotBeEdited'))}
         />
       </Screen>
     );

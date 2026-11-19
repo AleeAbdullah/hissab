@@ -7,6 +7,7 @@ import {
   useState
 } from 'react';
 import type { PropsWithChildren } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import type { DisplayCurrency } from '@/api/contracts';
 import { getSessionUserId } from '@/api/session-store';
@@ -80,7 +81,8 @@ export function LedgerDraftProvider({ children }: PropsWithChildren) {
 }
 
 export function useLedgerDraft() {
+  const { t } = useTranslation(['ledger', 'common']);
   const value = use(LedgerDraftContext);
-  if (!value) throw new Error('Ledger draft is unavailable.');
+  if (!value) throw new Error(t('ledgerDraftIsUnavailable'));
   return value;
 }

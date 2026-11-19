@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
 import { Icons } from '@/components/icons';
@@ -9,15 +10,19 @@ export const MIN_PASSWORD_LENGTH = 12;
 
 // Live password rule: the icon and wording change with the colour, so state never relies on colour alone.
 export function PasswordRequirement({ password }: { password: string }) {
+  const { t } = useTranslation(['auth', 'common']);
   const met = password.length >= MIN_PASSWORD_LENGTH;
   return (
     <View
       accessible
-      accessibilityLabel={`Password needs at least ${MIN_PASSWORD_LENGTH} characters. ${met ? 'Met.' : `${password.length} so far.`}`}
+      accessibilityLabel={t(met ? 'passwordMet' : 'passwordProgress', {
+        minimum: MIN_PASSWORD_LENGTH,
+        length: password.length
+      })}
       className="gap-2 rounded-xl bg-muted p-4"
     >
       <Text className="text-[15px] font-semibold leading-[22px]">
-        Your password needs
+        {t('yourPasswordNeeds')}
       </Text>
       <View className="flex-row items-center gap-2">
         <Icon
@@ -31,8 +36,10 @@ export function PasswordRequirement({ password }: { password: string }) {
             met ? 'text-foreground' : 'text-muted-foreground'
           )}
         >
-          At least {MIN_PASSWORD_LENGTH} characters
-          {met ? '' : ` (${password.length}/${MIN_PASSWORD_LENGTH})`}
+          {t(met ? 'passwordMinimum' : 'passwordMinimumProgress', {
+            minimum: MIN_PASSWORD_LENGTH,
+            length: password.length
+          })}
         </Text>
       </View>
     </View>

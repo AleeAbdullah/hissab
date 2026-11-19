@@ -1,5 +1,6 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, View, useWindowDimensions } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
@@ -24,8 +25,10 @@ import {
   inviteGroupUser
 } from '@/features/groups/api';
 import { groupInviteStatus } from '@/features/groups/invitations';
+import { isolate } from '@/i18n';
 
 export function GroupInviteForm({ groupId }: { groupId: string }) {
+  const { t } = useTranslation(['groups', 'common']);
   const [email, setEmail] = useState('');
   const { fontScale } = useWindowDimensions();
   const searching = useRef(false);
@@ -64,7 +67,7 @@ export function GroupInviteForm({ groupId }: { groupId: string }) {
     return (
       <Screen>
         <ErrorMessage
-          error={group.error ?? members.error ?? new Error('Group not found.')}
+          error={group.error ?? members.error ?? new Error(t('groupNotFound'))}
         />
         <Button
           variant="outline"
@@ -73,15 +76,15 @@ export function GroupInviteForm({ groupId }: { groupId: string }) {
             void members.refetch();
           }}
         >
-          <Text>Retry</Text>
+          <Text>{t('retry')}</Text>
         </Button>
       </Screen>
     );
   if (!canInvite)
     return (
       <Screen>
-        <Notice title="Invitations unavailable">
-          Only active members can invite people to an active group.
+        <Notice title={t('invitationsUnavailable')}>
+          {t('onlyActiveMembersCanInvitePeopleToAnActiveGroup')}
         </Notice>
       </Screen>
     );
@@ -113,18 +116,21 @@ export function GroupInviteForm({ groupId }: { groupId: string }) {
     const stateLabel =
       status === 'Member'
         ? lookupResult
-          ? `Already in ${group.data.name}`
-          : '✓ Member'
+          ? t('alreadyIn', { group: isolate(group.data.name) })
+          : t('memberChecked')
         : sent
-          ? '✓ Invited'
+          ? t('invitedChecked')
           : status
             ? lookupResult
-              ? 'Invitation pending'
-              : 'Invited'
+              ? t('invitationPending')
+              : t('invited')
             : undefined;
     const action = stateLabel ? (
       <Text
-        accessibilityLabel={`${person.displayName}, ${stateLabel}`}
+        accessibilityLabel={t('label', {
+          name: isolate(person.displayName),
+          state: isolate(stateLabel)
+        })}
         accessibilityLiveRegion="polite"
         className="text-[13px] leading-[18px] text-muted-foreground"
       >
@@ -135,7 +141,7 @@ export function GroupInviteForm({ groupId }: { groupId: string }) {
         size="compact"
         variant="outline"
         disabled={disabled}
-        accessibilityLabel={`Invite ${person.displayName}`}
+        accessibilityLabel={t('invite', { name: isolate(person.displayName) })}
         accessibilityState={{
           busy: invite.isPending && invite.variables === person.userId
         }}
@@ -148,7 +154,7 @@ export function GroupInviteForm({ groupId }: { groupId: string }) {
         {invite.isPending && invite.variables === person.userId ? (
           <ActivityIndicator className="text-primary" />
         ) : (
-          <Text>Invite</Text>
+          <Text>{t('invite2')}</Text>
         )}
       </Button>
     );
@@ -171,7 +177,7 @@ export function GroupInviteForm({ groupId }: { groupId: string }) {
           </View>
           {fontScale < 1.3 ? action : null}
         </View>
-        <View className="ml-12 border-b-hairline border-border" />
+        <View className="ms-12 border-b-hairline border-border" />
       </View>
     );
   };
@@ -181,13 +187,11 @@ export function GroupInviteForm({ groupId }: { groupId: string }) {
         selectable
         className="text-[15px] leading-[22px] text-muted-foreground"
       >
-        Invite someone to {group.data.name} by the exact email on their Tally
-        Stick account. They join only after accepting; this does not add them as
-        a friend.
+        {t('inviteInstructions', { name: isolate(group.data.name) })}
       </Text>
       <Field
-        label="Email address"
-        placeholder="person@example.com"
+        label={t('emailAddress')}
+        placeholder={t('personExampleCom')}
         keyboardType="email-address"
         autoCapitalize="none"
         autoCorrect={false}
@@ -211,7 +215,7 @@ export function GroupInviteForm({ groupId }: { groupId: string }) {
         {lookup.isPending ? (
           <ActivityIndicator className="text-primary-foreground" />
         ) : (
-          <Text>Find person</Text>
+          <Text>{t('findPerson')}</Text>
         )}
       </Button>
       {invite.error ? <ErrorMessage error={invite.error} /> : null}
@@ -231,12 +235,12 @@ export function GroupInviteForm({ groupId }: { groupId: string }) {
           accessibilityLiveRegion="polite"
           className="text-[15px] leading-[22px] text-positive"
         >
-          Invitation sent. It will appear under pending invitations on Members.
+          {t('invitationSentItWillAppearUnderPendingInvitationsOnMembers')}
         </Text>
       ) : null}
       {invitations.isLoading ? (
         <ActivityIndicator
-          accessibilityLabel="Loading invitations"
+          accessibilityLabel={t('loadingInvitations')}
           className="text-primary"
         />
       ) : null}
@@ -244,21 +248,21 @@ export function GroupInviteForm({ groupId }: { groupId: string }) {
         <>
           <ErrorMessage error={invitations.error} />
           <Button variant="outline" onPress={() => void invitations.refetch()}>
-            <Text>Retry invitations</Text>
+            <Text>{t('retryInvitations')}</Text>
           </Button>
         </>
       ) : null}
-      <SectionLabel>YOUR FRIENDS</SectionLabel>
+      <SectionLabel>{t('yourFriends')}</SectionLabel>
       {connections.isLoading ? (
         <ActivityIndicator
-          accessibilityLabel="Loading friends"
+          accessibilityLabel={t('loadingFriends')}
           className="text-primary"
         />
       ) : connections.error ? (
         <>
           <ErrorMessage error={connections.error} />
           <Button variant="outline" onPress={() => void connections.refetch()}>
-            <Text>Retry friends</Text>
+            <Text>{t('retryFriends')}</Text>
           </Button>
         </>
       ) : connections.data?.length ? (
@@ -268,7 +272,7 @@ export function GroupInviteForm({ groupId }: { groupId: string }) {
           selectable
           className="text-[15px] leading-[22px] text-muted-foreground"
         >
-          No friends yet. You can still invite someone by email.
+          {t('noFriendsYetYouCanStillInviteSomeoneByEmail')}
         </Text>
       )}
     </Screen>

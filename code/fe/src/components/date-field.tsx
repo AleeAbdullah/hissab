@@ -1,10 +1,12 @@
 import { DateTimePicker } from '@expo/ui/community/datetime-picker';
 import { CalendarDays } from 'lucide-react-native';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
 import { Chip } from '@/components/ui';
 import { Text } from '@/components/ui/text';
+import { intlLocale, isolate } from '@/i18n';
 import {
   dateLabel,
   localDateKey,
@@ -27,6 +29,7 @@ export function DateField({
   onChange: (value: string) => void;
   value: string;
 }) {
+  const { t } = useTranslation('common');
   const primaryColor = useThemeVariable(THEME_VARIABLES.primary);
   const [picking, setPicking] = useState(false);
   const today = todayDate();
@@ -35,17 +38,17 @@ export function DateField({
   const custom = value !== today && value !== yesterday;
   const chips = [
     {
-      label: 'Today',
+      label: t('today'),
       selected: value === today,
       onPress: () => onChange(today)
     },
     {
-      label: 'Yesterday',
+      label: t('yesterday'),
       selected: value === yesterday,
       onPress: () => onChange(yesterday)
     },
     {
-      label: custom ? dateLabel(value, today) : 'Pick date',
+      label: custom ? dateLabel(value, today) : t('pickDate'),
       selected: custom,
       icon: true,
       onPress: () => setPicking(true)
@@ -53,7 +56,7 @@ export function DateField({
   ];
   return (
     <View className="gap-1.5">
-      <Text className="text-[13px] text-muted-foreground">Date</Text>
+      <Text className="text-[13px] text-muted-foreground">{t('date')}</Text>
       <View className="flex-row flex-wrap gap-2">
         {chips.map((chip) => (
           <Chip
@@ -63,8 +66,10 @@ export function DateField({
             icon={chip.icon ? CalendarDays : undefined}
             error={Boolean(error)}
             disabled={disabled}
-            accessibilityLabel={chip.icon ? `Date, ${label}` : chip.label}
-            accessibilityHint={chip.icon ? 'Opens the date picker' : undefined}
+            accessibilityLabel={
+              chip.icon ? t('dateLabel', { date: isolate(label) }) : chip.label
+            }
+            accessibilityHint={chip.icon ? t('opensDate') : undefined}
             onPress={chip.onPress}
           />
         ))}
@@ -80,6 +85,9 @@ export function DateField({
       {picking ? (
         <DateTimePicker
           mode="date"
+          locale={intlLocale()}
+          positiveButton={{ label: t('done') }}
+          negativeButton={{ label: t('cancel') }}
           presentation="dialog"
           value={localPickerDate(value)}
           accentColor={primaryColor}

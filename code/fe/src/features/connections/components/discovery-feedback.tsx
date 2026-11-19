@@ -1,4 +1,5 @@
 import { Search } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
 import { Card } from '@/components/ui';
@@ -15,26 +16,27 @@ export function DiscoveryFeedback({
   error?: boolean;
   onRetry?: () => void;
 }) {
+  const { t } = useTranslation(['connections', 'common']);
   return (
     <Card>
       <View accessibilityLiveRegion="polite" className="gap-2 p-4">
         <Icon as={Search} size={24} className="text-muted-foreground" />
         <Text className="text-base font-semibold">
-          {error ? "Couldn't search right now" : 'No match to show'}
+          {error ? t('couldnTSearchRightNow') : t('noMatchToShow')}
         </Text>
         <Text className="text-[15px] leading-[22px] text-muted-foreground">
           {error
-            ? 'Try again in a minute.'
-            : "Check the spelling, or ask them which email they use for Tally Stick. For privacy, Tally Stick doesn't confirm whether an email has an account."}
+            ? t('tryAgainInAMinute')
+            : t('checkTheSpellingOrAskThemWhichEmailTheyUse')}
         </Text>
         {group && !error ? (
           <Text className="text-[15px] leading-[22px] text-muted-foreground">
-            You can also invite someone from your friends below.
+            {t('youCanAlsoInviteSomeoneFromYourFriendsBelow')}
           </Text>
         ) : null}
         {error && onRetry ? (
           <Button variant="outline" size="compact" onPress={onRetry}>
-            <Text>Retry</Text>
+            <Text>{t('retry')}</Text>
           </Button>
         ) : null}
       </View>

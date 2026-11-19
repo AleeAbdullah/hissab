@@ -6,13 +6,13 @@ import { idempotencyKey, request } from '@/api/transport';
 export type ReportTargetType = CreateReportDto['targetType'];
 export type ReportReason = CreateReportDto['reason'];
 
-export const REPORT_REASONS: { value: ReportReason; label: string }[] = [
-  { value: 'HARASSMENT', label: 'Harassment or abuse' },
-  { value: 'SPAM_OR_SCAM', label: 'Spam or scam' },
-  { value: 'INAPPROPRIATE_CONTENT', label: 'Inappropriate name or content' },
-  { value: 'IMPERSONATION', label: 'Impersonation' },
-  { value: 'OTHER', label: 'Something else' }
-];
+export const REPORT_REASONS = [
+  { value: 'HARASSMENT', label: 'harassmentOrAbuse' },
+  { value: 'SPAM_OR_SCAM', label: 'spamOrScam' },
+  { value: 'INAPPROPRIATE_CONTENT', label: 'inappropriateNameOrContent' },
+  { value: 'IMPERSONATION', label: 'impersonation' },
+  { value: 'OTHER', label: 'somethingElse' }
+] as const satisfies readonly { value: ReportReason; label: string }[];
 
 export function createReport(body: CreateReportDto) {
   return request<Report>(() =>

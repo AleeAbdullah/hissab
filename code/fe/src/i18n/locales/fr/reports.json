@@ -1,0 +1,18 @@
+{
+  "harassmentOrAbuse": "Harcèlement ou abus",
+  "spamOrScam": "Spam ou arnaque",
+  "inappropriateNameOrContent": "Nom ou contenu inapproprié",
+  "impersonation": "Usurpation d’identité",
+  "somethingElse": "Autre raison",
+  "reportSent": "Signalement envoyé",
+  "thanksForTellingUsTheTallyStickTeamWillReview": "Merci de nous avoir informés. L’équipe Tally Stick examinera le signalement. {{name}} ne sera pas averti.",
+  "tellTheTallyStickTeamAboutAProblemWithReports": "Signalez à l’équipe Tally Stick un problème avec {{name}}. Les signalements sont privés. Personne dans le groupe ou le compte n’est averti.",
+  "tellTheTallyStickTeamAboutAProblemWithThe": "Signalez à l’équipe Tally Stick un problème avec le groupe {{name}}. Les signalements sont privés. Personne dans le groupe ou le compte n’est averti.",
+  "reason": "MOTIF",
+  "detailsOptional": "Détails (facultatif)",
+  "whatHappenedUpTo1000Characters": "Que s’est-il passé ? 1 000 caractères maximum.",
+  "sendReport": "Envoyer le signalement",
+  "thisPerson": "cette personne",
+  "thisGroup": "ce groupe",
+  "openReportFromAPersonOrGroup": "Ouvrez Signaler depuis une personne ou un groupe."
+}

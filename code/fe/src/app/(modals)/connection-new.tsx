@@ -1,6 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, View } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
@@ -19,6 +20,7 @@ import { DiscoveryFeedback } from '@/features/connections/components/discovery-f
 import { homeQuery } from '@/features/home/api';
 
 export default function NewConnectionScreen() {
+  const { t } = useTranslation(['connections', 'common']);
   const [email, setEmail] = useState('');
   const searching = useRef(false);
   const sending = useRef(false);
@@ -62,8 +64,8 @@ export default function NewConnectionScreen() {
 
   return (
     <FormSheet
-      title="Add friend"
-      action={{ label: 'Close', onPress: () => router.back() }}
+      title={t('addFriend')}
+      action={{ label: t('close'), onPress: () => router.back() }}
     >
       <Screen>
         <View className="gap-2">
@@ -71,15 +73,14 @@ export default function NewConnectionScreen() {
             selectable
             className="text-[15px] leading-[22px] text-muted-foreground"
           >
-            Your friend needs a Tally Stick account. Enter the email they signed
-            up with.
+            {t('yourFriendNeedsATallyStickAccountEnterTheEmail')}
           </Text>
         </View>
         {send.error ? <ErrorMessage error={send.error} /> : null}
         <Field
           autoFocus
-          label="Email address"
-          placeholder="person@example.com"
+          label={t('emailAddress')}
+          placeholder={t('personExampleCom')}
           keyboardType="email-address"
           autoCapitalize="none"
           autoCorrect={false}
@@ -106,7 +107,7 @@ export default function NewConnectionScreen() {
           {lookup.isPending ? (
             <ActivityIndicator className="text-primary-foreground" />
           ) : (
-            <Text>Find person</Text>
+            <Text>{t('findPerson')}</Text>
           )}
         </Button>
         {lookup.isSuccess &&

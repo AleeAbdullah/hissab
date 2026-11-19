@@ -4,6 +4,7 @@ import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
 import { registerNotificationDevice, revokeNotificationDevice } from './api';
+import { i18n } from '@/i18n';
 
 const installationKey = 'hissab.push.installation';
 const deviceKey = (userId: string) => `hissab.push.device.${userId}`;
@@ -23,7 +24,7 @@ export function canRegisterPushNotifications() {
 export async function registerForPushNotifications(userId: string) {
   if (!canRegisterPushNotifications()) {
     throw new Error(
-      'Push notifications require a Tally Stick build linked to Expo on a physical device.'
+      i18n.t('account:pushNotificationsRequireATallyStickBuildLinkedTo')
     );
   }
 
@@ -31,7 +32,7 @@ export async function registerForPushNotifications(userId: string) {
   const Notifications = await import('expo-notifications');
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('default', {
-      name: 'Tally Stick notifications',
+      name: i18n.t('account:tallyStickNotifications'),
       importance: Notifications.AndroidImportance.DEFAULT
     });
   }
@@ -41,7 +42,7 @@ export async function registerForPushNotifications(userId: string) {
     : await Notifications.requestPermissionsAsync();
   if (!permission.granted) {
     throw new Error(
-      'Allow notifications in your device settings to turn on push notifications.'
+      i18n.t('account:allowNotificationsInYourDeviceSettingsToTurnOn')
     );
   }
 

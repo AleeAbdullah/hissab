@@ -68,6 +68,7 @@ export class HomeService {
 
     return {
       currency: profile.displayCurrency,
+      locale: profile.locale,
       personal: { monthNetMinor },
       shared: {
         totalNetMinor: balances.totalNetMinor,

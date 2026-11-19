@@ -1,5 +1,6 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Smartphone } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, View } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
@@ -23,9 +24,11 @@ import {
   isActiveSession,
   sessionDeviceLabel
 } from '@/features/account/sessions';
+import { isolate } from '@/i18n';
 import { formatDate, formatDateTime } from '@/lib/dates';
 
 export default function SessionsScreen() {
+  const { t } = useTranslation(['account', 'common']);
   const dialog = useDialog();
   const query = useQuery(sessionsQuery);
   const mutation = useMutation({
@@ -47,13 +50,17 @@ export default function SessionsScreen() {
       divided={index > 0}
       leading={<IconTile icon={Smartphone} />}
       title={sessionDeviceLabel(session)}
-      subtitle={`Active ${formatDateTime(session.lastUsedAt ?? session.createdAt)}`}
+      subtitle={t('activeAt', {
+        date: isolate(formatDateTime(session.lastUsedAt ?? session.createdAt))
+      })}
       trailing={
         session.current ? undefined : (
           <Button
             variant="destructiveOutline"
             size="compact"
-            accessibilityLabel={`Revoke ${sessionDeviceLabel(session)}`}
+            accessibilityLabel={t('revokeDevice', {
+              name: isolate(sessionDeviceLabel(session))
+            })}
             disabled={mutation.isPending}
             accessibilityState={{
               disabled: mutation.isPending,
@@ -61,12 +68,12 @@ export default function SessionsScreen() {
             }}
             onPress={() =>
               dialog(
-                'Revoke this session?',
-                'That device will need to sign in again.',
+                t('revokeThisSession'),
+                t('thatDeviceWillNeedToSignInAgain'),
                 [
-                  { text: 'Cancel', style: 'cancel' },
+                  { text: t('common:cancel'), style: 'cancel' },
                   {
-                    text: 'Revoke',
+                    text: t('revoke'),
                     style: 'destructive',
                     onPress: () => mutation.mutate(session.id)
                   }
@@ -77,7 +84,7 @@ export default function SessionsScreen() {
             {mutation.isPending && mutation.variables === session.id ? (
               <ActivityIndicator className="text-destructive" />
             ) : (
-              <Text>Revoke</Text>
+              <Text>{t('revoke')}</Text>
             )}
           </Button>
         )
@@ -87,11 +94,16 @@ export default function SessionsScreen() {
         selectable
         className="text-[13px] leading-[18px] text-muted-foreground"
       >
-        Signed in {formatDate(session.createdAt, false)} · Expires{' '}
-        {formatDate(session.expiresAt, false)}
-        {session.deviceName || !session.userAgent
-          ? ''
-          : `\n${session.userAgent}`}
+        {t('sessionDates', {
+          signedIn: isolate(formatDate(session.createdAt, false)),
+          expires: isolate(formatDate(session.expiresAt, false))
+        })}
+        {session.deviceName || !session.userAgent ? null : (
+          <Text>
+            {'\n'}
+            {isolate(session.userAgent)}
+          </Text>
+        )}
       </Text>
     </ListRow>
   );
@@ -103,11 +115,13 @@ export default function SessionsScreen() {
       ) : null}
       {current ? (
         <>
-          <SectionLabel>THIS DEVICE</SectionLabel>
+          <SectionLabel>{t('thisDevice')}</SectionLabel>
           <View>{sessionRow(current, 0)}</View>
         </>
       ) : null}
-      <SectionLabel>OTHER SESSIONS · {others.length}</SectionLabel>
+      <SectionLabel>
+        {t('otherSessions', { count: others.length })}
+      </SectionLabel>
       {others.length ? <View>{others.map(sessionRow)}</View> : null}
       {others.length ? (
         <Button
@@ -119,12 +133,12 @@ export default function SessionsScreen() {
           }}
           onPress={() =>
             dialog(
-              'Revoke all other sessions?',
-              'Every other device will need to sign in again.',
+              t('revokeAllOtherSessions'),
+              t('everyOtherDeviceWillNeedToSignInAgain'),
               [
-                { text: 'Cancel', style: 'cancel' },
+                { text: t('common:cancel'), style: 'cancel' },
                 {
-                  text: 'Revoke all',
+                  text: t('revokeAll'),
                   style: 'destructive',
                   onPress: () => mutation.mutate(undefined)
                 }
@@ -135,12 +149,12 @@ export default function SessionsScreen() {
           {mutation.isPending && mutation.variables === undefined ? (
             <ActivityIndicator className="text-destructive" />
           ) : (
-            <Text>Revoke all other sessions</Text>
+            <Text>{t('revokeAllOtherSessions2')}</Text>
           )}
         </Button>
       ) : (
         <Text selectable className="text-[15px] text-muted-foreground">
-          No other active sessions.
+          {t('noOtherActiveSessions')}
         </Text>
       )}
     </Screen>

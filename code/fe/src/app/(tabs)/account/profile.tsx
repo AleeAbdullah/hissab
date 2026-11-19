@@ -1,6 +1,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Stack } from 'expo-router/stack';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator } from 'react-native';
 
 import type { Profile } from '@/api/contracts';
@@ -25,6 +26,7 @@ export default function ProfileScreen() {
 }
 
 function ProfileForm({ profile }: { profile: Profile }) {
+  const { t } = useTranslation(['account', 'common']);
   const [displayName, setDisplayName] = useState(profile.displayName);
   const [displayCurrency, setDisplayCurrency] = useState(
     profile.displayCurrency
@@ -59,7 +61,7 @@ function ProfileForm({ profile }: { profile: Profile }) {
               {mutation.isPending ? (
                 <ActivityIndicator className="text-primary" />
               ) : (
-                <Text>Save</Text>
+                <Text>{t('save')}</Text>
               )}
             </Button>
           )
@@ -67,28 +69,28 @@ function ProfileForm({ profile }: { profile: Profile }) {
       />
       {mutation.error ? <ErrorMessage error={mutation.error} /> : null}
       {mutation.isSuccess ? (
-        <Notice title="Saved">Your profile and defaults are up to date.</Notice>
+        <Notice title={t('saved')}>
+          {t('yourProfileAndDefaultsAreUpToDate')}
+        </Notice>
       ) : null}
       <Field
-        label="Display name"
+        label={t('displayName')}
         value={displayName}
         onChangeText={setDisplayName}
-        hint="Everyone you share a ledger with sees this name."
+        hint={t('everyoneYouShareALedgerWithSeesThisName')}
       />
       <Field
-        label="Email"
+        label={t('email')}
         value={profile.email}
         editable={false}
-        hint="Changing your email is not supported in this version."
+        hint={t('changingYourEmailIsNotSupportedInThisVersion')}
       />
       <CurrencyPicker value={displayCurrency} onChange={setDisplayCurrency} />
       <Text
         selectable
         className="text-[13px] leading-[18px] text-muted-foreground"
       >
-        Display currency changes the symbol Tally Stick uses for amounts. It
-        does not convert stored values. Profile photos are not supported;
-        initials are generated from your name.
+        {t('displayCurrencyChangesTheSymbolTallyStickUsesFor')}
       </Text>
     </Screen>
   );

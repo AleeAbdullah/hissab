@@ -1,6 +1,7 @@
 import { ApiProperty, IntersectionType } from '@nestjs/swagger';
 import { Equals, IsString, MaxLength, MinLength } from 'class-validator';
 
+import { LOCALES, type Locale } from '../../common/locale';
 import {
   DISPLAY_CURRENCIES,
   type DisplayCurrency,
@@ -58,6 +59,9 @@ export class ExportProfileDto {
 
   @ApiProperty({ enum: DISPLAY_CURRENCIES })
   displayCurrency!: DisplayCurrency;
+
+  @ApiProperty({ enum: LOCALES })
+  locale!: Locale;
 
   @ApiProperty({ enum: ['ACTIVE'] })
   status!: 'ACTIVE';

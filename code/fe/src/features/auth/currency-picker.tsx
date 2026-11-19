@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
 import type { DisplayCurrency } from '@/api/contracts';
@@ -28,6 +29,7 @@ export function CurrencyPicker({
   value?: DisplayCurrency;
   onChange: (value: DisplayCurrency) => void;
 }) {
+  const { t } = useTranslation(['account', 'common']);
   const selected = value ? { value, label: value } : undefined;
   const change = (option: Option) => {
     if (option) onChange(option.value as DisplayCurrency);
@@ -36,11 +38,14 @@ export function CurrencyPicker({
   return (
     <View className="gap-1.5">
       <Text selectable className="text-[13px] text-muted-foreground">
-        Display currency
+        {t('displayCurrency')}
       </Text>
       <Select value={selected} onValueChange={change}>
-        <SelectTrigger accessibilityLabel="Display currency" className="w-full">
-          <SelectValue placeholder="Choose a currency" />
+        <SelectTrigger
+          accessibilityLabel={t('displayCurrency')}
+          className="w-full"
+        >
+          <SelectValue placeholder={t('chooseACurrency')} />
         </SelectTrigger>
         <SelectContent>
           <SelectGroup>

@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
+import { LOCALES, type Locale } from '../../common/locale';
 import {
   DISPLAY_CURRENCIES,
   type DisplayCurrency,
@@ -108,6 +109,9 @@ export class HomeSharedSummaryDto {
 export class HomeDto {
   @ApiProperty({ enum: DISPLAY_CURRENCIES })
   currency!: DisplayCurrency;
+
+  @ApiProperty({ enum: LOCALES })
+  locale!: Locale;
 
   @ApiProperty({ type: HomePersonalSummaryDto })
   personal!: HomePersonalSummaryDto;

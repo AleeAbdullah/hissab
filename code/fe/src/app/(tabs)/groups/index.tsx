@@ -3,6 +3,7 @@ import { Link } from 'expo-router';
 import { Stack } from 'expo-router/stack';
 import { UsersRound } from 'lucide-react-native';
 import { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
 import type { DisplayCurrency, Group, UserBalances } from '@/api/contracts';
@@ -38,8 +39,10 @@ import {
 } from '@/features/groups/api';
 import { GroupInvitationCard } from '@/features/groups/components/group-invitation-card';
 import { homeQuery } from '@/features/home/api';
+import { isolate } from '@/i18n';
 
 export default function GroupsScreen() {
+  const { t } = useTranslation(['groups', 'common']);
   const [search, setSearch] = useState('');
   const query = search.trim().toLowerCase();
   const groups = useQuery(groupsQuery);
@@ -104,7 +107,7 @@ export default function GroupsScreen() {
       <Stack.Screen
         options={{
           headerSearchBarOptions: {
-            placeholder: 'Search groups',
+            placeholder: t('searchGroups'),
             placement: 'stacked',
             hideWhenScrolling: false,
             autoCapitalize: 'none',
@@ -116,7 +119,7 @@ export default function GroupsScreen() {
                 className="w-12 px-0"
                 variant="ghost"
                 role="link"
-                accessibilityLabel="Create group"
+                accessibilityLabel={t('createGroup')}
               >
                 <Icon as={Icons.add} size={24} className="text-primary" />
               </Button>
@@ -146,22 +149,22 @@ export default function GroupsScreen() {
           {/* Stays visible while searching, so people are still one tap away. */}
           <ListRow
             href="/groups/friends"
-            title="Friends"
+            title={t('friends')}
             subtitle={
               friendCount === undefined
                 ? undefined
-                : `${friendCount} ${friendCount === 1 ? 'friend' : 'friends'}`
+                : t('friendCount', { count: friendCount })
             }
             accessibilityLabel={
               friendCount === undefined
-                ? 'Friends'
-                : `Friends, ${friendCount} ${friendCount === 1 ? 'friend' : 'friends'}`
+                ? t('friends')
+                : t('friendsCountLabel', { count: friendCount })
             }
             leading={<IconTile icon={UsersRound} />}
           />
           {invitations.data?.length ? (
             <View className="gap-3">
-              <SectionLabel>INVITATIONS</SectionLabel>
+              <SectionLabel>{t('invitations')}</SectionLabel>
               {invitations.data.map((invitation) => (
                 <GroupInvitationCard
                   key={invitation.groupId}
@@ -181,13 +184,13 @@ export default function GroupsScreen() {
             <>
               {active.length ? (
                 <View className="gap-1">
-                  <SectionLabel>GROUPS</SectionLabel>
+                  <SectionLabel>{t('groups2')}</SectionLabel>
                   <View>{groupRows(active)}</View>
                 </View>
               ) : null}
               {past.length ? (
                 <View className="gap-1">
-                  <SectionLabel>PAST GROUPS</SectionLabel>
+                  <SectionLabel>{t('pastGroups')}</SectionLabel>
                   <View>{groupRows(past)}</View>
                 </View>
               ) : null}
@@ -199,13 +202,13 @@ export default function GroupsScreen() {
                 className="text-center text-[17px] leading-[23px] text-muted-foreground"
               >
                 {search
-                  ? 'No groups match your search.'
-                  : 'No groups yet. Create one to start a shared ledger.'}
+                  ? t('noGroupsMatchYourSearch')
+                  : t('noGroupsYetCreateOneToStartASharedLedger')}
               </Text>
               {!search ? (
                 <Link href="/group-new" asChild>
                   <Button role="link">
-                    <Text>Create group</Text>
+                    <Text>{t('createGroup')}</Text>
                   </Button>
                 </Link>
               ) : null}
@@ -228,29 +231,29 @@ function GroupRow({
   currency?: DisplayCurrency;
   divided: boolean;
 }) {
+  const { t } = useTranslation(['groups', 'common']);
   const netMinor = balances?.ledgers.find(
     (ledger) => ledger.ledgerId === group.id
   )?.netMinor;
-  const subtitle = `${group.memberCount} ${group.memberCount === 1 ? 'member' : 'members'}${
+  const subtitle = t(
     group.status === 'ARCHIVED'
-      ? ' · Archived'
+      ? 'archivedMembers'
       : group.membershipStatus === 'LEFT'
-        ? ' · You left'
-        : ''
-  }`;
+        ? 'leftMembers'
+        : 'memberCount',
+    { count: group.memberCount }
+  );
   return (
     <ListRow
       href={{ pathname: '/groups/[groupId]', params: { groupId: group.id } }}
       title={group.name}
       subtitle={subtitle}
       divided={divided}
-      accessibilityLabel={[
-        group.name,
-        subtitle,
-        netBalanceLabel(netMinor, currency)
-      ]
-        .filter(Boolean)
-        .join(', ')}
+      accessibilityLabel={t('rowLabel', {
+        name: isolate(group.name),
+        summary: isolate(subtitle),
+        balance: isolate(netBalanceLabel(netMinor, currency) ?? '')
+      })}
       leading={<Avatar name={group.name} />}
       trailing={<NetBalance netMinor={netMinor} currency={currency} />}
     />

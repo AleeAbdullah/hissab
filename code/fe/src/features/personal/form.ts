@@ -4,7 +4,8 @@ import type {
   PersonalTransactionType
 } from '@/api/contracts';
 import type { CreatePersonalTransactionDto } from '@/api/generated/types.gen';
-import { dateToIso, formatDate, formatMonth } from '@/lib/dates';
+import { i18n, isolate } from '@/i18n';
+import { dateToIso, formatDate, formatMonth, formatPeriod } from '@/lib/dates';
 import { minorToInput, parseMinorAmount } from '@/lib/money';
 
 export type PersonalTransactionField =
@@ -20,16 +21,23 @@ export function buildPersonalTransactionBody(input: {
   type: PersonalTransactionType;
 }):
   | { body: CreatePersonalTransactionDto }
-  | { error: string; field: PersonalTransactionField } {
+  | {
+      error:
+        | 'enterAnAmountGreaterThanZero'
+        | 'chooseACategory'
+        | 'enterADescription'
+        | 'chooseAValidDate';
+      field: PersonalTransactionField;
+    } {
   const amountMinor = parseMinorAmount(input.amount);
   if (!amountMinor || BigInt(amountMinor) <= 0n)
-    return { error: 'Enter an amount greater than zero.', field: 'amount' };
+    return { error: 'enterAnAmountGreaterThanZero', field: 'amount' };
   if (!input.categoryCode)
-    return { error: 'Choose a category.', field: 'category' };
+    return { error: 'chooseACategory', field: 'category' };
   if (!input.description.trim())
-    return { error: 'Enter a description.', field: 'description' };
+    return { error: 'enterADescription', field: 'description' };
   const occurredAt = dateToIso(input.occurredDate);
-  if (!occurredAt) return { error: 'Choose a valid date.', field: 'date' };
+  if (!occurredAt) return { error: 'chooseAValidDate', field: 'date' };
   return {
     body: {
       type: input.type,
@@ -59,4 +67,13 @@ export function personalTransactionInitialValues(
 
 export function periodLabel(value: string, bucket: 'DAY' | 'MONTH') {
   return bucket === 'MONTH' ? formatMonth(`${value}-01`) : formatDate(value);
+}
+
+export function historyPeriodLabel(from?: string, to?: string) {
+  if (!from && !to) return i18n.t('personal:allTime');
+  if (!from && to)
+    return i18n.t('personal:periodUntil', { date: isolate(formatDate(to)) });
+  if (from && !to)
+    return i18n.t('personal:periodFrom', { date: isolate(formatDate(from)) });
+  return formatPeriod(from, to);
 }

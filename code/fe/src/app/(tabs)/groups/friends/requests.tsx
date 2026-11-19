@@ -1,5 +1,6 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 
 import type { ConnectionRequest } from '@/api/contracts';
 import { queryClient } from '@/api/query-client';
@@ -17,8 +18,10 @@ import {
 } from '@/features/connections/api';
 import { ConnectionRequestCard } from '@/features/connections/components/connection-request-card';
 import { homeQuery } from '@/features/home/api';
+import { isolate } from '@/i18n';
 
 export default function RequestsScreen() {
+  const { t } = useTranslation(['connections', 'common']);
   const dialog = useDialog();
   const query = useQuery(pendingRequestsQuery);
   const mutation = useMutation({
@@ -57,12 +60,14 @@ export default function RequestsScreen() {
     query.data?.filter((item) => item.direction === 'outgoing') ?? [];
   const confirm = (request: ConnectionRequest, action: 'decline' | 'cancel') =>
     dialog(
-      action === 'decline' ? 'Decline request?' : 'Cancel request?',
-      `${request.personDisplayName} will no longer see this pending request.`,
+      action === 'decline' ? t('declineRequest') : t('cancelRequest2'),
+      t('willNoLongerSeeThisPendingRequest', {
+        name: isolate(request.personDisplayName)
+      }),
       [
-        { text: 'Keep request', style: 'cancel' },
+        { text: t('keepRequest'), style: 'cancel' },
         {
-          text: action === 'decline' ? 'Decline' : 'Cancel request',
+          text: action === 'decline' ? t('decline') : t('cancelRequest'),
           style: 'destructive',
           onPress: () => mutation.mutate({ action, id: request.id })
         }
@@ -79,11 +84,11 @@ export default function RequestsScreen() {
           selectable
           className="py-8 text-center text-[17px] text-muted-foreground"
         >
-          No pending friend requests.
+          {t('noPendingFriendRequests')}
         </Text>
       ) : null}
       {incoming.length ? (
-        <SectionLabel>INCOMING · {incoming.length}</SectionLabel>
+        <SectionLabel>{t('incoming', { count: incoming.length })}</SectionLabel>
       ) : null}
       {incoming.map((item) => (
         <ConnectionRequestCard
@@ -96,12 +101,12 @@ export default function RequestsScreen() {
           onCancel={() => confirm(item, 'cancel')}
           onBlock={() =>
             dialog(
-              `Block ${item.personDisplayName}?`,
-              'This declines the request and stops them from sending new ones. You can unblock them later in Account.',
+              t('block3', { name: isolate(item.personDisplayName) }),
+              t('thisDeclinesTheRequestAndStopsThemFromSendingNew'),
               [
-                { text: 'Cancel', style: 'cancel' },
+                { text: t('common:cancel'), style: 'cancel' },
                 {
-                  text: 'Block person',
+                  text: t('blockPerson'),
                   style: 'destructive',
                   onPress: () =>
                     mutation.mutate({
@@ -126,7 +131,7 @@ export default function RequestsScreen() {
         />
       ))}
       {outgoing.length ? (
-        <SectionLabel>OUTGOING · {outgoing.length}</SectionLabel>
+        <SectionLabel>{t('outgoing', { count: outgoing.length })}</SectionLabel>
       ) : null}
       {outgoing.map((item) => (
         <ConnectionRequestCard

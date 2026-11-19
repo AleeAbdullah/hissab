@@ -18,10 +18,7 @@ export const metadata: Metadata = {
   title: { default: 'Tally Stick · Clear records, clear relationships', template: '%s · Tally Stick' },
   description: 'Tally Stick records shared expenses, personal transactions, and exactly who owes whom.',
   icons: {
-    icon: [
-      { url: '/brand/icon-dark.svg', type: 'image/svg+xml', media: '(prefers-color-scheme: light)' },
-      { url: '/brand/icon-light.svg', type: 'image/svg+xml', media: '(prefers-color-scheme: dark)' }
-    ]
+    icon: [{ url: '/brand/favicon.svg', type: 'image/svg+xml' }]
   },
   // Safari's install banner; it stays hidden until the app is live on the App Store.
   itunes: { appId: '6831827291' },

@@ -1,0 +1,18 @@
+{
+  "harassmentOrAbuse": "تحرّش أو إساءة",
+  "spamOrScam": "رسائل مزعجة أو احتيال",
+  "inappropriateNameOrContent": "اسم أو محتوى غير لائق",
+  "impersonation": "انتحال شخصية",
+  "somethingElse": "سبب آخر",
+  "reportSent": "تم إرسال البلاغ",
+  "thanksForTellingUsTheTallyStickTeamWillReview": "شكرًا لإبلاغنا. سيراجع فريق Tally Stick البلاغ. لن يتم إشعار {{name}}.",
+  "tellTheTallyStickTeamAboutAProblemWithReports": "أخبر فريق Tally Stick عن مشكلة مع {{name}}. البلاغات خاصة ولا يتم إشعار أحد في المجموعة أو السجل.",
+  "tellTheTallyStickTeamAboutAProblemWithThe": "أخبر فريق Tally Stick عن مشكلة في مجموعة {{name}}. البلاغات خاصة ولا يتم إشعار أحد في المجموعة أو السجل.",
+  "reason": "السبب",
+  "detailsOptional": "التفاصيل (اختياري)",
+  "whatHappenedUpTo1000Characters": "ماذا حدث؟ حتى 1,000 حرف.",
+  "sendReport": "إرسال البلاغ",
+  "thisPerson": "هذا الشخص",
+  "thisGroup": "هذه المجموعة",
+  "openReportFromAPersonOrGroup": "افتح الإبلاغ من صفحة شخص أو مجموعة."
+}

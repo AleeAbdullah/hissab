@@ -3,6 +3,7 @@ import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useNavigation, usePreventRemove } from 'expo-router/react-navigation';
 import { X } from 'lucide-react-native';
 import { useCallback, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import type { Settlement } from '@/api/contracts';
 import { queryClient } from '@/api/query-client';
@@ -24,6 +25,7 @@ import {
 } from '@/features/settlements/components/settlement-editor';
 
 export default function EditPaymentScreen() {
+  const { t } = useTranslation(['settlements', 'common']);
   const dialog = useDialog();
   const { paymentId } = useLocalSearchParams<{ paymentId: string }>();
   const settlement = useQuery(settlementQuery(paymentId));
@@ -54,12 +56,12 @@ export default function EditPaymentScreen() {
     onError: (error) => {
       if (error instanceof ApiError && error.status === 409)
         dialog(
-          'Payment changed',
-          'Keep your edits, or load the latest revision. Loading replaces the values in this form.',
+          t('changed'),
+          t('conflict'),
           [
-            { text: 'Keep editing', style: 'cancel' },
+            { text: t('keepEditing'), style: 'cancel' },
             {
-              text: 'Load latest',
+              text: t('loadLatest'),
               onPress: async () => {
                 if (submitting.current) return;
                 setLoadingLatest(true);
@@ -105,21 +107,17 @@ export default function EditPaymentScreen() {
       return;
     }
     if (submitting.current || replace.isPending || loadingLatest) return;
-    dialog(
-      'Discard changes?',
-      'Your changes have not been saved. The recorded history stays unchanged.',
-      [
-        { text: 'Keep editing', style: 'cancel' },
-        {
-          text: 'Discard changes',
-          style: 'destructive',
-          onPress: () => {
-            allowExit.current = true;
-            navigation.dispatch(data.action);
-          }
+    dialog(t('discardQuestion'), t('discardBody'), [
+      { text: t('keepEditing'), style: 'cancel' },
+      {
+        text: t('discardChanges'),
+        style: 'destructive',
+        onPress: () => {
+          allowExit.current = true;
+          navigation.dispatch(data.action);
         }
-      ]
-    );
+      }
+    ]);
   });
   const busy = replace.isPending || replace.isSuccess || loadingLatest;
   if (
@@ -133,11 +131,12 @@ export default function EditPaymentScreen() {
     return (
       <Screen>
         <ErrorMessage
+          fallback={t('common:error')}
           error={
             settlement.error ??
             profile.error ??
             balances.error ??
-            new Error('Payment not found.')
+            new Error(t('notFound'))
           }
         />
       </Screen>
@@ -153,11 +152,8 @@ export default function EditPaymentScreen() {
     return (
       <Screen>
         <ErrorMessage
-          error={
-            new Error(
-              'Only the person who recorded an active payment can edit it.'
-            )
-          }
+          fallback={t('onlyRecorder')}
+          error={new Error(t('onlyRecorder'))}
         />
       </Screen>
     );
@@ -165,14 +161,14 @@ export default function EditPaymentScreen() {
     <>
       <Stack.Screen
         options={{
-          title: 'Edit payment',
+          title: t('editPayment'),
           gestureEnabled: !busy,
           headerRight: () => (
             <Button
               className="w-12 px-0"
               variant="ghost"
               disabled={busy}
-              accessibilityLabel="Close editor"
+              accessibilityLabel={t('closeEditor')}
               onPress={() => router.back()}
             >
               <Icon as={X} size={22} />

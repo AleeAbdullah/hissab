@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link, useLocalSearchParams } from 'expo-router';
 import { Stack } from 'expo-router/stack';
 import { Settings } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
 import { Avatar, ErrorMessage, Loading, Screen } from '@/components/ui';
@@ -17,6 +18,7 @@ import { LedgerActivity } from '@/features/ledger/components/ledger-activity';
 import { LedgerBalancePanel } from '@/features/ledger/components/ledger-balance-panel';
 
 export default function FriendDetailScreen() {
+  const { t } = useTranslation(['connections', 'common']);
   const { friendId, ledgerId } = useLocalSearchParams<{
     friendId: string;
     ledgerId?: string;
@@ -45,19 +47,19 @@ export default function FriendDetailScreen() {
             void profile.refetch();
           }}
         >
-          <Text>Retry</Text>
+          <Text>{t('retry')}</Text>
         </Button>
       </Screen>
     );
   if (!friend)
     return (
       <Screen>
-        <Stack.Screen options={{ title: 'Direct ledger' }} />
+        <Stack.Screen options={{ title: t('directLedger') }} />
         <Text selectable className="text-lg font-semibold">
-          This direct ledger is no longer active
+          {t('thisDirectLedgerIsNoLongerActive')}
         </Text>
         <Text selectable className="text-muted-foreground">
-          Your accessible financial history remains in Activity.
+          {t('yourAccessibleFinancialHistoryRemainsInActivity')}
         </Text>
         <Link
           href={
@@ -68,7 +70,7 @@ export default function FriendDetailScreen() {
           asChild
         >
           <Button role="link">
-            <Text>View history in Activity</Text>
+            <Text>{t('viewHistoryInActivity')}</Text>
           </Button>
         </Link>
       </Screen>
@@ -77,10 +79,10 @@ export default function FriendDetailScreen() {
     return (
       <Screen>
         <ErrorMessage
-          error={balances.error ?? new Error('Balances unavailable.')}
+          error={balances.error ?? new Error(t('balancesUnavailable'))}
         />
         <Button variant="outline" onPress={() => balances.refetch()}>
-          <Text>Retry</Text>
+          <Text>{t('retry')}</Text>
         </Button>
       </Screen>
     );
@@ -114,7 +116,7 @@ export default function FriendDetailScreen() {
                 className="w-12 px-0"
                 variant="ghost"
                 role="link"
-                accessibilityLabel="Friend settings"
+                accessibilityLabel={t('friendSettings')}
               >
                 <Icon as={Settings} size={22} className="text-primary" />
               </Button>

@@ -1,9 +1,10 @@
 import { Body, Controller, Get, Patch } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags, ApiOkResponse } from '@nestjs/swagger';
 
 import type { AuthPrincipal } from '../../common/auth/auth-principal';
 import { CurrentUser } from '../../common/auth/current-user.decorator';
 import { IdempotencyKey } from '../idempotency';
+import { UserProfileDto } from './dto/user-profile.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UsersService } from './users.service';
 
@@ -13,11 +14,13 @@ import { UsersService } from './users.service';
 export class UsersController {
   constructor(private readonly users: UsersService) {}
 
+  @ApiOkResponse({ type: UserProfileDto })
   @Get('me')
   getProfile(@CurrentUser() principal: AuthPrincipal) {
     return this.users.getProfile(principal.userId);
   }
 
+  @ApiOkResponse({ type: UserProfileDto })
   @Patch('me')
   updateProfile(
     @CurrentUser() principal: AuthPrincipal,

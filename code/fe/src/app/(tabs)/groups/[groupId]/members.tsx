@@ -3,6 +3,7 @@ import { Link, useLocalSearchParams } from 'expo-router';
 import { Stack } from 'expo-router/stack';
 import { Flag, UserPlus } from 'lucide-react-native';
 import { useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, View } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
@@ -26,8 +27,10 @@ import {
   groupMembersQuery,
   groupQuery
 } from '@/features/groups/api';
+import { isolate } from '@/i18n';
 
 export default function GroupMembersScreen() {
+  const { t } = useTranslation(['groups', 'common']);
   const dialog = useDialog();
   const { groupId } = useLocalSearchParams<{ groupId: string }>();
   const cancelling = useRef(false);
@@ -72,7 +75,7 @@ export default function GroupMembersScreen() {
             group.error ??
             members.error ??
             profile.error ??
-            new Error('Group not found.')
+            new Error(t('groupNotFound'))
           }
         />
         <Button
@@ -83,7 +86,7 @@ export default function GroupMembersScreen() {
             void profile.refetch();
           }}
         >
-          <Text>Retry</Text>
+          <Text>{t('retry')}</Text>
         </Button>
       </Screen>
     );
@@ -92,7 +95,7 @@ export default function GroupMembersScreen() {
     <Screen>
       <Stack.Screen
         options={{
-          title: 'Members',
+          title: t('members'),
           headerRight: () =>
             canManage ? (
               <Link
@@ -106,7 +109,7 @@ export default function GroupMembersScreen() {
                   className="w-12 px-0"
                   variant="ghost"
                   role="link"
-                  accessibilityLabel="Invite members"
+                  accessibilityLabel={t('inviteMembers')}
                 >
                   <Icon as={UserPlus} size={22} className="text-primary" />
                 </Button>
@@ -119,14 +122,16 @@ export default function GroupMembersScreen() {
           <ErrorMessage error={invitations.error ?? cancel.error} />
           {invitations.error ? (
             <Button variant="outline" onPress={() => invitations.refetch()}>
-              <Text>Retry invitations</Text>
+              <Text>{t('retryInvitations')}</Text>
             </Button>
           ) : null}
         </View>
       ) : null}
       <SectionLabel>
-        ACTIVE ·{' '}
-        {members.data.filter((member) => member.status === 'ACTIVE').length}
+        {t('active', {
+          count: members.data.filter((member) => member.status === 'ACTIVE')
+            .length
+        })}
       </SectionLabel>
       <View>
         {(members.data ?? [])
@@ -137,7 +142,9 @@ export default function GroupMembersScreen() {
               divided={index > 0}
               leading={<Avatar name={member.displayName} />}
               title={
-                member.userId === profile.data?.id ? 'You' : member.displayName
+                member.userId === profile.data?.id
+                  ? t('you')
+                  : member.displayName
               }
               trailing={
                 member.userId === profile.data?.id ? undefined : (
@@ -152,12 +159,12 @@ export default function GroupMembersScreen() {
       </View>
       {canManage && invitations.isLoading ? (
         <ActivityIndicator
-          accessibilityLabel="Loading invitations"
+          accessibilityLabel={t('loadingInvitations')}
           className="text-primary"
         />
       ) : null}
       {canManage && invitations.data?.length ? (
-        <SectionLabel>PENDING INVITATIONS</SectionLabel>
+        <SectionLabel>{t('pendingInvitations')}</SectionLabel>
       ) : null}
       <View>
         {canManage &&
@@ -167,7 +174,9 @@ export default function GroupMembersScreen() {
               divided={index > 0}
               title={invitation.userDisplayName}
               leading={<Avatar name={invitation.userDisplayName} />}
-              subtitle={`Invited by ${invitation.invitedByDisplayName}`}
+              subtitle={t('invitedBy', {
+                name: isolate(invitation.invitedByDisplayName)
+              })}
               trailing={
                 <View className="shrink-0">
                   <Button
@@ -182,12 +191,15 @@ export default function GroupMembersScreen() {
                     }}
                     onPress={() =>
                       dialog(
-                        'Cancel invitation?',
-                        `Remove ${invitation.userDisplayName}'s pending invitation to ${group.data.name}?`,
+                        t('cancelInvitation'),
+                        t('removeSPendingInvitationTo', {
+                          name: isolate(invitation.userDisplayName),
+                          group: isolate(group.data.name)
+                        }),
                         [
-                          { text: 'Keep invitation', style: 'cancel' },
+                          { text: t('keepInvitation'), style: 'cancel' },
                           {
-                            text: 'Cancel invitation',
+                            text: t('cancelInvitation2'),
                             style: 'destructive',
                             onPress: () => {
                               if (!canManage || cancelling.current) return;
@@ -203,7 +215,7 @@ export default function GroupMembersScreen() {
                     cancel.variables === invitation.userId ? (
                       <ActivityIndicator className="text-destructive" />
                     ) : (
-                      <Text>Cancel</Text>
+                      <Text>{t('common:cancel')}</Text>
                     )}
                   </Button>
                 </View>
@@ -214,7 +226,7 @@ export default function GroupMembersScreen() {
       {(!canManage || !invitations.isSuccess) &&
       members.data.some((member) => member.status === 'INVITED') ? (
         <>
-          <SectionLabel>PENDING INVITATIONS</SectionLabel>
+          <SectionLabel>{t('pendingInvitations')}</SectionLabel>
           <View>
             {members.data
               .filter((member) => member.status === 'INVITED')
@@ -224,7 +236,7 @@ export default function GroupMembersScreen() {
                   divided={index > 0}
                   leading={<Avatar name={member.displayName} />}
                   title={member.displayName}
-                  subtitle="Invited"
+                  subtitle={t('invited')}
                 />
               ))}
           </View>
@@ -238,7 +250,7 @@ export default function GroupMembersScreen() {
             (invitation) => invitation.userId === member.userId
           )
       ) ? (
-        <SectionLabel>PAST</SectionLabel>
+        <SectionLabel>{t('past')}</SectionLabel>
       ) : null}
       <View>
         {(members.data ?? [])
@@ -258,10 +270,10 @@ export default function GroupMembersScreen() {
               title={member.displayName}
               subtitle={
                 member.status === 'CANCELLED'
-                  ? 'Invitation cancelled'
+                  ? t('invitationCancelled')
                   : member.status === 'DECLINED'
-                    ? 'Declined invitation'
-                    : 'Left'
+                    ? t('declinedInvitation')
+                    : t('left')
               }
               trailing={
                 member.status === 'LEFT' &&
@@ -285,13 +297,13 @@ export default function GroupMembersScreen() {
           asChild
         >
           <Button role="link">
-            <Text>Invite member</Text>
+            <Text>{t('inviteMember')}</Text>
           </Button>
         </Link>
       ) : null}
       {!canManage ? (
-        <Notice title="Member changes unavailable">
-          This group is read-only. Invitations cannot be changed.
+        <Notice title={t('memberChangesUnavailable')}>
+          {t('thisGroupIsReadOnlyInvitationsCannotBeChanged')}
         </Notice>
       ) : null}
     </Screen>
@@ -305,6 +317,7 @@ function ReportMemberButton({
   userId: string;
   name: string;
 }) {
+  const { t } = useTranslation(['groups', 'common']);
   return (
     <View className="shrink-0">
       <Link
@@ -318,7 +331,7 @@ function ReportMemberButton({
           className="w-12 px-0"
           variant="ghost"
           role="link"
-          accessibilityLabel={`Report ${name}`}
+          accessibilityLabel={t('report', { name: isolate(name) })}
         >
           <Icon as={Flag} size={20} className="text-muted-foreground" />
         </Button>

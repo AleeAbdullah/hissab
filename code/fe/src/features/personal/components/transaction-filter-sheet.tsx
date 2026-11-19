@@ -1,6 +1,7 @@
 import { DateTimePicker } from '@expo/ui/community/datetime-picker';
 import { Check, ChevronDown, ChevronUp, Shapes, X } from 'lucide-react-native';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -15,6 +16,8 @@ import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { AmountRangeSlider } from '@/features/personal/components/amount-range-slider';
 import { CATEGORY_ICONS } from '@/features/personal/components/category-picker';
+import { i18n, intlLocale, isolate } from '@/i18n';
+import { categoryName } from '@/i18n/categories';
 import {
   currentPeriodDates,
   formatDate,
@@ -36,7 +39,7 @@ export type TransactionFilters = {
 type FilterSection = 'AMOUNT' | 'CATEGORY' | 'DATE';
 
 function dateLabel(value?: string) {
-  if (!value) return 'Any date';
+  if (!value) return i18n.t('personal:anyDate');
   return formatDate(value);
 }
 
@@ -57,6 +60,7 @@ export function TransactionFilterSheet({
   onClose: () => void;
   visible: boolean;
 }) {
+  const { t } = useTranslation(['personal', 'common']);
   const primaryColor = useThemeVariable(THEME_VARIABLES.primary);
   const amountMaximum = [
     amountLimitMinor,
@@ -112,7 +116,10 @@ export function TransactionFilterSheet({
     <Button
       variant="ghost"
       className="min-h-16 w-full justify-start rounded-none border-b border-border px-0 py-2"
-      accessibilityLabel={`${title}, ${detail}, ${expanded === id ? 'expanded' : 'collapsed'}`}
+      accessibilityLabel={t(
+        expanded === id ? 'sectionExpanded' : 'sectionCollapsed',
+        { title, detail }
+      )}
       accessibilityState={{ expanded: expanded === id }}
       onPress={() => setExpanded(expanded === id ? null : id)}
     >
@@ -142,7 +149,7 @@ export function TransactionFilterSheet({
       <View className="flex-1 justify-end">
         <Pressable
           className="absolute inset-0"
-          accessibilityLabel="Close filters"
+          accessibilityLabel={t('closeFilters')}
           accessibilityRole="button"
           onPress={onClose}
         />
@@ -152,12 +159,12 @@ export function TransactionFilterSheet({
         >
           <View className="flex-row items-center justify-between px-5 pt-4">
             <Text className="text-[32px] font-semibold leading-[38px] text-foreground">
-              Filters
+              {t('filters')}
             </Text>
             <Button
               className="w-12 px-0"
               variant="ghost"
-              accessibilityLabel="Close filters"
+              accessibilityLabel={t('closeFilters')}
               onPress={onClose}
             >
               <Icon as={X} size={24} />
@@ -170,10 +177,17 @@ export function TransactionFilterSheet({
           >
             {section(
               'AMOUNT',
-              'Amount',
+              t('amount'),
               amountActive
-                ? `${formatMinorAmount(draftMinimum, displayCurrency)} – ${formatMinorAmount(draftMaximum, displayCurrency)}`
-                : 'Any amount',
+                ? t('range', {
+                    from: isolate(
+                      formatMinorAmount(draftMinimum, displayCurrency)
+                    ),
+                    to: isolate(
+                      formatMinorAmount(draftMaximum, displayCurrency)
+                    )
+                  })
+                : t('anyAmount'),
               amountActive
             )}
             {expanded === 'AMOUNT' ? (
@@ -181,8 +195,14 @@ export function TransactionFilterSheet({
                 {sliderMaximum ? (
                   <>
                     <Text className="text-center text-base text-foreground">
-                      {formatMinorAmount(draftMinimum, displayCurrency)} –{' '}
-                      {formatMinorAmount(draftMaximum, displayCurrency)}
+                      {t('range', {
+                        from: isolate(
+                          formatMinorAmount(draftMinimum, displayCurrency)
+                        ),
+                        to: isolate(
+                          formatMinorAmount(draftMaximum, displayCurrency)
+                        )
+                      })}
                     </Text>
                     <AmountRangeSlider
                       displayCurrency={displayCurrency}
@@ -199,8 +219,8 @@ export function TransactionFilterSheet({
                 ) : (
                   <Text className="text-sm text-muted-foreground">
                     {amountLimitMinor === null
-                      ? 'No positive amounts are available for this selection.'
-                      : 'Amount range is temporarily unavailable.'}
+                      ? t('noPositiveAmountsAreAvailableForThisSelection')
+                      : t('amountRangeIsTemporarilyUnavailable')}
                   </Text>
                 )}
               </View>
@@ -208,52 +228,57 @@ export function TransactionFilterSheet({
 
             {section(
               'CATEGORY',
-              'Category',
-              selectedCategory?.name ?? 'All categories',
+              t('category'),
+              (selectedCategory
+                ? categoryName(selectedCategory.code)
+                : undefined) ?? t('allCategories'),
               Boolean(draftCategoryCode)
             )}
             {expanded === 'CATEGORY' ? (
               <View className="pb-2">
-                {[{ code: undefined, name: 'All categories' }, ...choices].map(
-                  (category) => {
-                    const selected = draftCategoryCode === category.code;
-                    const symbol = category.code
-                      ? CATEGORY_ICONS[category.code]
-                      : Shapes;
-                    return (
-                      <Button
-                        key={category.code ?? 'ALL'}
-                        variant="ghost"
-                        className="min-h-12 w-full justify-start gap-3 rounded-none px-0 py-2"
-                        accessibilityState={{ selected }}
-                        onPress={() => setDraftCategoryCode(category.code)}
-                      >
-                        <View className="h-8 w-8 items-center justify-center rounded-full bg-secondary">
-                          <Icon
-                            as={symbol}
-                            size={18}
-                            className="text-secondary-foreground"
-                          />
-                        </View>
-                        <Text className="min-w-0 flex-1 text-base font-normal text-foreground">
-                          {category.name}
-                        </Text>
-                        {selected ? (
-                          <Icon as={Check} size={20} className="text-primary" />
-                        ) : null}
-                      </Button>
-                    );
-                  }
-                )}
+                {[{ code: undefined }, ...choices].map((category) => {
+                  const selected = draftCategoryCode === category.code;
+                  const symbol = category.code
+                    ? CATEGORY_ICONS[category.code]
+                    : Shapes;
+                  return (
+                    <Button
+                      key={category.code ?? 'ALL'}
+                      variant="ghost"
+                      className="min-h-12 w-full justify-start gap-3 rounded-none px-0 py-2"
+                      accessibilityState={{ selected }}
+                      onPress={() => setDraftCategoryCode(category.code)}
+                    >
+                      <View className="h-8 w-8 items-center justify-center rounded-full bg-secondary">
+                        <Icon
+                          as={symbol}
+                          size={18}
+                          className="text-secondary-foreground"
+                        />
+                      </View>
+                      <Text className="min-w-0 flex-1 text-base font-normal text-foreground">
+                        {category.code
+                          ? categoryName(category.code)
+                          : t('allCategories')}
+                      </Text>
+                      {selected ? (
+                        <Icon as={Check} size={20} className="text-primary" />
+                      ) : null}
+                    </Button>
+                  );
+                })}
               </View>
             ) : null}
 
             {section(
               'DATE',
-              'Date',
+              t('date'),
               datesActive
-                ? `${dateLabel(draftFromDate)} – ${dateLabel(draftToDate)}`
-                : 'Any date',
+                ? t('range', {
+                    from: isolate(dateLabel(draftFromDate)),
+                    to: isolate(dateLabel(draftToDate))
+                  })
+                : t('anyDate'),
               datesActive
             )}
             {expanded === 'DATE' ? (
@@ -277,7 +302,17 @@ export function TransactionFilterSheet({
                             setDraftToDate(dates.toDate);
                           }}
                         >
-                          <Text>{period}</Text>
+                          <Text>
+                            {t(
+                              (
+                                {
+                                  'This month': 'thisMonth',
+                                  'Last month': 'lastMonth',
+                                  'This year': 'thisYear'
+                                } as const
+                              )[period]
+                            )}
+                          </Text>
                         </Button>
                       );
                     }
@@ -289,11 +324,20 @@ export function TransactionFilterSheet({
                       key={side}
                       variant="outline"
                       className="min-w-0 flex-1 flex-col items-start gap-1 px-3 py-2"
-                      accessibilityLabel={`${side === 'from' ? 'From' : 'To'} date, ${dateLabel(side === 'from' ? draftFromDate : draftToDate)}`}
+                      accessibilityLabel={t(
+                        side === 'from' ? 'fromDate' : 'toDate',
+                        {
+                          date: isolate(
+                            dateLabel(
+                              side === 'from' ? draftFromDate : draftToDate
+                            )
+                          )
+                        }
+                      )}
                       onPress={() => setPickingDate(side)}
                     >
                       <Text className="text-xs text-muted-foreground">
-                        {side === 'from' ? 'From' : 'To'}
+                        {side === 'from' ? t('from') : t('to')}
                       </Text>
                       <Text className="text-sm text-primary">
                         {dateLabel(
@@ -312,12 +356,12 @@ export function TransactionFilterSheet({
                       setDraftToDate(undefined);
                     }}
                   >
-                    <Text className="text-primary">Clear dates</Text>
+                    <Text className="text-primary">{t('clearDates')}</Text>
                   </Button>
                 ) : null}
                 {invalidDates ? (
                   <Text className="text-sm text-destructive">
-                    From must be on or before To.
+                    {t('fromMustBeOnOrBeforeTo')}
                   </Text>
                 ) : null}
               </View>
@@ -342,7 +386,7 @@ export function TransactionFilterSheet({
                 })
               }
             >
-              <Text>See results</Text>
+              <Text>{t('seeResults')}</Text>
             </Button>
             <Button
               variant="ghost"
@@ -358,7 +402,7 @@ export function TransactionFilterSheet({
               }}
             >
               <Text className="text-primary">
-                Clear filters ({activeCount})
+                {t('clearFilters', { count: activeCount })}
               </Text>
             </Button>
           </View>
@@ -367,6 +411,9 @@ export function TransactionFilterSheet({
       {pickingDate ? (
         <DateTimePicker
           mode="date"
+          locale={intlLocale()}
+          positiveButton={{ label: t('common:done') }}
+          negativeButton={{ label: t('common:cancel') }}
           presentation="dialog"
           value={localPickerDate(
             pickingDate === 'from' ? draftFromDate : draftToDate

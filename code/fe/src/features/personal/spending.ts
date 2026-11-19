@@ -1,15 +1,24 @@
 import type { PersonalReportBucket } from '@/api/contracts';
-import { formatDate, formatPeriod } from '@/lib/dates';
+import { i18n, intlLocale, isolate } from '@/i18n';
+import { formatDate, formatPeriod, formatShortMonth } from '@/lib/dates';
 
 export const SPENDING_PERIODS = ['1W', '1M', '6M', '1Y'] as const;
 export type SpendingPeriod = (typeof SPENDING_PERIODS)[number];
 export type SpendingBucket = 'DAY' | 'MONTH';
 
 export const SPENDING_PERIOD_NAMES: Record<SpendingPeriod, string> = {
-  '1W': 'Last 7 days',
-  '1M': 'This month',
-  '6M': 'Last 6 months',
-  '1Y': 'Last 12 months'
+  get '1W'() {
+    return i18n.t('personal:last7Days');
+  },
+  get '1M'() {
+    return i18n.t('personal:thisMonth');
+  },
+  get '6M'() {
+    return i18n.t('personal:last6Months');
+  },
+  get '1Y'() {
+    return i18n.t('personal:last12Months');
+  }
 };
 
 // Fixed plot heights keep the layout stable across chart type, period, and load state.
@@ -21,10 +30,10 @@ export function spendingSeriesName(
   bucket: SpendingBucket
 ) {
   return variant === 'line'
-    ? 'Cumulative'
+    ? i18n.t('personal:cumulative')
     : bucket === 'MONTH'
-      ? 'Monthly'
-      : 'Daily';
+      ? i18n.t('personal:monthly')
+      : i18n.t('personal:daily');
 }
 
 export function spendingBucket(period: SpendingPeriod): SpendingBucket {
@@ -87,7 +96,7 @@ export function spendingPoints(
 // Short axis labels keep charts readable; full dates accompany their textual values.
 export function spendingAxisLabel(period: string, bucket: SpendingBucket) {
   return bucket === 'MONTH'
-    ? formatDate(`${period}-01`, false).split(' ').slice(1).join(' ')
+    ? formatShortMonth(`${period}-01`)
     : formatDate(period, false);
 }
 
@@ -99,7 +108,15 @@ export function spendingRangeLabel(range: { from: string; to: string }) {
 // Share of the total as text; non-zero amounts never round down to `0%`.
 export function spendingShareLabel(amount: string, total: string) {
   const percent = Math.round(spendingRatio(amount, total) * 100);
-  return percent === 0 && BigInt(amount) > 0n ? '<1%' : `${percent}%`;
+  const formatter = new Intl.NumberFormat(intlLocale(), {
+    style: 'percent',
+    maximumFractionDigits: 0
+  });
+  return percent === 0 && BigInt(amount) > 0n
+    ? i18n.t('personal:lessThanPercent', {
+        percent: isolate(formatter.format(0.01))
+      })
+    : formatter.format(percent / 100);
 }
 
 // Only chart geometry is converted to Number; monetary totals remain exact.

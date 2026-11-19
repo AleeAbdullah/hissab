@@ -1,0 +1,2 @@
+patchedDependencies:
+  '@expo/ui@57.0.21': patches/@expo__ui@57.0.21.patch

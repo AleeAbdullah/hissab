@@ -2,6 +2,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Stack } from 'expo-router/stack';
 import { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
@@ -27,9 +28,11 @@ import {
   leaveGroup,
   updateGroup
 } from '@/features/groups/api';
+import { isolate } from '@/i18n';
 import { formatMinorAmount } from '@/lib/money';
 
 export default function GroupSettingsScreen() {
+  const { t } = useTranslation(['groups', 'common']);
   const dialog = useDialog();
   const { groupId } = useLocalSearchParams<{ groupId: string }>();
   const group = useQuery(groupQuery(groupId));
@@ -88,7 +91,7 @@ export default function GroupSettingsScreen() {
       <Screen>
         <ErrorMessage
           error={
-            group.error ?? profile.error ?? new Error('Group unavailable.')
+            group.error ?? profile.error ?? new Error(t('groupUnavailable'))
           }
         />
       </Screen>
@@ -125,14 +128,22 @@ export default function GroupSettingsScreen() {
     )
       return;
     dialog(
-      action === 'leave' ? 'Leave group?' : 'Archive group?',
+      action === 'leave' ? t('leaveGroup') : t('archiveGroup'),
       action === 'leave'
-        ? `Leave ${group.data.name}? Your financial history is retained.${lastMember ? ' You are the last active member, so leaving also archives the group.' : ''}`
-        : `Archive ${group.data.name} for everyone? Its history remains readable.`,
+        ? lastMember
+          ? t('leaveYourFinancialHistoryIsRetainedYouAreTheLast', {
+              group: isolate(group.data.name)
+            })
+          : t('leaveYourFinancialHistoryIsRetained', {
+              group: isolate(group.data.name)
+            })
+        : t('archiveForEveryoneItsHistoryRemainsReadable', {
+            group: isolate(group.data.name)
+          }),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common:cancel'), style: 'cancel' },
         {
-          text: action === 'leave' ? 'Leave group' : 'Archive group',
+          text: action === 'leave' ? t('leaveGroup2') : t('archiveGroup2'),
           style: 'destructive',
           onPress: () => {
             if (locked.current) return;
@@ -146,10 +157,10 @@ export default function GroupSettingsScreen() {
   };
   return (
     <Screen>
-      <Stack.Screen options={{ title: 'Group settings' }} />
+      <Stack.Screen options={{ title: t('groupSettings') }} />
       {!canManage ? (
         <Text selectable className="text-muted-foreground">
-          Only active members can manage an active group.
+          {t('onlyActiveMembersCanManageAnActiveGroup')}
         </Text>
       ) : null}
       {update.error ||
@@ -180,11 +191,11 @@ export default function GroupSettingsScreen() {
       />
       <Card>
         <Row
-          title="Balance details"
+          title={t('balanceDetails')}
           href={{ pathname: '/groups/[groupId]/balances', params: { groupId } }}
         />
         <Row
-          title="Report group"
+          title={t('reportGroup')}
           href={{
             pathname: '/report',
             params: {
@@ -195,35 +206,42 @@ export default function GroupSettingsScreen() {
           }}
         />
       </Card>
-      <SectionLabel>MEMBERSHIP</SectionLabel>
+      <SectionLabel>{t('membership')}</SectionLabel>
       <Card>
         <Row
-          title="Leave group"
+          title={t('leaveGroup2')}
           destructive
           disabled={pending || leaveBlocked}
-          detail={leave.isPending ? 'Leaving…' : undefined}
+          detail={leave.isPending ? t('leaving') : undefined}
           subtitle={
             own === undefined
-              ? 'Balance eligibility is unavailable.'
+              ? t('balanceEligibilityIsUnavailable')
               : own === 0n
                 ? lastMember
-                  ? 'You are the last member, so this also archives the group.'
-                  : 'Your balance is settled.'
-                : `Settle your balance first. ${own < 0n ? 'You owe' : "You're owed"} ${formatMinorAmount((own < 0n ? -own : own).toString(), profile.data.displayCurrency)}.`
+                  ? t('youAreTheLastMemberSoThisAlsoArchivesThe')
+                  : t('yourBalanceIsSettled')
+                : t(own < 0n ? 'settleOwe' : 'settleOwed', {
+                    amount: isolate(
+                      formatMinorAmount(
+                        (own < 0n ? -own : own).toString(),
+                        profile.data.displayCurrency
+                      )
+                    )
+                  })
           }
           onPress={() => confirm('leave')}
         />
         <Row
-          title="Archive group"
+          title={t('archiveGroup2')}
           destructive
           disabled={pending || archiveBlocked}
-          detail={archive.isPending ? 'Archiving…' : undefined}
+          detail={archive.isPending ? t('archiving') : undefined}
           subtitle={
             unsettled === undefined
-              ? 'Balance eligibility is unavailable.'
+              ? t('balanceEligibilityIsUnavailable')
               : unsettled
-                ? `Everyone must be settled first. ${unsettled} ${unsettled === 1 ? 'member has' : 'members have'} open balances.`
-                : 'Everyone is settled. Archives the group for all members.'
+                ? t('unsettledMembers', { count: unsettled })
+                : t('everyoneIsSettledArchivesTheGroupForAllMembers')
           }
           onPress={() => confirm('archive')}
         />
@@ -236,7 +254,7 @@ export default function GroupSettingsScreen() {
             void members.refetch();
           }}
         >
-          <Text>Retry eligibility check</Text>
+          <Text>{t('retryEligibilityCheck')}</Text>
         </Button>
       ) : null}
     </Screen>
@@ -256,6 +274,7 @@ function GroupNameForm({
   saving: boolean;
   onSave: (name: string) => void;
 }) {
+  const { t } = useTranslation(['groups', 'common']);
   const [name, setName] = useState(initialName);
   const valid =
     canManage &&
@@ -269,20 +288,20 @@ function GroupNameForm({
   return (
     <View className="gap-3">
       <Field
-        label="Group name"
+        label={t('groupName')}
         value={name}
         onChangeText={setName}
         onSubmitEditing={save}
         maxLength={100}
         editable={canManage && !disabled}
-        hint="Up to 100 characters"
+        hint={t('upTo100Characters')}
       />
       <Button
         disabled={!valid}
         accessibilityState={{ disabled: !valid, busy: saving }}
         onPress={save}
       >
-        <Text>{saving ? 'Saving…' : 'Save name'}</Text>
+        <Text>{saving ? t('saving') : t('saveName')}</Text>
       </Button>
     </View>
   );

@@ -17,12 +17,14 @@ import {
   Wallet,
   type LucideIcon
 } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, View } from 'react-native';
 
 import type { PersonalCategoryCode } from '@/api/contracts';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
+import { categoryName } from '@/i18n/categories';
 import { cn } from '@/lib/utils';
 
 export const CATEGORY_ICONS: Record<PersonalCategoryCode, LucideIcon> = {
@@ -57,18 +59,19 @@ export function CategoryPicker<T extends PersonalCategoryCode>({
   onChange: (code: T) => void;
   value: T | null;
 }) {
+  const { t } = useTranslation(['personal', 'common']);
   if (loading)
     return (
       <View className="min-h-12 items-start justify-center">
         <ActivityIndicator
-          accessibilityLabel="Loading categories"
+          accessibilityLabel={t('loadingCategories')}
           className="text-primary"
         />
       </View>
     );
   return (
     <View
-      accessibilityLabel="Category"
+      accessibilityLabel={t('category')}
       accessibilityRole="radiogroup"
       className="flex-row flex-wrap gap-y-2"
     >
@@ -79,7 +82,7 @@ export function CategoryPicker<T extends PersonalCategoryCode>({
             key={category.code}
             variant="ghost"
             role="radio"
-            accessibilityLabel={category.name}
+            accessibilityLabel={categoryName(category.code)}
             disabled={disabled}
             accessibilityState={{ checked: selected, disabled }}
             className="h-auto w-1/4 flex-col justify-start gap-1.5 px-0.5 py-1"
@@ -99,7 +102,7 @@ export function CategoryPicker<T extends PersonalCategoryCode>({
                 }
               />
               {selected ? (
-                <View className="absolute -bottom-0.5 -right-0.5 size-5 items-center justify-center rounded-full border border-border bg-card">
+                <View className="absolute -bottom-0.5 -end-0.5 size-5 items-center justify-center rounded-full border border-border bg-card">
                   <Icon as={Check} size={12} className="text-primary" />
                 </View>
               ) : null}
@@ -115,7 +118,7 @@ export function CategoryPicker<T extends PersonalCategoryCode>({
                   : 'font-normal text-foreground'
               )}
             >
-              {category.name}
+              {categoryName(category.code)}
             </Text>
           </Button>
         );

@@ -1,6 +1,10 @@
 import { Stack } from 'expo-router/stack';
+import { useTranslation } from 'react-i18next';
+
+import { nativeLargeTitle } from '@/i18n';
 
 export default function PersonalLayout() {
+  const { t } = useTranslation(['personal', 'common']);
   return (
     <Stack
       screenOptions={{
@@ -12,23 +16,23 @@ export default function PersonalLayout() {
       <Stack.Screen
         name="index"
         options={{
-          title: 'Personal',
-          headerLargeTitle: true,
+          title: t('personal'),
+          headerLargeTitle: nativeLargeTitle,
           headerTitleAlign: 'left'
         }}
       />
-      <Stack.Screen name="transactions" options={{ title: 'History' }} />
+      <Stack.Screen name="transactions" options={{ title: t('history') }} />
       <Stack.Screen
         name="spending"
-        options={{ title: 'Spending', headerTitleAlign: 'center' }}
+        options={{ title: t('spending'), headerTitleAlign: 'center' }}
       />
       <Stack.Screen
         name="[transactionId]/index"
-        options={{ title: 'Transaction' }}
+        options={{ title: t('transaction') }}
       />
       <Stack.Screen
         name="[transactionId]/edit"
-        options={{ title: 'Edit transaction' }}
+        options={{ title: t('editTransaction') }}
       />
     </Stack>
   );

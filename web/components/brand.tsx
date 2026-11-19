@@ -5,8 +5,8 @@ export function BrandLockup() {
   return (
     <Link className="brand-lockup" href="/" aria-label="Tally Stick home">
       <span className="brand-icon" aria-hidden="true">
-        <Image className="brand-icon-light-theme" src="/brand/icon-dark.svg" alt="" width="25" height="24" />
-        <Image className="brand-icon-dark-theme" src="/brand/icon-light.svg" alt="" width="25" height="24" />
+        <Image className="brand-icon-light-theme" src="/brand/icon-dark.svg" alt="" width="28" height="18" />
+        <Image className="brand-icon-dark-theme" src="/brand/icon-light.svg" alt="" width="28" height="18" />
       </span>
       <span>Tally Stick</span>
     </Link>

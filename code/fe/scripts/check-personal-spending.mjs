@@ -1,8 +1,23 @@
 import assert from 'node:assert/strict';
 import { registerHooks } from 'node:module';
 
+// Keep the existing pure checks independent of Expo storage and native reloads.
+const translations = `
+  import { createInstance } from ${JSON.stringify(import.meta.resolve('i18next'))};
+  import common from ${JSON.stringify(new URL('../src/i18n/locales/en/common.json', import.meta.url).href)} with { type: 'json' };
+  import personal from ${JSON.stringify(new URL('../src/i18n/locales/en/personal.json', import.meta.url).href)} with { type: 'json' };
+  export const i18n = createInstance();
+  i18n.init({ lng: 'en', initAsync: false, resources: { en: { common, personal } } });
+  export const intlLocale = () => 'en-u-nu-latn-ca-gregory';
+  export const isolate = (value) => value;
+`;
 registerHooks({
   resolve(specifier, context, nextResolve) {
+    if (specifier === '@/i18n')
+      return {
+        url: `data:text/javascript,${encodeURIComponent(translations)}`,
+        shortCircuit: true
+      };
     return nextResolve(
       specifier.startsWith('@/')
         ? new URL(`../src/${specifier.slice(2)}.ts`, import.meta.url).href
@@ -12,8 +27,16 @@ registerHooks({
   }
 });
 
-const { spendingPoints, spendingRange, spendingRatio, spendingSegments } =
-  await import('../src/features/personal/spending.ts');
+const {
+  spendingAxisLabel,
+  spendingPoints,
+  spendingRange,
+  spendingRatio,
+  spendingSegments
+} = await import('../src/features/personal/spending.ts');
+
+assert.equal(spendingAxisLabel('2026-11', 'MONTH'), 'Nov');
+assert.equal(spendingAxisLabel('2026-11-01', 'DAY'), 'Nov 1');
 
 const now = new Date('2026-01-01T23:30:00-05:00');
 assert.deepEqual(spendingRange('1M', now), {
