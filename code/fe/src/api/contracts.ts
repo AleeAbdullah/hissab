@@ -81,6 +81,21 @@ export type AccountDeletionResult = {
   deletedAt: string;
 };
 
+export type DeletionPlan = {
+  settlements: {
+    ledgerId: string;
+    ledgerType: 'DIRECT' | 'GROUP';
+    groupName: string | null;
+    fromUserId: string;
+    fromDisplayName: string;
+    toUserId: string;
+    toDisplayName: string;
+    amountMinor: string;
+  }[];
+  groups: { groupId: string; name: string; willArchive: boolean }[];
+  fingerprint: string;
+};
+
 export type Reminder = {
   id: string;
   ledgerId: string;

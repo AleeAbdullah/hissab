@@ -1,5 +1,6 @@
 import type {
   AccountDeletionResult,
+  DeletionPlan,
   InAppNotification,
   NotificationDevice,
   NotificationPage,
@@ -11,6 +12,7 @@ import type {
 import {
   accountDeleteAccount,
   accountExportAccount,
+  accountGetDeletionPlan,
   authListSessions,
   authRevokeOtherSessions,
   authRevokeSession,
@@ -152,11 +154,19 @@ export function exportAccount() {
   return request<AccountExportDto>(() => accountExportAccount());
 }
 
-export function deleteAccount(body: DeleteAccountDtoWritable) {
+// Not persisted: the plan must reflect current balances when the screen opens.
+export const deletionPlanQuery = {
+  queryKey: ['account', 'deletion-plan'] as const,
+  queryFn: () => request<DeletionPlan>(() => accountGetDeletionPlan()),
+  staleTime: 0
+};
+
+// Pass the same key when retrying one logical deletion attempt.
+export function deleteAccount(body: DeleteAccountDtoWritable, key: string) {
   return request<AccountDeletionResult>(() =>
     accountDeleteAccount({
       body,
-      headers: { 'Idempotency-Key': idempotencyKey() }
+      headers: { 'Idempotency-Key': key }
     })
   );
 }

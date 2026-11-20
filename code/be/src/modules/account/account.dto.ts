@@ -1,5 +1,12 @@
 import { ApiProperty, IntersectionType } from '@nestjs/swagger';
-import { Equals, IsString, MaxLength, MinLength } from 'class-validator';
+import {
+  Equals,
+  IsOptional,
+  IsString,
+  Matches,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 
 import { LOCALES, type Locale } from '../../common/locale';
 import {
@@ -29,6 +36,64 @@ export class DeleteAccountDto {
   @IsString()
   @Equals('DELETE')
   confirmation!: 'DELETE';
+
+  @ApiProperty({
+    required: false,
+    pattern: '^[0-9a-f]{64}$',
+    description:
+      'Fingerprint from GET /account/deletion-plan. When present, the plan is recorded and groups are left before anonymizing.',
+  })
+  @IsOptional()
+  @Matches(/^[0-9a-f]{64}$/)
+  planFingerprint?: string;
+}
+
+export class DeletionPlanSettlementDto {
+  @ApiProperty({ format: 'uuid' })
+  ledgerId!: string;
+
+  @ApiProperty({ enum: ['DIRECT', 'GROUP'] })
+  ledgerType!: 'DIRECT' | 'GROUP';
+
+  @ApiProperty({ type: String, nullable: true })
+  groupName!: string | null;
+
+  @ApiProperty({ format: 'uuid' })
+  fromUserId!: string;
+
+  @ApiProperty()
+  fromDisplayName!: string;
+
+  @ApiProperty({ format: 'uuid' })
+  toUserId!: string;
+
+  @ApiProperty()
+  toDisplayName!: string;
+
+  @ApiProperty({ pattern: '^[1-9][0-9]*$' })
+  amountMinor!: string;
+}
+
+export class DeletionPlanGroupDto {
+  @ApiProperty({ format: 'uuid' })
+  groupId!: string;
+
+  @ApiProperty()
+  name!: string;
+
+  @ApiProperty()
+  willArchive!: boolean;
+}
+
+export class DeletionPlanDto {
+  @ApiProperty({ type: DeletionPlanSettlementDto, isArray: true })
+  settlements!: DeletionPlanSettlementDto[];
+
+  @ApiProperty({ type: DeletionPlanGroupDto, isArray: true })
+  groups!: DeletionPlanGroupDto[];
+
+  @ApiProperty({ pattern: '^[0-9a-f]{64}$' })
+  fingerprint!: string;
 }
 
 export class AccountDeletionResultDto {

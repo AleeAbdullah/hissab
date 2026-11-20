@@ -82,6 +82,7 @@ Preserve the audit contents and screen numbers. These screenshots are historical
 - Account deletion requires the current password, exact `DELETE` confirmation, authentication, and an idempotency key. It is irreversible and has no grace period.
 - Block account deletion while any per-ledger user balance is nonzero or while the user has an active group membership. Cancel pending invitations and connection requests and archive settled direct connections during deletion.
 - Allowed account deletion anonymizes the user as `Deleted user`, clears their email and authentication credentials, scrubs non-financial personal/security data, revokes every session immediately, and preserves immutable financial history under the same UUID.
+- The deletion screen offers to resolve those blockers in the same request. It lists each settlement Tally Stick will record, routed with the same simplification as the simplified-debts view so every payer and payee is named, and each group the user will leave. After the password and `DELETE` confirmation, the server rebuilds the plan under the ledger locks, refuses with `409 DELETION_PLAN_CHANGED` if anything changed since review, then records those settlements as the deleting user, leaves the groups (archiving any the user was last in) and anonymizes, all in one transaction. These settlements only record payments made outside Tally Stick; other members are notified and see them in Activity as with any settlement. Requests without a plan fingerprint keep the plain block.
 - Financial records whose current effect involves an anonymized or inactive ledger member are frozen against later edit or deletion so resolved balances cannot reappear after departure or account deletion.
 
 ## Current implementation boundary
@@ -103,7 +104,7 @@ Implemented now:
 - balance-aware manual reminders with a rolling 24-hour cooldown;
 - private user and group reports emailed to support;
 - fixed personal categories, immutable manual personal transactions, and UTC-grouped personal reports that include shared allocations;
-- versioned JSON account export and irreversible, balance-aware account anonymization with immediate session revocation;
+- versioned JSON account export and irreversible, balance-aware account anonymization with immediate session revocation, including an optional reviewed plan that settles balances and leaves groups in the same transaction;
 - read-only operator reconciliation for schema guardrails, immutable histories, financial postings, and account lifecycle state;
 - user-scoped filesystem persistence for approved query-read snapshots and form drafts, with versioned envelopes and query-cache expiry.
 

@@ -4,6 +4,7 @@ import { and, eq, inArray, or, type SQL, sql } from 'drizzle-orm';
 import { resolveLocale } from '../../common/locale';
 import type { DisplayCurrency } from '../../common/display-currency';
 import {
+  type AppDatabase,
   DatabaseService,
   type DatabaseTransaction,
 } from '../../database/database.service';
@@ -39,6 +40,21 @@ import type {
   ExportPersonalTransactionDto,
   ExportReminderDto,
 } from './account.dto';
+
+export interface DeletionBalanceRow {
+  ledgerId: string;
+  ledgerType: 'DIRECT' | 'GROUP';
+  groupName: string | null;
+  userId: string;
+  displayName: string;
+  netMinor: string;
+}
+
+export interface DeletionGroupRow {
+  groupId: string;
+  name: string;
+  activeMemberCount: number;
+}
 
 interface AccountRow {
   id: string;
@@ -344,6 +360,86 @@ export class AccountRepository {
       where user_id = ${userId}::uuid
       for update
     `);
+  }
+
+  // Every nonzero member net in each ledger where the user's own net is nonzero.
+  listDeletionBalanceRows(
+    executor: AppDatabase | DatabaseTransaction,
+    userId: string,
+  ): Promise<DeletionBalanceRow[]> {
+    return this.rows<DeletionBalanceRow>(
+      executor,
+      sql`
+        with unsettled as (
+          select event.ledger_id
+          from financial_events event
+          join ledger_postings posting on posting.financial_event_id = event.id
+          where posting.user_id = ${userId}::uuid
+          group by event.ledger_id
+          having sum(posting.amount_minor) <> 0
+        ), nets as (
+          select event.ledger_id, posting.user_id, sum(posting.amount_minor) as net
+          from financial_events event
+          join ledger_postings posting on posting.financial_event_id = event.id
+          where event.ledger_id in (select ledger_id from unsettled)
+          group by event.ledger_id, posting.user_id
+          having sum(posting.amount_minor) <> 0
+        )
+        select nets.ledger_id as "ledgerId",
+               ledger.type as "ledgerType",
+               profile.name as "groupName",
+               nets.user_id as "userId",
+               person.display_name as "displayName",
+               nets.net::text as "netMinor"
+        from nets
+        join ledgers ledger on ledger.id = nets.ledger_id
+        left join group_profiles profile on profile.ledger_id = ledger.id
+        join users person on person.id = nets.user_id
+        order by nets.ledger_id, nets.user_id
+      `,
+    );
+  }
+
+  // The payment checks are deferred to commit, when this user is already anonymized and has left
+  // their groups. Run them now, while every party is still active, as a separate commit would.
+  async checkRecordedSettlementsNow(
+    transaction: DatabaseTransaction,
+  ): Promise<void> {
+    await transaction.execute(sql`
+      set constraints
+        payments_active_users_check,
+        payments_integrity_check,
+        financial_events_payment_integrity_check,
+        ledger_postings_payment_integrity_check
+      immediate
+    `);
+  }
+
+  listActiveGroupsToLeave(
+    executor: AppDatabase | DatabaseTransaction,
+    userId: string,
+  ): Promise<DeletionGroupRow[]> {
+    return this.rows<DeletionGroupRow>(
+      executor,
+      sql`
+        select ledger.id as "groupId",
+               profile.name as "name",
+               (
+                 select count(*)
+                 from ledger_members other
+                 where other.ledger_id = ledger.id
+                   and other.status = 'ACTIVE'
+               )::int as "activeMemberCount"
+        from ledger_members membership
+        join ledgers ledger on ledger.id = membership.ledger_id
+        join group_profiles profile on profile.ledger_id = ledger.id
+        where membership.user_id = ${userId}::uuid
+          and membership.status = 'ACTIVE'
+          and ledger.type = 'GROUP'
+          and ledger.status = 'ACTIVE'
+        order by ledger.id
+      `,
+    );
   }
 
   async hasActiveGroupMembership(
@@ -1015,7 +1111,7 @@ export class AccountRepository {
   }
 
   private async rows<T>(
-    transaction: DatabaseTransaction,
+    transaction: AppDatabase | DatabaseTransaction,
     query: SQL,
   ): Promise<T[]> {
     return (await transaction.execute(query)).rows as unknown as T[];

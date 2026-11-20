@@ -24,6 +24,7 @@ import {
   AccountDeletionResultDto,
   AccountExportDto,
   DeleteAccountDto,
+  DeletionPlanDto,
 } from './account.dto';
 import { AccountService } from './account.service';
 
@@ -47,6 +48,14 @@ export class AccountController {
     return new StreamableFile(Readable.from([JSON.stringify(snapshot)]), {
       type: 'application/json; charset=utf-8',
     });
+  }
+
+  @Get('deletion-plan')
+  @ApiOkResponse({ type: DeletionPlanDto })
+  getDeletionPlan(
+    @CurrentUser() user: AuthPrincipal,
+  ): Promise<DeletionPlanDto> {
+    return this.account.getDeletionPlan(user.userId);
   }
 
   @Post('deletion')

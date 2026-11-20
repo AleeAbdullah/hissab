@@ -316,38 +316,40 @@ export class GroupsService {
         responseStatus: 200,
         routeScope: 'groups:leave',
       },
-      async (transaction) => {
-        await this.requireActiveMember(transaction, groupId, userId);
-        if (
-          await this.balances.hasUnsettledBalance(transaction, groupId, userId)
-        ) {
-          throw new ConflictException(
-            'Settle all group balances before leaving.',
-          );
-        }
-
-        await this.repository.leaveGroup(transaction, groupId, userId);
-        await this.recordChange(transaction, userId, groupId, 'MEMBER_LEFT', {
-          userId,
-        });
-
-        const groupArchived =
-          (await this.repository.countActiveMembers(transaction, groupId)) ===
-          0;
-        if (groupArchived) {
-          const cancelledInvitationUserIds = await this.repository.archiveGroup(
-            transaction,
-            groupId,
-          );
-          await this.recordChange(transaction, userId, groupId, 'ARCHIVED', {
-            reason: 'LAST_MEMBER_LEFT',
-            cancelledInvitationUserIds,
-          });
-        }
-
-        return { groupId, status: 'LEFT', groupArchived };
-      },
+      (transaction) => this.leaveInTransaction(transaction, userId, groupId),
     );
+  }
+
+  // Runs inside the caller's transaction and idempotency scope.
+  async leaveInTransaction(
+    transaction: DatabaseTransaction,
+    userId: string,
+    groupId: string,
+  ): Promise<{ groupId: string; status: 'LEFT'; groupArchived: boolean }> {
+    await this.requireActiveMember(transaction, groupId, userId);
+    if (await this.balances.hasUnsettledBalance(transaction, groupId, userId)) {
+      throw new ConflictException('Settle all group balances before leaving.');
+    }
+
+    await this.repository.leaveGroup(transaction, groupId, userId);
+    await this.recordChange(transaction, userId, groupId, 'MEMBER_LEFT', {
+      userId,
+    });
+
+    const groupArchived =
+      (await this.repository.countActiveMembers(transaction, groupId)) === 0;
+    if (groupArchived) {
+      const cancelledInvitationUserIds = await this.repository.archiveGroup(
+        transaction,
+        groupId,
+      );
+      await this.recordChange(transaction, userId, groupId, 'ARCHIVED', {
+        reason: 'LAST_MEMBER_LEFT',
+        cancelledInvitationUserIds,
+      });
+    }
+
+    return { groupId, status: 'LEFT', groupArchived };
   }
 
   archiveGroup(

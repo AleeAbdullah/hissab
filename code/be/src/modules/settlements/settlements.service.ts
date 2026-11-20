@@ -60,22 +60,31 @@ export class SettlementsService {
         responseStatus: 201,
         routeScope: 'settlements:create',
       },
-      async (transaction) => {
-        await this.ledgers.requireWritableLedger(transaction, ledgerId, userId);
-        const prepared = this.prepare(dto);
-        await this.requireActiveParties(transaction, ledgerId, prepared);
-        const revision = await this.repository.insertRevision(transaction, {
-          ledgerId,
-          createdByUserId: userId,
-          ...prepared,
-          status: 'ACTIVE',
-          version: 1,
-        });
-        await this.applyEffect(transaction, userId, revision, prepared);
-        await this.recordChange(transaction, userId, revision, 'CREATED');
-        return this.repository.toView(revision);
-      },
+      (transaction) =>
+        this.recordSettlement(transaction, userId, ledgerId, dto),
     );
+  }
+
+  // Runs inside the caller's transaction and idempotency scope.
+  async recordSettlement(
+    transaction: DatabaseTransaction,
+    userId: string,
+    ledgerId: string,
+    dto: CreateSettlementDto,
+  ): Promise<SettlementView> {
+    await this.ledgers.requireWritableLedger(transaction, ledgerId, userId);
+    const prepared = this.prepare(dto);
+    await this.requireActiveParties(transaction, ledgerId, prepared);
+    const revision = await this.repository.insertRevision(transaction, {
+      ledgerId,
+      createdByUserId: userId,
+      ...prepared,
+      status: 'ACTIVE',
+      version: 1,
+    });
+    await this.applyEffect(transaction, userId, revision, prepared);
+    await this.recordChange(transaction, userId, revision, 'CREATED');
+    return this.repository.toView(revision);
   }
 
   async listSettlements(

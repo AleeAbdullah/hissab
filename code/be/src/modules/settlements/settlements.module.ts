@@ -11,5 +11,6 @@ import { SettlementsService } from './settlements.service';
   imports: [IdempotencyModule, LedgersModule, OutboxModule],
   controllers: [SettlementsController],
   providers: [SettlementsRepository, SettlementsService],
+  exports: [SettlementsService],
 })
 export class SettlementsModule {}

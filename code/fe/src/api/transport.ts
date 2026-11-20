@@ -39,7 +39,8 @@ export class ApiError extends Error {
   constructor(
     message: string,
     readonly status?: number,
-    readonly details?: Record<string, unknown>
+    readonly details?: Record<string, unknown>,
+    readonly code?: string
   ) {
     super(message);
     this.name = 'ApiError';
@@ -138,10 +139,18 @@ function unwrap<T>(result: Result): T {
     throw new ApiError(
       errorMessage(result.error),
       result.response?.status,
-      errorDetails(result.error)
+      errorDetails(result.error),
+      errorCode(result.error)
     );
   }
   return result.data as T;
+}
+
+function errorCode(error: unknown) {
+  if (!error || typeof error !== 'object') return undefined;
+  const record = error as { code?: unknown; error?: { code?: unknown } };
+  const code = record.error?.code ?? record.code;
+  return typeof code === 'string' ? code : undefined;
 }
 
 function errorDetails(error: unknown) {

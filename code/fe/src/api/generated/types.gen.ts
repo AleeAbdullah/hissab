@@ -558,13 +558,67 @@ export type AccountExportDto = {
     notifications: Array<ExportNotificationDto>;
 };
 
+export type DeletionPlanSettlementDto = {
+    ledgerId: string;
+    ledgerType: 'DIRECT' | 'GROUP';
+    groupName: string | null;
+    fromUserId: string;
+    fromDisplayName: string;
+    toUserId: string;
+    toDisplayName: string;
+    amountMinor: string;
+};
+
+export type DeletionPlanGroupDto = {
+    groupId: string;
+    name: string;
+    willArchive: boolean;
+};
+
+export type DeletionPlanDto = {
+    settlements: Array<DeletionPlanSettlementDto>;
+    groups: Array<DeletionPlanGroupDto>;
+    fingerprint: string;
+};
+
 export type DeleteAccountDto = {
     confirmation: 'DELETE';
+    /**
+     * Fingerprint from GET /account/deletion-plan. When present, the plan is recorded and groups are left before anonymizing.
+     */
+    planFingerprint?: string;
 };
 
 export type AccountDeletionResultDto = {
     status: 'ANONYMIZED';
     deletedAt: string;
+};
+
+export type CreateGroupDto = {
+    name: string;
+};
+
+export type UpdateGroupDto = {
+    name: string;
+};
+
+export type InviteGroupUserDto = {
+    userId: string;
+};
+
+export type CreateSettlementDto = {
+    fromUserId: string;
+    toUserId: string;
+    amountMinor: string;
+    occurredAt: string;
+};
+
+export type ReplaceSettlementDto = {
+    fromUserId: string;
+    toUserId: string;
+    amountMinor: string;
+    occurredAt: string;
+    expectedVersion: number;
 };
 
 export type CreateConnectionRequestDto = {
@@ -610,33 +664,6 @@ export type ReplaceExpenseDto = {
     } & EqualExpenseSplitDto) | ({
         method: 'EXACT';
     } & ExactExpenseSplitDto);
-    expectedVersion: number;
-};
-
-export type CreateGroupDto = {
-    name: string;
-};
-
-export type UpdateGroupDto = {
-    name: string;
-};
-
-export type InviteGroupUserDto = {
-    userId: string;
-};
-
-export type CreateSettlementDto = {
-    fromUserId: string;
-    toUserId: string;
-    amountMinor: string;
-    occurredAt: string;
-};
-
-export type ReplaceSettlementDto = {
-    fromUserId: string;
-    toUserId: string;
-    amountMinor: string;
-    occurredAt: string;
     expectedVersion: number;
 };
 
@@ -749,6 +776,10 @@ export type ReportDto = {
 export type DeleteAccountDtoWritable = {
     currentPassword: string;
     confirmation: 'DELETE';
+    /**
+     * Fingerprint from GET /account/deletion-plan. When present, the plan is recorded and groups are left before anonymizing.
+     */
+    planFingerprint?: string;
 };
 
 export type HealthLiveData = {
@@ -1233,6 +1264,19 @@ export type AccountExportAccountResponses = {
 
 export type AccountExportAccountResponse = AccountExportAccountResponses[keyof AccountExportAccountResponses];
 
+export type AccountGetDeletionPlanData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/v1/account/deletion-plan';
+};
+
+export type AccountGetDeletionPlanResponses = {
+    200: DeletionPlanDto;
+};
+
+export type AccountGetDeletionPlanResponse = AccountGetDeletionPlanResponses[keyof AccountGetDeletionPlanResponses];
+
 export type AccountDeleteAccountData = {
     body: DeleteAccountDtoWritable;
     headers: {
@@ -1251,302 +1295,6 @@ export type AccountDeleteAccountResponses = {
 };
 
 export type AccountDeleteAccountResponse = AccountDeleteAccountResponses[keyof AccountDeleteAccountResponses];
-
-export type ConnectionsListRequestsData = {
-    body?: never;
-    path?: never;
-    query?: {
-        direction?: 'incoming' | 'outgoing';
-        status?: 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'CANCELLED';
-    };
-    url: '/v1/connection-requests';
-};
-
-export type ConnectionsListRequestsResponses = {
-    200: Array<{
-        [key: string]: unknown;
-    }>;
-};
-
-export type ConnectionsListRequestsResponse = ConnectionsListRequestsResponses[keyof ConnectionsListRequestsResponses];
-
-export type ConnectionsSendRequestData = {
-    body: CreateConnectionRequestDto;
-    headers: {
-        /**
-         * A unique key for safely retrying this mutation.
-         */
-        'Idempotency-Key': string;
-    };
-    path?: never;
-    query?: never;
-    url: '/v1/connection-requests';
-};
-
-export type ConnectionsSendRequestResponses = {
-    201: unknown;
-};
-
-export type ConnectionsFindCandidateData = {
-    body?: never;
-    path?: never;
-    query: {
-        email: string;
-    };
-    url: '/v1/connection-candidate';
-};
-
-export type ConnectionsFindCandidateResponses = {
-    200: {
-        [key: string]: unknown;
-    };
-};
-
-export type ConnectionsFindCandidateResponse = ConnectionsFindCandidateResponses[keyof ConnectionsFindCandidateResponses];
-
-export type ConnectionsAcceptRequestData = {
-    body?: never;
-    headers: {
-        /**
-         * A unique key for safely retrying this mutation.
-         */
-        'Idempotency-Key': string;
-    };
-    path: {
-        requestId: string;
-    };
-    query?: never;
-    url: '/v1/connection-requests/{requestId}/accept';
-};
-
-export type ConnectionsAcceptRequestResponses = {
-    200: unknown;
-};
-
-export type ConnectionsDeclineRequestData = {
-    body?: never;
-    headers: {
-        /**
-         * A unique key for safely retrying this mutation.
-         */
-        'Idempotency-Key': string;
-    };
-    path: {
-        requestId: string;
-    };
-    query?: never;
-    url: '/v1/connection-requests/{requestId}/decline';
-};
-
-export type ConnectionsDeclineRequestResponses = {
-    200: unknown;
-};
-
-export type ConnectionsCancelRequestData = {
-    body?: never;
-    headers: {
-        /**
-         * A unique key for safely retrying this mutation.
-         */
-        'Idempotency-Key': string;
-    };
-    path: {
-        requestId: string;
-    };
-    query?: never;
-    url: '/v1/connection-requests/{requestId}/cancel';
-};
-
-export type ConnectionsCancelRequestResponses = {
-    200: unknown;
-};
-
-export type ConnectionsListConnectionsData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/v1/connections';
-};
-
-export type ConnectionsListConnectionsResponses = {
-    200: Array<{
-        [key: string]: unknown;
-    }>;
-};
-
-export type ConnectionsListConnectionsResponse = ConnectionsListConnectionsResponses[keyof ConnectionsListConnectionsResponses];
-
-export type ConnectionsListBlocksData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/v1/blocks';
-};
-
-export type ConnectionsListBlocksResponses = {
-    200: Array<{
-        [key: string]: unknown;
-    }>;
-};
-
-export type ConnectionsListBlocksResponse = ConnectionsListBlocksResponses[keyof ConnectionsListBlocksResponses];
-
-export type ConnectionsUnblockData = {
-    body?: never;
-    headers: {
-        /**
-         * A unique key for safely retrying this mutation.
-         */
-        'Idempotency-Key': string;
-    };
-    path: {
-        userId: string;
-    };
-    query?: never;
-    url: '/v1/blocks/{userId}';
-};
-
-export type ConnectionsUnblockResponses = {
-    200: unknown;
-};
-
-export type ConnectionsBlockData = {
-    body?: never;
-    headers: {
-        /**
-         * A unique key for safely retrying this mutation.
-         */
-        'Idempotency-Key': string;
-    };
-    path: {
-        userId: string;
-    };
-    query?: never;
-    url: '/v1/blocks/{userId}';
-};
-
-export type ConnectionsBlockResponses = {
-    200: unknown;
-};
-
-export type ExpensesListCategoriesData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/v1/shared-expense-categories';
-};
-
-export type ExpensesListCategoriesResponses = {
-    200: Array<{
-        [key: string]: unknown;
-    }>;
-};
-
-export type ExpensesListCategoriesResponse = ExpensesListCategoriesResponses[keyof ExpensesListCategoriesResponses];
-
-export type ExpensesListExpensesData = {
-    body?: never;
-    path: {
-        ledgerId: string;
-    };
-    query?: {
-        cursor?: string;
-        limit?: number;
-    };
-    url: '/v1/ledgers/{ledgerId}/expenses';
-};
-
-export type ExpensesListExpensesResponses = {
-    200: unknown;
-};
-
-export type ExpensesCreateExpenseData = {
-    body: CreateExpenseDto;
-    headers: {
-        /**
-         * A unique key for safely retrying this mutation.
-         */
-        'Idempotency-Key': string;
-    };
-    path: {
-        ledgerId: string;
-    };
-    query?: never;
-    url: '/v1/ledgers/{ledgerId}/expenses';
-};
-
-export type ExpensesCreateExpenseResponses = {
-    201: {
-        [key: string]: unknown;
-    };
-};
-
-export type ExpensesCreateExpenseResponse = ExpensesCreateExpenseResponses[keyof ExpensesCreateExpenseResponses];
-
-export type ExpensesDeleteExpenseData = {
-    body?: never;
-    headers: {
-        /**
-         * A unique key for safely retrying this mutation.
-         */
-        'Idempotency-Key': string;
-    };
-    path: {
-        expenseId: string;
-    };
-    query: {
-        expectedVersion: number;
-    };
-    url: '/v1/expenses/{expenseId}';
-};
-
-export type ExpensesDeleteExpenseResponses = {
-    200: {
-        [key: string]: unknown;
-    };
-};
-
-export type ExpensesDeleteExpenseResponse = ExpensesDeleteExpenseResponses[keyof ExpensesDeleteExpenseResponses];
-
-export type ExpensesGetExpenseData = {
-    body?: never;
-    path: {
-        expenseId: string;
-    };
-    query?: never;
-    url: '/v1/expenses/{expenseId}';
-};
-
-export type ExpensesGetExpenseResponses = {
-    200: {
-        [key: string]: unknown;
-    };
-};
-
-export type ExpensesGetExpenseResponse = ExpensesGetExpenseResponses[keyof ExpensesGetExpenseResponses];
-
-export type ExpensesReplaceExpenseData = {
-    body: ReplaceExpenseDto;
-    headers: {
-        /**
-         * A unique key for safely retrying this mutation.
-         */
-        'Idempotency-Key': string;
-    };
-    path: {
-        expenseId: string;
-    };
-    query?: never;
-    url: '/v1/expenses/{expenseId}';
-};
-
-export type ExpensesReplaceExpenseResponses = {
-    200: {
-        [key: string]: unknown;
-    };
-};
-
-export type ExpensesReplaceExpenseResponse = ExpensesReplaceExpenseResponses[keyof ExpensesReplaceExpenseResponses];
 
 export type GroupsListGroupsData = {
     body?: never;
@@ -1887,6 +1635,302 @@ export type SettlementsReplaceSettlementResponses = {
 };
 
 export type SettlementsReplaceSettlementResponse = SettlementsReplaceSettlementResponses[keyof SettlementsReplaceSettlementResponses];
+
+export type ConnectionsListRequestsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        direction?: 'incoming' | 'outgoing';
+        status?: 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'CANCELLED';
+    };
+    url: '/v1/connection-requests';
+};
+
+export type ConnectionsListRequestsResponses = {
+    200: Array<{
+        [key: string]: unknown;
+    }>;
+};
+
+export type ConnectionsListRequestsResponse = ConnectionsListRequestsResponses[keyof ConnectionsListRequestsResponses];
+
+export type ConnectionsSendRequestData = {
+    body: CreateConnectionRequestDto;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/connection-requests';
+};
+
+export type ConnectionsSendRequestResponses = {
+    201: unknown;
+};
+
+export type ConnectionsFindCandidateData = {
+    body?: never;
+    path?: never;
+    query: {
+        email: string;
+    };
+    url: '/v1/connection-candidate';
+};
+
+export type ConnectionsFindCandidateResponses = {
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type ConnectionsFindCandidateResponse = ConnectionsFindCandidateResponses[keyof ConnectionsFindCandidateResponses];
+
+export type ConnectionsAcceptRequestData = {
+    body?: never;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        requestId: string;
+    };
+    query?: never;
+    url: '/v1/connection-requests/{requestId}/accept';
+};
+
+export type ConnectionsAcceptRequestResponses = {
+    200: unknown;
+};
+
+export type ConnectionsDeclineRequestData = {
+    body?: never;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        requestId: string;
+    };
+    query?: never;
+    url: '/v1/connection-requests/{requestId}/decline';
+};
+
+export type ConnectionsDeclineRequestResponses = {
+    200: unknown;
+};
+
+export type ConnectionsCancelRequestData = {
+    body?: never;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        requestId: string;
+    };
+    query?: never;
+    url: '/v1/connection-requests/{requestId}/cancel';
+};
+
+export type ConnectionsCancelRequestResponses = {
+    200: unknown;
+};
+
+export type ConnectionsListConnectionsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/v1/connections';
+};
+
+export type ConnectionsListConnectionsResponses = {
+    200: Array<{
+        [key: string]: unknown;
+    }>;
+};
+
+export type ConnectionsListConnectionsResponse = ConnectionsListConnectionsResponses[keyof ConnectionsListConnectionsResponses];
+
+export type ConnectionsListBlocksData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/v1/blocks';
+};
+
+export type ConnectionsListBlocksResponses = {
+    200: Array<{
+        [key: string]: unknown;
+    }>;
+};
+
+export type ConnectionsListBlocksResponse = ConnectionsListBlocksResponses[keyof ConnectionsListBlocksResponses];
+
+export type ConnectionsUnblockData = {
+    body?: never;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        userId: string;
+    };
+    query?: never;
+    url: '/v1/blocks/{userId}';
+};
+
+export type ConnectionsUnblockResponses = {
+    200: unknown;
+};
+
+export type ConnectionsBlockData = {
+    body?: never;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        userId: string;
+    };
+    query?: never;
+    url: '/v1/blocks/{userId}';
+};
+
+export type ConnectionsBlockResponses = {
+    200: unknown;
+};
+
+export type ExpensesListCategoriesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/v1/shared-expense-categories';
+};
+
+export type ExpensesListCategoriesResponses = {
+    200: Array<{
+        [key: string]: unknown;
+    }>;
+};
+
+export type ExpensesListCategoriesResponse = ExpensesListCategoriesResponses[keyof ExpensesListCategoriesResponses];
+
+export type ExpensesListExpensesData = {
+    body?: never;
+    path: {
+        ledgerId: string;
+    };
+    query?: {
+        cursor?: string;
+        limit?: number;
+    };
+    url: '/v1/ledgers/{ledgerId}/expenses';
+};
+
+export type ExpensesListExpensesResponses = {
+    200: unknown;
+};
+
+export type ExpensesCreateExpenseData = {
+    body: CreateExpenseDto;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        ledgerId: string;
+    };
+    query?: never;
+    url: '/v1/ledgers/{ledgerId}/expenses';
+};
+
+export type ExpensesCreateExpenseResponses = {
+    201: {
+        [key: string]: unknown;
+    };
+};
+
+export type ExpensesCreateExpenseResponse = ExpensesCreateExpenseResponses[keyof ExpensesCreateExpenseResponses];
+
+export type ExpensesDeleteExpenseData = {
+    body?: never;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        expenseId: string;
+    };
+    query: {
+        expectedVersion: number;
+    };
+    url: '/v1/expenses/{expenseId}';
+};
+
+export type ExpensesDeleteExpenseResponses = {
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type ExpensesDeleteExpenseResponse = ExpensesDeleteExpenseResponses[keyof ExpensesDeleteExpenseResponses];
+
+export type ExpensesGetExpenseData = {
+    body?: never;
+    path: {
+        expenseId: string;
+    };
+    query?: never;
+    url: '/v1/expenses/{expenseId}';
+};
+
+export type ExpensesGetExpenseResponses = {
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type ExpensesGetExpenseResponse = ExpensesGetExpenseResponses[keyof ExpensesGetExpenseResponses];
+
+export type ExpensesReplaceExpenseData = {
+    body: ReplaceExpenseDto;
+    headers: {
+        /**
+         * A unique key for safely retrying this mutation.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        expenseId: string;
+    };
+    query?: never;
+    url: '/v1/expenses/{expenseId}';
+};
+
+export type ExpensesReplaceExpenseResponses = {
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type ExpensesReplaceExpenseResponse = ExpensesReplaceExpenseResponses[keyof ExpensesReplaceExpenseResponses];
 
 export type NotificationsGetUnreadCountData = {
     body?: never;
