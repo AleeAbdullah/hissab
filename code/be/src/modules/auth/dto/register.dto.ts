@@ -12,6 +12,7 @@ import {
 } from 'class-validator';
 
 import { LOCALES, type Locale } from '../../../common/locale';
+import { IsAllowedText } from '../../../common/moderation/objectionable-text';
 
 export class RegisterDto {
   @ValidateIf((_object, value: unknown) => value !== undefined)
@@ -36,6 +37,7 @@ export class RegisterDto {
   )
   @IsString()
   @Length(1, 100)
+  @IsAllowedText()
   displayName!: string;
 
   @IsOptional()

@@ -2,6 +2,8 @@ import { Transform } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, Length } from 'class-validator';
 
+import { IsAllowedText } from '../../../common/moderation/objectionable-text';
+
 export class CreateGroupDto {
   @ApiProperty({ minLength: 1, maxLength: 100 })
   @Transform(({ value }: { value: unknown }) =>
@@ -9,5 +11,6 @@ export class CreateGroupDto {
   )
   @IsString()
   @Length(1, 100)
+  @IsAllowedText()
   name!: string;
 }

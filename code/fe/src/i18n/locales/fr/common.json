@@ -85,6 +85,7 @@
     "sessionChanged": "Votre compte a changé pendant cette demande. Réessayez.",
     "inactiveMembers": "Cet enregistrement inclut un membre qui n’est plus actif dans ce registre. Il ne peut pas être modifié.",
     "amountTooLarge": "Ce montant est trop élevé. Saisissez un montant inférieur.",
-    "invitationPending": "Une invitation est déjà en attente pour cette personne. Actualisez le groupe pour la voir."
+    "invitationPending": "Une invitation est déjà en attente pour cette personne. Actualisez le groupe pour la voir.",
+    "objectionableContent": "Ce texte contient des termes non autorisés. Modifiez-le et réessayez."
   }
 }

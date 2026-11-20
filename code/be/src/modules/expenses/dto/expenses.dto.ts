@@ -24,6 +24,7 @@ import { CursorPageQueryDto } from '../../../common/dto/cursor-page-query.dto';
 import { ExpectedVersionDto } from '../../../common/dto/expected-version.dto';
 import { Trim } from '../../../common/dto/transforms';
 import { POSITIVE_MINOR_PATTERN } from '../../../common/minor-units';
+import { IsAllowedText } from '../../../common/moderation/objectionable-text';
 
 export const SHARED_EXPENSE_CATEGORY_CODES = [
   'FOOD_AND_DRINK',
@@ -87,6 +88,7 @@ class MutableExpenseFieldsDto {
   @Trim()
   @IsString()
   @MinLength(1)
+  @IsAllowedText()
   description!: string;
 
   @ApiProperty({ example: '2500', pattern: POSITIVE_MINOR_PATTERN })

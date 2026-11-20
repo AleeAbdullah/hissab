@@ -27,6 +27,7 @@ const knownErrors = {
 } as const;
 
 const errorCodes = {
+  OBJECTIONABLE_CONTENT: 'objectionableContent',
   REMINDER_COOLDOWN: 'reminderCooldown',
   Unauthorized: 'sessionExpired',
   HTTP_401: 'sessionExpired',
@@ -59,6 +60,8 @@ export function errorMessage(error: unknown) {
     typeof body.code === 'string' && Object.hasOwn(errorCodes, body.code)
       ? errorCodes[body.code as keyof typeof errorCodes]
       : undefined;
+  if (key === 'objectionableContent')
+    return i18n.t('common:apiErrors.objectionableContent');
   if (Array.isArray(message))
     return i18n.language === 'en'
       ? message.join('\n')

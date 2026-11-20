@@ -85,6 +85,7 @@
     "sessionChanged": "Your account changed while this request was running. Try again.",
     "inactiveMembers": "This record includes a member who is no longer active in this ledger. It cannot be changed.",
     "amountTooLarge": "This amount is too large. Enter a smaller amount.",
-    "invitationPending": "An invitation is already pending for this person. Refresh the group to view it."
+    "invitationPending": "An invitation is already pending for this person. Refresh the group to view it.",
+    "objectionableContent": "This text contains language that isn't allowed. Change it and try again."
   }
 }
