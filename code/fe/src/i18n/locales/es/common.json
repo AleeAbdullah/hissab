@@ -85,6 +85,7 @@
     "sessionChanged": "Tu cuenta cambió durante esta solicitud. Inténtalo de nuevo.",
     "inactiveMembers": "Este registro incluye a un miembro que ya no está activo en este registro compartido. No se puede cambiar.",
     "amountTooLarge": "Este importe es demasiado grande. Introduce uno menor.",
-    "invitationPending": "Ya hay una invitación pendiente para esta persona. Actualiza el grupo para verla."
+    "invitationPending": "Ya hay una invitación pendiente para esta persona. Actualiza el grupo para verla.",
+    "objectionableContent": "Este texto contiene lenguaje no permitido. Cámbialo e inténtalo de nuevo."
   }
 }

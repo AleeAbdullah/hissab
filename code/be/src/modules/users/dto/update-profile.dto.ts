@@ -13,6 +13,7 @@ import {
   DISPLAY_CURRENCIES,
   type DisplayCurrency,
 } from '../../../common/display-currency';
+import { IsAllowedText } from '../../../common/moderation/objectionable-text';
 
 export class UpdateProfileDto {
   @ValidateIf((_object, value: unknown) => value !== undefined)
@@ -26,6 +27,7 @@ export class UpdateProfileDto {
   )
   @IsString()
   @Length(1, 100)
+  @IsAllowedText()
   displayName?: string;
 
   @IsOptional()

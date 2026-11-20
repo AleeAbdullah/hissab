@@ -1,11 +1,38 @@
-import { RequestMethod, ValidationPipe } from '@nestjs/common';
+import {
+  BadRequestException,
+  RequestMethod,
+  ValidationError,
+  ValidationPipe,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 
 import { HttpExceptionFilter } from '../common/http/http-exception.filter';
+import {
+  ALLOWED_TEXT_CONSTRAINT,
+  OBJECTIONABLE_CONTENT_CODE,
+} from '../common/moderation/objectionable-text';
 import { EnvironmentVariables } from '../config/environment';
+
+// Keeps the default 400 body; filtered text also gets a stable error code.
+class AppValidationPipe extends ValidationPipe {
+  createExceptionFactory() {
+    const createException = super.createExceptionFactory();
+    return (errors: ValidationError[]) => {
+      const exception = createException(errors) as BadRequestException;
+      return errors.some(
+        (error) => error.constraints?.[ALLOWED_TEXT_CONSTRAINT],
+      )
+        ? new BadRequestException({
+            ...(exception.getResponse() as object),
+            code: OBJECTIONABLE_CONTENT_CODE,
+          })
+        : exception;
+    };
+  }
+}
 
 export function configureApp(
   app: NestExpressApplication,
@@ -23,7 +50,7 @@ export function configureApp(
   });
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalPipes(
-    new ValidationPipe({
+    new AppValidationPipe({
       forbidNonWhitelisted: true,
       transform: true,
       whitelist: true,

@@ -25,6 +25,7 @@
     "db:check": "drizzle-kit check",
     "check:utc-calendar": "node scripts/check-utc-calendar.mjs",
     "check:auth-response": "node scripts/check-auth-response.mjs",
+    "check:content-filter": "node scripts/check-content-filter.mjs",
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {

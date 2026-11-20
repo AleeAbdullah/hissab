@@ -85,6 +85,7 @@
     "sessionChanged": "Is darkhwast ke dauran aap ka account badal gaya. Dobara koshish karein.",
     "inactiveMembers": "Is record mein aisa member shamil hai jo ab is hisaab mein active nahi hai. Isay badla nahi ja sakta.",
     "amountTooLarge": "Yeh raqam bohat bari hai. Kam raqam darj karein.",
-    "invitationPending": "Is shakhs ki dawat pehle hi pending hai. Dekhne ke liye group refresh karein."
+    "invitationPending": "Is shakhs ki dawat pehle hi pending hai. Dekhne ke liye group refresh karein.",
+    "objectionableContent": "Is text mein aisi zabaan hai jis ki ijazat nahin. Ise badal kar dobara koshish karein."
   }
 }

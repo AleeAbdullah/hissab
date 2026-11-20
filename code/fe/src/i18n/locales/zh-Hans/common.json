@@ -85,6 +85,7 @@
     "sessionChanged": "此请求期间账号已更改。请重试。",
     "inactiveMembers": "此记录涉及已不在此账本中活跃的成员，无法更改。",
     "amountTooLarge": "金额过大。请输入较小的金额。",
-    "invitationPending": "此人已有待处理的邀请。刷新群组以查看邀请。"
+    "invitationPending": "此人已有待处理的邀请。刷新群组以查看邀请。",
+    "objectionableContent": "此文本包含不允许使用的词语。请修改后重试。"
   }
 }
