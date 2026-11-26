@@ -43,7 +43,12 @@ export interface EnvironmentVariables extends Record<string, unknown> {
   EXPO_PUSH_SEND_URL: string;
   EXPO_PUSH_RECEIPTS_URL: string;
   MAIL_ENABLED: boolean;
+  MAIL_PROVIDER?: 'resend' | 'smtp';
   RESEND_API_KEY?: string;
+  SMTP_HOST?: string;
+  SMTP_PORT?: number;
+  SMTP_USER?: string;
+  SMTP_PASSWORD?: string;
   MAIL_FROM?: string;
   SUPPORT_EMAIL?: string;
   PUBLIC_WEB_URL?: string;
@@ -201,9 +206,30 @@ export function validateEnvironment(
       'MAIL_ENABLED must be true when the production outbox runs.',
     );
   }
+  const mailProvider = parseMailProvider(config.MAIL_PROVIDER);
   const mail = mailEnabled
     ? {
-        RESEND_API_KEY: parseString('RESEND_API_KEY', config.RESEND_API_KEY),
+        MAIL_PROVIDER: mailProvider,
+        ...(mailProvider === 'smtp'
+          ? {
+              // Any SMTP relay works; Gmail is smtp.gmail.com:465 with an app password.
+              SMTP_HOST: parseString('SMTP_HOST', config.SMTP_HOST),
+              SMTP_PORT: parseInteger(
+                'SMTP_PORT',
+                config.SMTP_PORT,
+                465,
+                1,
+                65535,
+              ),
+              SMTP_USER: parseString('SMTP_USER', config.SMTP_USER),
+              SMTP_PASSWORD: parseString('SMTP_PASSWORD', config.SMTP_PASSWORD),
+            }
+          : {
+              RESEND_API_KEY: parseString(
+                'RESEND_API_KEY',
+                config.RESEND_API_KEY,
+              ),
+            }),
         MAIL_FROM: parseString('MAIL_FROM', config.MAIL_FROM),
         SUPPORT_EMAIL: parseString('SUPPORT_EMAIL', config.SUPPORT_EMAIL),
         PUBLIC_WEB_URL: parsePublicWebUrl(config.PUBLIC_WEB_URL),
@@ -358,6 +384,14 @@ export function validateEnvironment(
       nodeEnvironment !== 'production',
     ),
   };
+}
+
+function parseMailProvider(value: unknown): 'resend' | 'smtp' {
+  const provider = value ?? 'resend';
+  if (provider !== 'resend' && provider !== 'smtp') {
+    throw new Error('MAIL_PROVIDER must be resend or smtp.');
+  }
+  return provider;
 }
 
 function parsePublicWebUrl(value: unknown): string {

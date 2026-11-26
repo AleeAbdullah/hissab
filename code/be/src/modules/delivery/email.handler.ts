@@ -1,5 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { createTransport, type Transporter } from 'nodemailer';
 
 import { copy } from './copy';
 import type { EnvironmentVariables } from '../../config/environment';
@@ -45,6 +46,7 @@ interface EmailMessage {
 export class EmailHandler implements OutboxHandler, OnModuleInit {
   readonly eventTypes = ['auth.password_reset_requested', 'report.created'];
   private readonly logger = new Logger(EmailHandler.name);
+  private smtp?: Transporter;
 
   constructor(
     private readonly database: DatabaseService,
@@ -172,6 +174,28 @@ export class EmailHandler implements OutboxHandler, OnModuleInit {
     idempotencyKey: string,
     signal: AbortSignal,
   ): Promise<void> {
+    if (this.config.get('MAIL_PROVIDER') === 'smtp') {
+      // SMTP has no idempotency key; a crash between send and acknowledge can
+      // resend once, which is acceptable for reset links and support reports.
+      this.smtp ??= createTransport({
+        host: this.config.getOrThrow<string>('SMTP_HOST'),
+        port: this.config.getOrThrow<number>('SMTP_PORT'),
+        secure: this.config.getOrThrow<number>('SMTP_PORT') === 465,
+        auth: {
+          user: this.config.getOrThrow<string>('SMTP_USER'),
+          pass: this.config.getOrThrow<string>('SMTP_PASSWORD'),
+        },
+      });
+      await this.smtp.sendMail({
+        from: this.config.getOrThrow<string>('MAIL_FROM'),
+        to: message.to,
+        subject: message.subject,
+        text: message.text,
+        ...(message.replyTo ? { replyTo: message.replyTo } : {}),
+      });
+      return;
+    }
+
     const response = await fetch(RESEND_URL, {
       method: 'POST',
       headers: {
