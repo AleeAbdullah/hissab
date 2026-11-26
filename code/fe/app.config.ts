@@ -33,7 +33,16 @@ const config: ExpoConfig = {
       foregroundImage: './assets/images/icons/app-icon-foreground.png',
       monochromeImage: './assets/images/icons/app-icon-monochrome.png'
     },
-    predictiveBackGestureEnabled: true
+    predictiveBackGestureEnabled: true,
+    // Defaults the app never uses: export shares from the cache directory, and
+    // secure-store never requires biometric authentication.
+    blockedPermissions: [
+      'android.permission.SYSTEM_ALERT_WINDOW',
+      'android.permission.READ_EXTERNAL_STORAGE',
+      'android.permission.WRITE_EXTERNAL_STORAGE',
+      'android.permission.USE_BIOMETRIC',
+      'android.permission.USE_FINGERPRINT'
+    ]
   },
   web: {
     output: 'static',

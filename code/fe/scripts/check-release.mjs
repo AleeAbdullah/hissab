@@ -50,7 +50,8 @@ for (const [platform, physical, environment, projectId, expected] of [
     'expo-device': { isDevice: physical },
     'expo-secure-store': {},
     'react-native': { Platform: { OS: platform } },
-    './api': {}
+    './api': {},
+    '@/i18n': { i18n: { t: (key) => key } }
   };
   runInNewContext(outputText, {
     exports,
