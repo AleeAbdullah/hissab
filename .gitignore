@@ -5,3 +5,6 @@ __pycache__/
 
 # Local mobile audit evidence
 /audits/Hissab-App-Audit-2026-10-04/
+
+# Launch-film workspace (renders, captures, node_modules); kept local
+/demo/

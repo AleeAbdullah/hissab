@@ -181,6 +181,10 @@ export class EmailHandler implements OutboxHandler, OnModuleInit {
         host: this.config.getOrThrow<string>('SMTP_HOST'),
         port: this.config.getOrThrow<number>('SMTP_PORT'),
         secure: this.config.getOrThrow<number>('SMTP_PORT') === 465,
+        // Finish well inside the outbox lease so a stuck send is not claimed twice.
+        connectionTimeout: 10_000,
+        greetingTimeout: 10_000,
+        socketTimeout: 30_000,
         auth: {
           user: this.config.getOrThrow<string>('SMTP_USER'),
           pass: this.config.getOrThrow<string>('SMTP_PASSWORD'),

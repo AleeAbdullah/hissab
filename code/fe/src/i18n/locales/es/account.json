@@ -145,5 +145,10 @@
   "exportFolder": "Guarda una copia JSON de tu perfil, estado social, historial financiero, actividad, recordatorios y notificaciones. Elegirás una carpeta para guardarla.",
   "exportShare": "Guarda una copia JSON de tu perfil, estado social, historial financiero, actividad, recordatorios y notificaciones. Elegirás dónde guardarla o enviarla.",
   "exporting": "Exportando…",
-  "appleDevice": "iPhone o iPad"
+  "appleDevice": "iPhone o iPad",
+  "offOnThisDevice": "Desactivadas en este dispositivo",
+  "turnOnNotificationsTitle": "¿Activar las notificaciones?",
+  "turnOnNotificationsBody": "Recibe avisos cuando alguien añada un gasto, registre un pago, te invite o te envíe un recordatorio. Puedes cambiarlo cuando quieras en Cuenta.",
+  "notNow": "Ahora no",
+  "turnOn": "Activar"
 }

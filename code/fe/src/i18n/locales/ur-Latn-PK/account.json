@@ -145,5 +145,10 @@
   "exportFolder": "Profile, social state, financial history, activity, reminders aur notifications ka JSON snapshot save karein. Save karne ke liye folder chunein ge.",
   "exportShare": "Profile, social state, financial history, activity, reminders aur notifications ka JSON snapshot save karein. Save ya bhejne ki jagah chunein ge.",
   "exporting": "Export ho raha hai…",
-  "appleDevice": "iPhone ya iPad"
+  "appleDevice": "iPhone ya iPad",
+  "offOnThisDevice": "Is device par band",
+  "turnOnNotificationsTitle": "Notifications on karein?",
+  "turnOnNotificationsBody": "Jab koi kharcha add kare, settlement record kare, aapko invite kare ya reminder bheje to alert paayein. Aap ise kabhi bhi Account mein badal sakte hain.",
+  "notNow": "Abhi nahin",
+  "turnOn": "On karein"
 }

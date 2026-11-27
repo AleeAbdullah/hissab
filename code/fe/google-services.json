@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "169502012366",
+    "project_id": "tally-stick",
+    "storage_bucket": "tally-stick.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:169502012366:android:1cdd88fa4886fdd51bf19f",
+        "android_client_info": {
+          "package_name": "com.alee.hissab"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyACxiXSPZWS1PauTocblJqhMD1KlyuiLiw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -145,5 +145,10 @@
   "exportFolder": "Enregistrez une copie JSON de votre profil, de vos relations, de votre historique financier, de votre activité, des rappels et des notifications. Vous choisirez un dossier pour l’enregistrer.",
   "exportShare": "Enregistrez une copie JSON de votre profil, de vos relations, de votre historique financier, de votre activité, des rappels et des notifications. Vous choisirez où l’enregistrer ou l’envoyer.",
   "exporting": "Export en cours…",
-  "appleDevice": "iPhone ou iPad"
+  "appleDevice": "iPhone ou iPad",
+  "offOnThisDevice": "Désactivées sur cet appareil",
+  "turnOnNotificationsTitle": "Activer les notifications ?",
+  "turnOnNotificationsBody": "Soyez averti quand quelqu’un ajoute une dépense, enregistre un règlement, vous invite ou vous envoie un rappel. Vous pouvez modifier ce choix à tout moment dans Compte.",
+  "notNow": "Pas maintenant",
+  "turnOn": "Activer"
 }

@@ -7,22 +7,73 @@ import i18next from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import { I18nManager } from 'react-native';
 
-import { deviceLocale, intlTag, isLocale, isRTL, type Locale } from './locale';
+import {
+  intlTag,
+  isLocale,
+  isRTL,
+  matchDeviceLocale,
+  type Locale
+} from './locale';
 import { resources } from './resources';
 
+type Stored = {
+  locale?: string;
+  // The device (or iOS per-app) language seen at the last launch.
+  device?: string;
+  // A device-language change not yet saved to the server profile.
+  deviceSync?: string;
+  directionReload?: string;
+};
 const preference = new File(Paths.document, 'hissab-language.json');
-function readPreference(): Locale | null {
+function readStored(): Stored {
   try {
     const stored = JSON.parse(preference.textSync());
-    const locale = stored.locale === 'en-PK' ? 'en' : stored.locale;
-    return stored.version === 1 && isLocale(locale) ? locale : null;
+    return stored?.version === 1 ? stored : {};
   } catch {
-    return null;
+    return {};
   }
 }
-const savedLocale = readPreference();
-const initialLocale =
-  savedLocale ?? deviceLocale(getLocales().map((value) => value.languageTag));
+function writeStored(patch: Stored) {
+  // Read before create: an overwriting create empties the file.
+  const next = JSON.stringify({ ...readStored(), ...patch, version: 1 });
+  preference.create({ overwrite: true, intermediates: true });
+  preference.write(next);
+}
+function readPreference(): Locale | null {
+  const { locale: stored } = readStored();
+  const locale = stored === 'en-PK' ? 'en' : stored;
+  return isLocale(locale) ? locale : null;
+}
+const matchedDevice = matchDeviceLocale(
+  getLocales().map((value) => value.languageTag)
+);
+const currentDevice = matchedDevice ?? 'en';
+// Changing the phone language, or the app's Language in iOS Settings, restarts
+// the app. A change to a supported device language since the last launch is an
+// explicit choice, so it replaces the saved one and is sent to the profile
+// later. A change to an unsupported language keeps the saved one.
+const lastDevice = readStored().device;
+const seenDevice = matchedDevice ?? 'none';
+const deviceChanged =
+  typeof lastDevice === 'string' &&
+  matchedDevice !== null &&
+  lastDevice !== matchedDevice;
+// Decided before writing, so a failed write cannot lose the saved language.
+const savedLocale = deviceChanged ? currentDevice : readPreference();
+if (lastDevice !== seenDevice) {
+  try {
+    writeStored(
+      deviceChanged
+        ? {
+            locale: currentDevice,
+            device: currentDevice,
+            deviceSync: currentDevice
+          }
+        : { device: seenDevice }
+    );
+  } catch {}
+}
+const initialLocale = savedLocale ?? currentDevice;
 export const i18n = i18next;
 void i18n.use(initReactI18next).init({
   resources,
@@ -56,6 +107,7 @@ export const isolate = (value: string) =>
 export async function setLocale(locale: Locale) {
   const directionChanged = isRTL(locale) !== isRTL(activeLocale());
   persistLocale(locale);
+  clearDeviceSync();
   if (locale === activeLocale()) return;
   const rtl = isRTL(locale);
   I18nManager.allowRTL(rtl);
@@ -65,15 +117,26 @@ export async function setLocale(locale: Locale) {
 }
 
 // Remote preferences must not restart a screen containing unsaved edits.
+// A pending device-language change outranks the older server value.
 export async function syncLocale(locale: Locale) {
+  if (pendingDeviceLocale()) return;
   persistLocale(locale);
+}
+
+export function pendingDeviceLocale(): Locale | null {
+  const { deviceSync } = readStored();
+  return isLocale(deviceSync) ? deviceSync : null;
+}
+
+export function clearDeviceSync() {
+  if (readStored().deviceSync === undefined) return;
+  writeStored({ deviceSync: undefined });
 }
 
 function persistLocale(locale: Locale) {
   if (!isLocale(locale)) throw new Error('Unsupported locale');
   if (readPreference() === locale) return;
-  preference.create({ overwrite: true, intermediates: true });
-  preference.write(JSON.stringify({ version: 1, locale }));
+  writeStored({ locale });
 }
 // Native direction only applies after a restart. If it disagrees with the
 // selected locale (first launch, device language change), reload once per
@@ -87,14 +150,7 @@ if (I18nManager.isRTL !== isRTL(initialLocale)) {
   } catch {}
   if (marker !== initialLocale) {
     try {
-      preference.create({ overwrite: true, intermediates: true });
-      preference.write(
-        JSON.stringify({
-          version: 1,
-          locale: savedLocale ?? undefined,
-          directionReload: initialLocale
-        })
-      );
+      writeStored({ directionReload: initialLocale });
       void reloadAppAsync().catch(() => undefined);
     } catch {
       // Without a saved marker, restarting could loop on every launch.

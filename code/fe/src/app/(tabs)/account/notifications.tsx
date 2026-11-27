@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, View } from 'react-native';
 
@@ -16,7 +16,7 @@ import {
 } from '@/features/account/api';
 import {
   canRegisterPushNotifications,
-  hasRegisteredPushDevice,
+  pushDeviceQuery,
   registerForPushNotifications,
   revokePushNotifications
 } from '@/features/account/push';
@@ -62,22 +62,18 @@ export default function NotificationsScreen() {
     mutationFn: () => revokePushNotifications(session?.user.id ?? '')
   });
   const [setupError, setSetupError] = useState<string>();
-  const [deviceRegistered, setDeviceRegistered] = useState(false);
+  const userId = session?.user.id;
+  const pushDevice = useQuery({
+    ...pushDeviceQuery(userId ?? ''),
+    enabled: !!userId
+  });
+  const deviceRegistered = pushDevice.data === true;
+  const setDeviceRegistered = (registered: boolean) => {
+    if (userId)
+      queryClient.setQueryData(pushDeviceQuery(userId).queryKey, registered);
+  };
   const updating = useRef(false);
   const [isUpdating, setIsUpdating] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-    void (async () => {
-      const registered = session?.user.id
-        ? await hasRegisteredPushDevice(session.user.id).catch(() => false)
-        : false;
-      if (active) setDeviceRegistered(registered);
-    })();
-    return () => {
-      active = false;
-    };
-  }, [session?.user.id]);
 
   if (preferences.isLoading) return <Loading />;
   const update = async (key: PreferenceKey, value: boolean) => {
@@ -131,8 +127,11 @@ export default function NotificationsScreen() {
               title={option.title}
               description={option.description}
               value={
-                option.key === 'pushEnabled' && !canRegisterPushNotifications()
-                  ? false
+                option.key === 'pushEnabled'
+                  ? // On only when this phone is registered too; turning it on registers it.
+                    canRegisterPushNotifications() &&
+                    preferences.data.pushEnabled &&
+                    deviceRegistered
                   : preferences.data[option.key]
               }
               disabled={

@@ -22,7 +22,8 @@ export const languageNames: Record<Locale, string> = {
 export function isLocale(value: unknown): value is Locale {
   return locales.includes(value as Locale);
 }
-export function deviceLocale(tags: string[]): Locale {
+// The first device language Tally Stick supports, or null when there is none.
+export function matchDeviceLocale(tags: string[]): Locale | null {
   for (const tag of tags) {
     const lower = tag.toLowerCase();
     if (lower.startsWith('ur-latn')) continue;
@@ -35,8 +36,10 @@ export function deviceLocale(tags: string[]): Locale {
     }
     if (isLocale(language)) return language;
   }
-  return 'en';
+  return null;
 }
+export const deviceLocale = (tags: string[]): Locale =>
+  matchDeviceLocale(tags) ?? 'en';
 export const isRTL = (locale: string) => locale === 'ur-PK' || locale === 'ar';
 // React Native accepts physical alignment values only.
 export function logicalTextAlign(edge: 'start' | 'end', locale: string) {

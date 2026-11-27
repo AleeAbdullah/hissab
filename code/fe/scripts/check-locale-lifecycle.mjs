@@ -33,7 +33,7 @@ function load(file, modules = {}) {
 }
 const mapping = load('i18n/locale.ts');
 
-function boot(stored, nativeRTL, failAt) {
+function boot(stored, nativeRTL, failAt, tags = ['en-US']) {
   let contents = stored;
   let reloads = 0;
   const api = load('i18n/index.ts', {
@@ -66,7 +66,9 @@ function boot(stored, nativeRTL, failAt) {
         }
       }
     },
-    'expo-localization': { getLocales: () => [{ languageTag: 'en-US' }] },
+    'expo-localization': {
+      getLocales: () => tags.map((languageTag) => ({ languageTag }))
+    },
     i18next: createInstance(),
     'react-i18next': { initReactI18next: { type: '3rdParty', init() {} } },
     'react-native': {
@@ -97,6 +99,40 @@ assert.equal(
   ).api.activeLocale(),
   'en'
 );
+// A new device (or iOS per-app) language since the last launch wins and waits
+// for the profile; an unchanged one keeps the explicit choice.
+const deviceChanged = boot(
+  JSON.stringify({ version: 1, locale: 'ar', device: 'fr' }),
+  false
+);
+assert.equal(deviceChanged.api.activeLocale(), 'en');
+assert.equal(deviceChanged.api.pendingDeviceLocale(), 'en');
+await deviceChanged.api.syncLocale('ar');
+assert.equal(JSON.parse(deviceChanged.contents()).locale, 'en');
+deviceChanged.api.clearDeviceSync();
+assert.equal(deviceChanged.api.pendingDeviceLocale(), null);
+const sameDevice = boot(
+  JSON.stringify({ version: 1, locale: 'ur-Latn-PK', device: 'en' }),
+  false
+);
+assert.equal(sameDevice.api.activeLocale(), 'ur-Latn-PK');
+assert.equal(sameDevice.api.pendingDeviceLocale(), null);
+const firstRecord = boot(JSON.stringify({ version: 1, locale: 'es' }), false);
+assert.equal(firstRecord.api.activeLocale(), 'es');
+assert.equal(JSON.parse(firstRecord.contents()).device, 'en');
+// Switching the phone to an unsupported language keeps the explicit choice;
+// switching back to a supported one later still counts as a change.
+const unsupported = boot(
+  JSON.stringify({ version: 1, locale: 'es', device: 'fr' }),
+  false,
+  undefined,
+  ['de-DE']
+);
+assert.equal(unsupported.api.activeLocale(), 'es');
+assert.equal(unsupported.api.pendingDeviceLocale(), null);
+const backToFrench = boot(unsupported.contents(), false, undefined, ['fr-FR']);
+assert.equal(backToFrench.api.activeLocale(), 'fr');
+assert.equal(backToFrench.api.pendingDeviceLocale(), 'fr');
 const switched = boot(null, false);
 await switched.api.setLocale('ar');
 assert.equal(JSON.parse(switched.contents()).locale, 'ar');
@@ -243,9 +279,7 @@ const modules = {
     }
   );
   const select = (savedLocale) =>
-    LocalePicker({ savedLocale }).props.children.find(
-      (child) => child.type === 'Select'
-    );
+    LocalePicker({ savedLocale });
   const remote = select('fr');
   assert.equal(remote.props.value.value, 'fr');
   remote.props.onValueChange({ value: 'en' });
@@ -283,10 +317,7 @@ await race(() => {
     'features/account/components/locale-picker.tsx',
     modules
   );
-  const picker = LocalePicker({});
-  picker.props.children
-    .find((child) => child.type === 'Select')
-    .props.onValueChange({ value: 'es' });
+  LocalePicker({}).props.onValueChange({ value: 'es' });
 });
 await race(() => {
   const { SessionProvider } = load('features/auth/session.tsx', modules);
@@ -379,9 +410,7 @@ const { LocalePicker: DelayedPicker } = load(
     }
   }
 );
-DelayedPicker({})
-  .props.children.find((child) => child.type === 'Select')
-  .props.onValueChange({ value: 'es' });
+DelayedPicker({}).props.onValueChange({ value: 'es' });
 await flush();
 tokens = {
   ...rotated,

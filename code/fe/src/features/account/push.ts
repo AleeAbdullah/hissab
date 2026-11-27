@@ -59,6 +59,22 @@ export async function hasRegisteredPushDevice(userId: string) {
   return Boolean(await SecureStore.getItemAsync(deviceKey(userId)));
 }
 
+// Whether this installation holds a server device registration for the user.
+// The server's pushEnabled preference alone does not mean this phone receives pushes.
+export const pushDeviceQuery = (userId: string) => ({
+  queryKey: ['push-device', userId] as const,
+  queryFn: () => hasRegisteredPushDevice(userId)
+});
+
+const offeredKey = (userId: string) => `hissab.push.offered.${userId}`;
+
+// The in-app "turn on notifications" prompt is shown once per user and installation.
+export async function claimPushOffer(userId: string) {
+  if (await SecureStore.getItemAsync(offeredKey(userId))) return false;
+  await SecureStore.setItemAsync(offeredKey(userId), '1');
+  return true;
+}
+
 // The server already disabled this device (e.g. password change); drop the local record.
 export function forgetPushDevice(userId: string) {
   return SecureStore.deleteItemAsync(deviceKey(userId));

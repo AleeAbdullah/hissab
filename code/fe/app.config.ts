@@ -15,6 +15,14 @@ const config: ExpoConfig = {
   icon: './assets/images/icons/app-icon-light.png',
   scheme: 'hissab',
   userInterfaceStyle: 'automatic',
+  // Declares the app languages to iOS (App Store "Languages" and the per-app
+  // Language setting). Roman Urdu has no iOS language; the in-app picker covers it.
+  locales: Object.fromEntries(
+    ['en', 'ar', 'es', 'fr', 'hi', 'ur', 'zh-Hans'].map((lang) => [
+      lang,
+      { ios: { CFBundleDisplayName: 'Tally Stick' } }
+    ])
+  ),
   ios: {
     bundleIdentifier: 'com.alee.hissab',
     infoPlist: {
@@ -28,6 +36,8 @@ const config: ExpoConfig = {
   },
   android: {
     package: 'com.alee.hissab',
+    // Firebase config for FCM push (project tally-stick). Identifiers only, not secrets.
+    googleServicesFile: './google-services.json',
     adaptiveIcon: {
       backgroundColor: '#A83A1B',
       foregroundImage: './assets/images/icons/app-icon-foreground.png',

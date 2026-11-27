@@ -24,9 +24,13 @@ import {
 } from '@/features/account/api';
 import { ExportAccountRow } from '@/features/account/components/export-account-row';
 import { LocalePicker } from '@/features/account/components/locale-picker';
-import { canRegisterPushNotifications } from '@/features/account/push';
+import {
+  canRegisterPushNotifications,
+  pushDeviceQuery
+} from '@/features/account/push';
 import { isActiveSession } from '@/features/account/sessions';
 import { signOut } from '@/features/auth/api';
+import { useSession } from '@/features/auth/session';
 import { isolate } from '@/i18n';
 
 const externalIcon = (
@@ -39,6 +43,11 @@ export default function AccountScreen() {
   const profile = useQuery(profileQuery);
   const sessions = useQuery(sessionsQuery);
   const notifications = useQuery(notificationPreferencesQuery);
+  const userId = useSession()?.user.id;
+  const pushDevice = useQuery({
+    ...pushDeviceQuery(userId ?? ''),
+    enabled: !!userId
+  });
   const mutation = useMutation({ mutationFn: signOut });
   if (profile.isLoading) return <Loading />;
 
@@ -71,7 +80,11 @@ export default function AccountScreen() {
             !canRegisterPushNotifications()
               ? t('unavailable')
               : notifications.data?.pushEnabled
-                ? t('on')
+                ? pushDevice.data
+                  ? t('on')
+                  : pushDevice.data === false
+                    ? t('offOnThisDevice')
+                    : undefined
                 : notifications.data
                   ? t('off')
                   : undefined

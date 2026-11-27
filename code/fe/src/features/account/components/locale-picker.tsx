@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { View } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
 import { getLoginVersion, getTokens } from '@/api/session-store';
@@ -62,55 +61,60 @@ export function LocalePicker({ savedLocale }: { savedLocale?: Locale }) {
     }
   };
   return (
-    <View className="gap-1.5 py-4">
-      <Text className="text-[13px] text-muted-foreground">{t('language')}</Text>
-      <Select
-        value={{ value, label: languageNames[value] }}
-        onValueChange={(option) => {
-          if (
-            busy ||
-            !option ||
-            !isLocale(option.value) ||
-            (option.value === value && option.value === currentLocale)
-          )
-            return;
-          const locale = option.value;
-          if (isRTL(locale) !== isRTL(currentLocale)) {
-            dialog(t('restartTitle'), t('restartBody'), [
-              { text: t('common:cancel'), style: 'cancel' },
-              {
-                text: t('restart'),
-                onPress: () => {
-                  void apply(locale);
-                }
+    <Select
+      value={{ value, label: languageNames[value] }}
+      onValueChange={(option) => {
+        if (
+          busy ||
+          !option ||
+          !isLocale(option.value) ||
+          (option.value === value && option.value === currentLocale)
+        )
+          return;
+        const locale = option.value;
+        if (isRTL(locale) !== isRTL(currentLocale)) {
+          dialog(t('restartTitle'), t('restartBody'), [
+            { text: t('common:cancel'), style: 'cancel' },
+            {
+              text: t('restart'),
+              onPress: () => {
+                void apply(locale);
               }
-            ]);
-          } else {
-            void apply(locale);
-          }
-        }}
+            }
+          ]);
+        } else {
+          void apply(locale);
+        }
+      }}
+    >
+      {/* Styled as a settings Row so it matches the rows around it in the card. */}
+      <SelectTrigger
+        disabled={busy}
+        accessibilityLabel={t('language')}
+        className="min-h-[52px] w-full gap-3 rounded-none border-0 border-b border-border bg-transparent px-4 py-3"
       >
-        <SelectTrigger
-          disabled={busy}
-          accessibilityLabel={t('language')}
-          className="w-full"
-        >
-          <SelectValue placeholder={t('chooseLanguage')} />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectGroup>
-            {locales.map((locale) => (
-              <SelectItem
-                key={locale}
-                label={languageNames[locale]}
-                value={locale}
-              >
-                {languageNames[locale]}
-              </SelectItem>
-            ))}
-          </SelectGroup>
-        </SelectContent>
-      </Select>
-    </View>
+        <Text className="flex-1 text-[17px] font-semibold leading-[23px]">
+          {t('language')}
+        </Text>
+        <SelectValue
+          placeholder={t('chooseLanguage')}
+          className="text-[15px] font-semibold leading-5 text-muted-foreground"
+        />
+      </SelectTrigger>
+      {/* Open under the value, which sits at the row's end (physical left in RTL). */}
+      <SelectContent align={isRTL(currentLocale) ? 'start' : 'end'}>
+        <SelectGroup>
+          {locales.map((locale) => (
+            <SelectItem
+              key={locale}
+              label={languageNames[locale]}
+              value={locale}
+            >
+              {languageNames[locale]}
+            </SelectItem>
+          ))}
+        </SelectGroup>
+      </SelectContent>
+    </Select>
   );
 }

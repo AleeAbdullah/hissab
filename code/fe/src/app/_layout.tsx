@@ -11,6 +11,7 @@ import { Platform, useColorScheme, View } from 'react-native';
 import { queryClient } from '@/api/query-client';
 import { DialogProvider } from '@/components/ui/dialog';
 import { ProfileLocaleSync } from '@/features/account/components/profile-locale-sync';
+import { PushRegistrationPrompt } from '@/features/account/components/push-registration-prompt';
 import { canRegisterPushNotifications } from '@/features/account/push';
 import { SessionProvider } from '@/features/auth/session';
 import { LedgerDraftProvider } from '@/features/ledger/draft';
@@ -42,6 +43,7 @@ function Navigation() {
       ) : null}
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
       <DialogProvider>
+        {canRegisterPushNotifications() ? <PushRegistrationPrompt /> : null}
         <View
           className="flex-1 bg-background"
           style={{ direction: isRTL(i18n.language) ? 'rtl' : 'ltr' }}
